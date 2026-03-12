@@ -4,7 +4,7 @@
  * Service layer for song CRUD operations using Supabase.
  */
 
-import { createServiceClient } from "../supabase/client";
+import { createServiceClient } from "../supabase/browser";
 import type { Database } from "../supabase/types";
 
 type SongRow = Database["public"]["Tables"]["songs"]["Row"];

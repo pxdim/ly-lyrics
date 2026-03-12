@@ -1,106 +1,120 @@
+/**
+ * Display Page
+ *
+ * Lyrics display for secondary screens/projectors.
+ * Receives real-time updates via WebSocket from controller.
+ */
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLyricsStore } from "@/lib/store";
+import { LyricsDisplay } from "@/components/lyrics/LyricsDisplay";
+import { LyricsControl } from "@/components/lyrics/LyricsControl";
 
 export default function DisplayPage() {
-  const [currentLine, setCurrentLine] = useState(0);
-  const [displayLines] = useState(4);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [connectionCode, setConnectionCode] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const { connect, disconnect, currentSong } = useLyricsStore();
 
-  // Sample lyrics
-  const lyrics = [
-    "這是第一行歌詞",
-    "這是第二行歌詞",
-    "這是第三行歌詞",
-    "這是第四行歌詞",
-    "這是第五行歌詞",
-    "這是第六行歌詞",
-    "這是第七行歌詞",
-    "這是第八行歌詞",
-  ];
-
-  // Calculate which lines to display
-  const getDisplayLines = () => {
-    const half = Math.floor(displayLines / 2);
-    const start = Math.max(0, currentLine - half);
-    const end = Math.min(lyrics.length, start + displayLines);
-    return { lines: lyrics.slice(start, end), startIndex: start };
-  };
-
-  const { lines: displayLyrics, startIndex } = getDisplayLines();
-
-  // Keyboard controls
+  // Handle connection
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-        setCurrentLine((prev) => Math.min(lyrics.length - 1, prev + 1));
-      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-        setCurrentLine((prev) => Math.max(0, prev - 1));
-      } else if (e.key === " ") {
-        // Spacebar to toggle theme
-        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-      }
+    if (connectionCode.length === 6) {
+      // Simulate connection - in production, this would validate via WebSocket
+      setIsConnected(true);
+      connect();
+    }
+  }, [connectionCode, connect]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disconnect();
     };
+  }, [disconnect]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Connection Screen
+  if (!isConnected) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center space-y-8 max-w-md">
+          {/* Logo */}
+          <div className="space-y-2">
+            <h1 className="text-6xl font-bold text-primary-500">LY</h1>
+            <p className="text-xl text-muted-foreground">歌詞顯示系統</p>
+          </div>
 
-  return (
-    <div
-      className={`w-full h-full flex flex-col items-center justify-center p-8 transition-colors ${
-        theme === "dark" ? "bg-black text-white" : "bg-white text-black"
-      }`}
-    >
-      {/* Connection Code Input (shown initially) */}
-      {!connectionCode && (
-        <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
-          <div className="text-center space-y-6">
-            <h1 className="text-4xl font-bold text-white">LY 顯示端</h1>
-            <p className="text-muted-foreground">輸入同步碼以連接</p>
+          {/* Connection Input */}
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              輸入控制器顯示的同步碼以連接
+            </p>
             <input
               type="text"
               value={connectionCode}
-              onChange={(e) => setConnectionCode(e.target.value.toUpperCase())}
-              placeholder="輸入同步碼"
-              className="px-6 py-4 text-2xl font-mono text-center bg-gray-800 text-white rounded-lg border-2 border-primary-600 focus:outline-none focus:border-primary-400 uppercase"
-              maxLength={4}
+              onChange={(e) => {
+                const value = e.target.value.toUpperCase().slice(0, 6);
+                setConnectionCode(value);
+              }}
+              placeholder="XXXXXX"
+              className="w-full px-6 py-4 text-3xl font-mono text-center bg-gray-900 text-white rounded-xl border-2 border-primary-600 focus:outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary/20 transition-all"
+              maxLength={6}
+              autoFocus
             />
+
+            {/* Quick connect button (for demo) */}
             <button
-              onClick={() => {/* TODO: Connect to controller */}}
-              className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+              onClick={() => setConnectionCode("DEMO01")}
+              className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
             >
               連接
             </button>
           </div>
+
+          {/* Instructions */}
+          <div className="text-left space-y-2 text-sm text-muted-foreground bg-gray-900/50 rounded-lg p-4">
+            <p className="font-medium text-foreground">快速連接步驟:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>在控制器上選擇歌曲</li>
+              <li>複製控制器顯示的同步碼</li>
+              <li>在上方輸入框輸入同步碼</li>
+              <li>點擊連接按鈕</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected - Display Lyrics
+  return (
+    <div className="relative min-h-screen w-full">
+      {/* Main Lyrics Display */}
+      <LyricsDisplay />
+
+      {/* Floating Controls */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+        <LyricsControl compact={true} position="floating" />
+      </div>
+
+      {/* Song Info Overlay (top left, fades out) */}
+      {currentSong && (
+        <div className="fixed top-4 left-4 animate-[fade-out_3s_ease-out_forwards]">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
+            <p className="text-white font-medium">{currentSong.title}</p>
+            {currentSong.artist && (
+              <p className="text-sm text-white/70">{currentSong.artist}</p>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Lyrics Display */}
-      <div className="max-w-4xl w-full">
-        {displayLyrics.map((line, idx) => {
-          const globalIndex = startIndex + idx;
-          const isActive = globalIndex === currentLine;
-
-          return (
-            <p
-              key={idx}
-              className={`text-4xl md:text-5xl lg:text-6xl text-center py-4 transition-all duration-300 ${
-                isActive
-                  ? "text-primary-600 font-bold scale-105 focus-glow"
-                  : "opacity-40"
-              }`}
-            >
-              {line}
-            </p>
-          );
-        })}
-      </div>
-
-      {/* Current Position Indicator */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 text-sm opacity-50">
-        {currentLine + 1} / {lyrics.length}
+      {/* Connection Status Indicator (top right) */}
+      <div className="fixed top-4 right-4">
+        <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs text-white/70">已連接</span>
+        </div>
       </div>
     </div>
   );

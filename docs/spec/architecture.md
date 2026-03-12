@@ -137,7 +137,11 @@ lib/
 │       ├── playlistService.ts
 │       └── settingsService.ts
 │
-├── websocket/                 # WebSocket
+├── store/                     # 狀態管理 ✅ 已實作
+│   └── index.ts              # Zustand Store (WebSocket 整合)
+│
+├── websocket/                 # WebSocket ✅ 已實作
+│   ├── client.ts             # Socket.IO 客戶端
 │   ├── server.ts             # Socket.IO 伺服器
 │   ├── events.ts             # 事件定義
 │   └── handler.ts            # 事件處理
@@ -150,6 +154,25 @@ lib/
 └── ndi/                       # NDI 輸出
     ├── ndi.ts                # NDI.js 整合
     └── spout.ts              # Spout 整合
+```
+
+### 前端組件架構 (已完成)
+
+```
+components/
+├── lyrics/                    # 歌詞顯示組件 ✅
+│   ├── LyricsDisplay.tsx     # 主顯示組件
+│   ├── LyricsLine.tsx        # 單行歌詞
+│   ├── LyricsControl.tsx     # 控制按鈕
+│   └── SongSelector.tsx      # 歌曲選擇
+│
+├── settings/                  # 設定組件 ✅
+│   └── SettingsPanel.tsx     # 顯示設定面板
+│
+└── ui/                        # UI 基礎組件 (待實作)
+    ├── Button.tsx
+    ├── Input.tsx
+    └── ...
 ```
 
 ## 資料流
@@ -428,10 +451,10 @@ sequenceDiagram
 
 ## 狀態管理
 
-### 全域狀態 (Zustand Store)
+### 全域狀態 (Zustand Store) ✅ 已實作
 
 ```typescript
-// stores/lyricsStore.ts
+// lib/store/index.ts
 interface LyricsState {
   // 當前歌曲
   currentSong: Song | null
@@ -575,9 +598,10 @@ socket.on('connection', async (socket) => {
 
 ---
 
-**文件版本:** 1.1
+**文件版本:** 1.2
 **最後更新:** 2026-03-12
 
 **變更記錄:**
+- v1.2 (2026-03-12): 更新 Store 路徑為 `/lib/store/index.ts`；新增前端組件架構區塊；標記 P0 組件完成狀態
 - v1.1 (2026-03-12): 更新技術棧 - 移除 tRPC，改用 REST API；更新 Tailwind CSS 版本為 3.4.19
 - v1.0 (2026-03-11): 初始版本

@@ -1,5 +1,5 @@
 # Railway Deployment Configuration
-# Project ID: f3497a33-73e6-4a4b-bf8a-160ecf113384
+# Project ID: 0b6e0369-b0c3-400e-a2d4-a2c6c3062887
 
 [build]
   builder = "NIXPACKS"
@@ -7,7 +7,7 @@
   watchPaths = ["package.json", "next.config.ts"]
 
 [deploy]
-  healthcheckPath = "/api/trpc/health"
+  healthcheckPath = "/api/health"
   healthcheckTimeout = 300
   restartPolicyType = "ON_FAILURE"
   restartPolicyMaxRetries = 10
@@ -15,7 +15,7 @@
 [[services]]
   name = "web"
   source = "."
-  healthcheck_path = "/api/trpc/health"
+  healthcheck_path = "/api/health"
 
   [[services.ports]]
     type = "HTTP"
@@ -30,17 +30,19 @@
     key = "PORT"
     value = "3000"
 
+# Environment variables reference
+# Set these in Railway Dashboard for security
 [env]
-  # Supabase
-  NEXT_PUBLIC_SUPABASE_URL = "https://ylwtfaczffuzyaijhhqu.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
-  SUPABASE_SERVICE_ROLE_KEY = "${SUPABASE_SERVICE_ROLE_KEY}"
+  # Supabase (set in Railway Dashboard)
+  NEXT_PUBLIC_SUPABASE_URL = "${{Supabase.NEXT_PUBLIC_SUPABASE_URL}}"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "${{Supabase.NEXT_PUBLIC_SUPABASE_ANON_KEY}}"
+  SUPABASE_SERVICE_ROLE_KEY = "${{Supabase.SUPABASE_SERVICE_ROLE_KEY}}"
 
-  # Gemini API
-  GEMINI_API_KEY = "${GEMINI_API_KEY}"
+  # Gemini API (set in Railway Dashboard)
+  GEMINI_API_KEY = "${{Gemini.GEMINI_API_KEY}}"
 
   # Railway
-  RAILWAY_PUBLIC_URL = "${RAILWAY_PUBLIC_URL}"
+  RAILWAY_PUBLIC_URL = "${{Railway.PUBLIC_URL}}"
   PORT = "3000"
 
   # Node
