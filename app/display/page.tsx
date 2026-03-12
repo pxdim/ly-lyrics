@@ -3,11 +3,13 @@
  *
  * Lyrics display for secondary screens/projectors.
  * Receives real-time updates via WebSocket from controller.
+ * Design System v2.0 - Dark Tech Edition
  */
 
 "use client";
 
 import { useEffect, useState } from "react";
+import { Link2, Check } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { LyricsDisplay } from "@/components/lyrics/LyricsDisplay";
 import { LyricsControl } from "@/components/lyrics/LyricsControl";
@@ -36,49 +38,88 @@ export default function DisplayPage() {
   // Connection Screen
   if (!isConnected) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-center space-y-8 max-w-md">
+      <div className="fixed inset-0 bg-void flex items-center justify-center relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-scanlines opacity-20 pointer-events-none" />
+
+        <div className="text-center space-y-12 max-w-md relative z-10 p-8">
           {/* Logo */}
-          <div className="space-y-2">
-            <h1 className="text-6xl font-bold text-primary-500">LY</h1>
-            <p className="text-xl text-muted-foreground">歌詞顯示系統</p>
+          <div className="space-y-4">
+            <div className="inline-flex items-center justify-center w-32 h-32 bg-elevated border-2 border-primary/30 rounded-3xl shadow-glow-lg">
+              <h1 className="text-6xl font-heading font-bold text-primary tracking-wider">
+                LY
+              </h1>
+            </div>
+            <p className="text-xl font-body text-text-muted tracking-wide">
+              歌詞顯示系統
+            </p>
+            <div className="w-24 h-0.5 mx-auto bg-gradient-to-r from-transparent via-primary to-transparent" />
           </div>
 
           {/* Connection Input */}
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-6">
+            <p className="font-body text-text-muted">
               輸入控制器顯示的同步碼以連接
             </p>
-            <input
-              type="text"
-              value={connectionCode}
-              onChange={(e) => {
-                const value = e.target.value.toUpperCase().slice(0, 6);
-                setConnectionCode(value);
-              }}
-              placeholder="XXXXXX"
-              className="w-full px-6 py-4 text-3xl font-mono text-center bg-gray-900 text-white rounded-xl border-2 border-primary-600 focus:outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary/20 transition-all"
-              maxLength={6}
-              autoFocus
-            />
+
+            <div className="relative">
+              <input
+                type="text"
+                value={connectionCode}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase().slice(0, 6);
+                  setConnectionCode(value);
+                }}
+                placeholder="______"
+                className="w-full px-6 py-5 text-4xl font-mono text-center bg-elevated text-primary rounded-2xl border-2 border-primary/30 focus:outline-none focus:border-primary focus:shadow-glow-md transition-all tracking-[0.5em] placeholder:text-primary/20"
+                maxLength={6}
+                autoFocus
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <Link2 className="w-5 h-5 text-primary/50" strokeWidth={1.5} />
+              </div>
+            </div>
 
             {/* Quick connect button (for demo) */}
             <button
               onClick={() => setConnectionCode("DEMO01")}
-              className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+              className="group w-full px-8 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold tracking-wider uppercase transition-all duration-300 hover:shadow-glow-lg hover:-translate-y-1 relative overflow-hidden"
             >
-              連接
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Link2 className="w-5 h-5" strokeWidth={1.5} />
+                連接
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
           </div>
 
           {/* Instructions */}
-          <div className="text-left space-y-2 text-sm text-muted-foreground bg-gray-900/50 rounded-lg p-4">
-            <p className="font-medium text-foreground">快速連接步驟:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>在控制器上選擇歌曲</li>
-              <li>複製控制器顯示的同步碼</li>
-              <li>在上方輸入框輸入同步碼</li>
-              <li>點擊連接按鈕</li>
+          <div className="text-left bg-elevated border border-border-dim rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 pb-4 border-b border-border-dim">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Check className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              </div>
+              <p className="font-heading font-semibold text-text-primary">快速連接步驟</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-3 font-body text-sm text-text-muted">
+              <li className="flex items-start gap-3">
+                <span className="text-primary font-bold">1.</span>
+                <span>在控制器上選擇歌曲</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-primary font-bold">2.</span>
+                <span>複製控制器顯示的同步碼</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-primary font-bold">3.</span>
+                <span>在上方輸入框輸入同步碼</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-primary font-bold">4.</span>
+                <span>點擊連接按鈕</span>
+              </li>
             </ol>
           </div>
         </div>
@@ -88,32 +129,38 @@ export default function DisplayPage() {
 
   // Connected - Display Lyrics
   return (
-    <div className="relative min-h-screen w-full">
+    <div className="relative min-h-screen w-full bg-void">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-20 pointer-events-none" />
+
       {/* Main Lyrics Display */}
       <LyricsDisplay />
 
       {/* Floating Controls */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
         <LyricsControl compact={true} position="floating" />
       </div>
 
       {/* Song Info Overlay (top left, fades out) */}
       {currentSong && (
-        <div className="fixed top-4 left-4 animate-[fade-out_3s_ease-out_forwards]">
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
-            <p className="text-white font-medium">{currentSong.title}</p>
+        <div className="fixed top-6 left-6 animate-[fade-out_3s_ease-out_forwards] z-40">
+          <div className="bg-elevated/80 backdrop-blur-md rounded-xl px-6 py-3 border border-border-dim shadow-glow-sm">
+            <p className="font-heading font-semibold text-primary">{currentSong.title}</p>
             {currentSong.artist && (
-              <p className="text-sm text-white/70">{currentSong.artist}</p>
+              <p className="font-body text-sm text-text-muted">{currentSong.artist}</p>
             )}
           </div>
         </div>
       )}
 
       {/* Connection Status Indicator (top right) */}
-      <div className="fixed top-4 right-4">
-        <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-xs text-white/70">已連接</span>
+      <div className="fixed top-6 right-6 z-40">
+        <div className="flex items-center gap-3 bg-elevated/80 backdrop-blur-md rounded-full px-5 py-2 border border-accent/30 shadow-glow-accent">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
+          </span>
+          <span className="font-body text-xs font-medium text-accent">已連接</span>
         </div>
       </div>
     </div>

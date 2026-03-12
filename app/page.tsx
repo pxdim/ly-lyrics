@@ -1,68 +1,125 @@
 import Link from "next/link";
+import { Mic, Smartphone, Video } from "lucide-react";
+
+/**
+ * Home Page - Landing Page
+ * Design System v2.0 - Dark Tech Edition
+ */
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-br from-primary-50 to-accent-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-4xl w-full text-center space-y-8">
+    <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-void text-text-primary relative overflow-hidden">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-50" />
+      <div className="absolute inset-0 bg-scanlines opacity-30 pointer-events-none" />
+
+      <div className="max-w-5xl w-full text-center space-y-12 relative z-10">
         {/* Logo/Title */}
-        <div className="space-y-4">
-          <h1 className="text-7xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-            LY
+        <div className="space-y-6">
+          <h1 className="text-8xl font-heading font-bold tracking-wider">
+            <span className="inline-block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-glow">
+              LY
+            </span>
           </h1>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-2xl font-body text-text-muted tracking-wide">
             歌詞顯示系統
           </p>
+          <div className="w-32 h-1 mx-auto bg-gradient-to-r from-primary to-accent rounded-full shadow-glow-md" />
         </div>
 
         {/* Tagline */}
-        <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
-          市場首創的 AI 驅動歌詞顯示系統，支援即時聽歌辨識、多裝置同步、NDI 輸出到 VJ 軟體
+        <p className="text-lg text-text-muted max-w-2xl mx-auto font-body leading-relaxed">
+          市場首創的 AI 驅動歌詞顯示系統<br />
+          <span className="text-primary">即時聽歌辨識</span> · <span className="text-secondary">多裝置同步</span> · <span className="text-accent">NDI 輸出</span>
         </p>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <div className="text-3xl mb-3">🎤</div>
-            <h3 className="font-semibold text-lg mb-2">AI 聽歌辨識</h3>
-            <p className="text-sm text-muted-foreground">即時識別播放中的歌詞並自動跳轉</p>
-          </div>
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <div className="text-3xl mb-3">📱</div>
-            <h3 className="font-semibold text-lg mb-2">多裝置同步</h3>
-            <p className="text-sm text-muted-foreground">控制端與多個顯示端即時同步</p>
-          </div>
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <div className="text-3xl mb-3">🎬</div>
-            <h3 className="font-semibold text-lg mb-2">NDI 輸出</h3>
-            <p className="text-sm text-muted-foreground">直接輸出到 Resolume Arena</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+          <FeatureCard
+            icon={<Mic className="w-8 h-8" strokeWidth={1.5} />}
+            title="AI 聽歌辨識"
+            description="即時識別播放中的歌詞並自動跳轉"
+            color="primary"
+          />
+          <FeatureCard
+            icon={<Smartphone className="w-8 h-8" strokeWidth={1.5} />}
+            title="多裝置同步"
+            description="控制端與多個顯示端即時同步"
+            color="secondary"
+          />
+          <FeatureCard
+            icon={<Video className="w-8 h-8" strokeWidth={1.5} />}
+            title="NDI 輸出"
+            description="直接輸出到 Resolume Arena"
+            color="accent"
+          />
         </div>
 
         {/* Mode Selection */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center mt-16">
           <Link
             href="/controller"
-            className="px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+            className="group relative px-10 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-300 hover:shadow-glow-lg hover:-translate-y-1"
           >
             控制端
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
           </Link>
           <Link
             href="/display"
-            className="px-8 py-4 bg-accent-600 hover:bg-accent-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+            className="group relative px-10 py-4 bg-gradient-accent text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-300 hover:shadow-glow-accent hover:-translate-y-1"
           >
             顯示端
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
           </Link>
         </div>
 
         {/* Status Badge */}
-        <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+        <div className="mt-12 inline-flex items-center gap-3 px-6 py-3 bg-elevated border border-border-dim rounded-full shadow-inner-glow">
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-accent shadow-glow-accent"></span>
           </span>
-          準備就緒
+          <span className="font-body font-medium text-accent">系統準備就緒</span>
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * Feature Card Component
+ */
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  color: "primary" | "secondary" | "accent";
+}
+
+function FeatureCard({ icon, title, description, color }: FeatureCardProps) {
+  const colorStyles = {
+    primary: "group-hover:border-primary/50 group-hover:shadow-glow-md",
+    secondary: "group-hover:border-secondary/50 group-hover:shadow-glow-md",
+    accent: "group-hover:border-accent/50 group-hover:shadow-glow-accent",
+  };
+
+  const iconColors = {
+    primary: "text-primary",
+    secondary: "text-secondary",
+    accent: "text-accent",
+  };
+
+  return (
+    <div className={`group p-8 bg-elevated border border-border-dim rounded-2xl transition-all duration-300 hover:-translate-y-1 ${colorStyles[color]}`}>
+      <div className={`inline-flex p-3 rounded-xl bg-void border border-border-dim mb-4 ${iconColors[color]}`}>
+        {icon}
+      </div>
+      <h3 className="font-heading font-semibold text-xl mb-3 text-text-primary">
+        {title}
+      </h3>
+      <p className="font-body text-sm text-text-muted leading-relaxed">
+        {description}
+      </p>
+    </div>
   );
 }
