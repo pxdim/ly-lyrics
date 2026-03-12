@@ -52,3 +52,15 @@ next-env.d.ts
 
 # Railway
 .railway/
+
+# AI/Agent tool configs
+.agent/
+.agents/
+.claude/
+.kiro/
+.trae/
+skills/
+skills-lock.json
+
+# Superpowers plans (local workflow docs)
+docs/superpowers/
