@@ -7,11 +7,18 @@
  * @module lib/auth/session
  */
 
-import { auth } from "@/lib/auth/config";
+import NextAuth from "next-auth";
+import { authConfig } from "./config";
 import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
 import { AppError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "@/lib/services/userService";
+
+// Create auth function
+export const { auth } = NextAuth({
+  ...authConfig,
+  secret: process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production",
+});
 
 // ============================================================================
 // Types

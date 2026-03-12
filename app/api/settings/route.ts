@@ -56,7 +56,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = await getUserId();
-    const settings = await updateSettings(userId, bodyResult.data);
+
+    // Handle undefined displaySettings
+    const updateData = bodyResult.data.displaySettings
+      ? bodyResult.data
+      : { autoReconnect: bodyResult.data.autoReconnect };
+
+    const settings = await updateSettings(userId, updateData);
 
     return NextResponse.json(settings);
   } catch (error) {

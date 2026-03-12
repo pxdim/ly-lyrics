@@ -7,7 +7,8 @@
  * @module lib/auth/config
  */
 
-import type { NextAuthConfig } from "next-auth";
+import type { User as NextAuthUser } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { verifyPassword } from "./password";
 import { getUserByEmail } from "@/lib/services/userService";
@@ -16,6 +17,22 @@ import { AppError } from "@/lib/errors/AppError";
 // ============================================================================
 // NextAuth Configuration
 // ============================================================================
+
+type NextAuthConfig = {
+  providers: any[];
+  session: { strategy: "jwt"; maxAge: number };
+  pages: { signIn: string; error: string };
+  callbacks: {
+    jwt: (params: { token: JWT; user?: NextAuthUser; trigger?: "signIn" | "update" }) => Promise<JWT> | JWT;
+    session: (params: { session: any; token: JWT; user?: NextAuthUser; trigger?: "signIn" | "update" }) => Promise<any> | any;
+  };
+  events: {
+    signIn?: (params: { user: NextAuthUser }) => Promise<void> | void;
+    signOut?: (params: { token: JWT; session?: any }) => Promise<void> | void;
+    error?: (params: { error: Error }) => Promise<void> | void;
+  };
+  debug?: boolean;
+};
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -124,7 +141,7 @@ export const authConfig: NextAuthConfig = {
     },
   },
 
-  debug: process.env.NODE_ENV === "development",
+  debug: process.env["NODE_ENV"] === "development",
 };
 
 // ============================================================================

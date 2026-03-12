@@ -69,8 +69,11 @@ export async function POST(
 
     // Update song with imported lyrics
     const updatedSong = await updateSong(id, {
+      title: undefined,
+      artist: undefined,
       lyrics,
       lrcTimestamps: timestamps,
+      language: undefined,
     });
 
     if (!updatedSong) {

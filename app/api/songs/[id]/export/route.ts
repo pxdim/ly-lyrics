@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSongById } from "@/lib/services/songService";
-import { toLrcLines, serializeLRC, msToTimeTag } from "@/lib/lrc/parser";
+import { toLrcLines, serializeLRC } from "@/lib/lrc/parser";
 import { createErrorResponse } from "@/lib/errors/AppError";
 
 // ============================================================================
@@ -19,7 +19,7 @@ import { createErrorResponse } from "@/lib/errors/AppError";
  * GET /api/songs/[id]/export - Export song as LRC file
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -39,11 +39,15 @@ export async function GET(
     );
 
     // Create LRC file with metadata
+    const metadata: Record<string, string> = {
+      title: song.title,
+    };
+    if (song.artist) {
+      metadata.artist = song.artist;
+    }
+
     const lrcFile = {
-      metadata: {
-        title: song.title,
-        artist: song.artist,
-      },
+      metadata,
       lines: lrcLines,
     };
 

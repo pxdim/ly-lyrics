@@ -34,6 +34,22 @@ export interface Song {
   updated_at: Date;
 }
 
+/**
+ * API Song model - with parsed arrays (for external use)
+ */
+export interface ApiSong {
+  id: string;
+  title: string;
+  artist?: string;
+  lyrics: string[];
+  lrcTimestamps?: number[];
+  lrc_content?: LrcLine[] | null;
+  language?: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Playlist {
   id: string;
   name: string;

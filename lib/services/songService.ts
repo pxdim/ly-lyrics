@@ -15,10 +15,13 @@ import {
   buildDeleteQuery,
   isUniqueViolation,
 } from "@/lib/db/client";
-import type { Song, SongInsert, SongUpdate } from "@/lib/db/types";
+import type { Song, SongInsert, SongUpdate, ApiSong } from "@/lib/db/types";
 import { createPartialSongListParams } from "@/lib/schemas/index";
 import { createNotFoundError, isAppError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "./userService";
+
+// Re-export ApiSong as Song for external use
+export type { ApiSong as Song };
 
 // ============================================================================
 // Types
@@ -62,8 +65,8 @@ export interface SongListResult {
 /**
  * Convert database row to Song model
  */
-function rowToSong(row: any): Song {
-  const base: Omit<Song, "artist" | "lrcTimestamps" | "language"> = {
+function rowToSong(row: any): ApiSong {
+  const base: Omit<ApiSong, "artist" | "lrcTimestamps" | "language"> = {
     id: row.id,
     title: row.title,
     lyrics: JSON.parse(row.lyrics) as string[],
@@ -73,12 +76,13 @@ function rowToSong(row: any): Song {
   };
 
   // Add optional properties conditionally
-  const result: Song = { ...base };
+  const result: ApiSong = { ...base };
   if (row.artist !== null) result.artist = row.artist;
   if (row.lrc_timestamps !== null) {
     result.lrcTimestamps = JSON.parse(row.lrc_timestamps) as number[];
   }
   if (row.language !== null) result.language = row.language;
+  if (row.lrc_content !== null) result.lrc_content = row.lrc_content;
 
   return result;
 }
@@ -153,7 +157,7 @@ export async function getSongs(
 /**
  * Get a single song by ID
  */
-export async function getSongById(id: string): Promise<Song | null> {
+export async function getSongById(id: string): Promise<ApiSong | null> {
   const result = await queryOne(`SELECT * FROM songs WHERE id = $1`, [id]);
 
   if (!result) {

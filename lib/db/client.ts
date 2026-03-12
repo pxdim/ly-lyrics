@@ -7,7 +7,8 @@
  * @module lib/db/client
  */
 
-import { Pool, PoolConfig, QueryResult, PoolClient } from "pg";
+import { Pool } from "pg";
+import type { PoolConfig, QueryResult, PoolClient, QueryResultRow } from "pg";
 import { logError } from "@/lib/errors/AppError";
 
 // ============================================================================
@@ -51,7 +52,7 @@ export function initPool(config?: DatabaseConfig): Pool {
     return pool;
   }
 
-  const connectionString = config?.connectionString || process.env.DATABASE_URL;
+  const connectionString = config?.connectionString || process.env["DATABASE_URL"];
 
   if (!connectionString) {
     throw new Error(

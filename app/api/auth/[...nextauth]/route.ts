@@ -16,8 +16,7 @@ import { authConfig } from "@/lib/auth/config";
 
 const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
+  secret: process.env["NEXTAUTH_SECRET"],
 });
 
 // ============================================================================

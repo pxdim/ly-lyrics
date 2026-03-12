@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const newPlaylist = await createPlaylist({
       name: bodyResult.data.name,
-      songIds: bodyResult.data.songIds,
+      songIds: bodyResult.data.songIds ?? [],
       userId,
     });
 
