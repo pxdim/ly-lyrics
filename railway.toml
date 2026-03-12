@@ -1,5 +1,5 @@
 # Railway Deployment Configuration
-# Project ID: 0b6e0369-b0c3-400e-a2d4-a2c6c3062887
+# LY Lyrics Display System - Self-hosted architecture
 
 [build]
   builder = "NIXPACKS"
@@ -11,6 +11,7 @@
   healthcheckTimeout = 300
   restartPolicyType = "ON_FAILURE"
   restartPolicyMaxRetries = 10
+  autoRollback = true
 
 [[services]]
   name = "web"
@@ -30,20 +31,50 @@
     key = "PORT"
     value = "3000"
 
-# Environment variables reference
+# ==================== Plugins ====================
+
+# PostgreSQL Plugin
+[[plugins]]
+  plugin = "postgresql"
+  name = "postgres"
+  options = { databaseName = "lyrics", isOpen = true }
+
+# Redis Plugin
+[[plugins]]
+  plugin = "redis"
+  name = "redis"
+  options = { isOpen = true }
+
+# ==================== Environment Variables ====================
 # Set these in Railway Dashboard for security
+
 [env]
-  # Supabase (set in Railway Dashboard)
-  NEXT_PUBLIC_SUPABASE_URL = "${{Supabase.NEXT_PUBLIC_SUPABASE_URL}}"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY = "${{Supabase.NEXT_PUBLIC_SUPABASE_ANON_KEY}}"
-  SUPABASE_SERVICE_ROLE_KEY = "${{Supabase.SUPABASE_SERVICE_ROLE_KEY}}"
+  # Database (PostgreSQL)
+  DATABASE_URL = "${{ Postgres.DATABASE_URL }}"
 
-  # Gemini API (set in Railway Dashboard)
-  GEMINI_API_KEY = "${{Gemini.GEMINI_API_KEY}}"
+  # Redis
+  REDIS_URL = "${{ Redis.REDIS_URL }}"
+  REDIS_ENABLED = "true"
 
-  # Railway
-  RAILWAY_PUBLIC_URL = "${{Railway.PUBLIC_URL}}"
+  # NextAuth.js
+  NEXTAUTH_URL = "${{ RailwayPublic.Domain }}"
+  NEXTAUTH_SECRET = "${{ secrets.NEXTAUTH_SECRET }}"
+  NEXT_PUBLIC_APP_URL = "${{ RailwayPublic.Domain }}"
+
+  # Application
   PORT = "3000"
-
-  # Node
   NODE_ENV = "production"
+
+  # Optional: Gemini API
+  GEMINI_API_KEY = "${{ secrets.GEMINI_API_KEY }}"
+
+# ==================== Scaling ====================
+
+[[services.scale]]
+  min = 1
+  max = 1
+
+# ==================== Monitoring ====================
+
+[deploy.monitoring]
+  enabled = true
