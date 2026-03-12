@@ -343,4 +343,15 @@ supabase db restore --file backup.sql
 ---
 
 **文件版本:** 1.0
-**最後更新:** 2026-03-11
+**最後更新:** 2026-03-12
+
+---
+
+## Railway 專案資訊
+
+- **Project ID:** `0b6e0369-b0c3-400e-a2d4-a2c6c3062887`
+- **Token:** `5fbc4ee7-578c-4d47-80ee-579db203ea26`
+- **Dashboard:** https://railway.app/project/0b6e0369-b0c3-400e-a2d4-a2c6c3062887
+
+**變更記錄:**
+- v1.1 (2026-03-12): 更新 Railway 專案資訊
