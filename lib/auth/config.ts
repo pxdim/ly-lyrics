@@ -10,9 +10,6 @@
 import type { User as NextAuthUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
-import { verifyPassword } from "./password";
-import { getUserByEmail } from "@/lib/services/userService";
-import { AppError } from "@/lib/errors/AppError";
 
 // ============================================================================
 // NextAuth Configuration
@@ -50,48 +47,34 @@ export const authConfig: NextAuthConfig = {
         },
       },
       async authorize(credentials) {
-        // Validate credentials
+        // 驗證必要欄位
         if (!credentials?.email || !credentials?.password) {
-          throw new AppError(
-            "AUTH_MISSING_CREDENTIALS",
-            "Email and password are required",
-            undefined,
-            "error"
-          );
+          throw new Error("Email and password are required");
         }
 
-        // Get user from database
-        const user = await getUserByEmail(credentials.email as string);
+        // 透過 Go 後端驗證帳號密碼
+        const goBackendUrl =
+          process.env["GO_BACKEND_URL"] || "http://localhost:8080";
+        const res = await fetch(`${goBackendUrl}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+          }),
+        });
 
-        if (!user) {
-          throw new AppError(
-            "AUTH_INVALID_CREDENTIALS",
-            "Invalid email or password",
-            undefined,
-            "warning"
-          );
+        if (!res.ok) {
+          return null;
         }
 
-        // Verify password
-        const isValidPassword = await verifyPassword(
-          credentials.password as string,
-          user.password_hash
-        );
+        const data = await res.json();
 
-        if (!isValidPassword) {
-          throw new AppError(
-            "AUTH_INVALID_CREDENTIALS",
-            "Invalid email or password",
-            undefined,
-            "warning"
-          );
-        }
-
-        // Return user object for session
+        // 回傳使用者物件供 session 使用
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
         };
       },
     }),

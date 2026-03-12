@@ -5,7 +5,7 @@
  * 透過環境變數 NEXT_PUBLIC_USE_NATIVE_WS=true 切換。
  */
 
-import type { ClientRole, DisplaySettings, ServerToClientEvents, SessionState } from "./client";
+import type { ClientRole, DisplaySettings, ServerToClientEvents } from "./client";
 
 // ============================================================================
 // Types

@@ -12,7 +12,6 @@ import type { AuthOptions, Session } from "next-auth";
 import { authConfig } from "./config";
 import { redirect } from "next/navigation";
 import { AppError } from "@/lib/errors/AppError";
-import { ensureDemoUser } from "@/lib/services/userService";
 
 // NextAuth v4 authOptions（供 getServerSession 使用）
 const nextAuthSecret: string = process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production";
@@ -89,8 +88,7 @@ export async function getUserId(): Promise<string> {
     return user.id;
   }
 
-  // Ensure demo user exists and return demo user ID
-  await ensureDemoUser();
+  // Demo 使用者由 Go 後端管理
   return "00000000-0000-0000-0000-000000000001";
 }
 
