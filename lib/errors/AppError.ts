@@ -25,6 +25,16 @@ export const ERROR_CODES = {
   PLAYLIST_NOT_FOUND: "PLAYLIST_NOT_FOUND",
   PLAYLIST_EMPTY: "PLAYLIST_EMPTY",
   PLAYLIST_DUPLICATE: "PLAYLIST_DUPLICATE",
+  PLAYLIST_INVALID_FORMAT: "PLAYLIST_INVALID_FORMAT",
+
+  // ========== Settings Related ==========
+  SETTINGS_INVALID_FORMAT: "SETTINGS_INVALID_FORMAT",
+
+  // ========== LRC Related ==========
+  LRC_INVALID_CONTENT: "LRC_INVALID_CONTENT",
+  LRC_INVALID_FORMAT: "LRC_INVALID_FORMAT",
+  LRC_INVALID_JSON: "LRC_INVALID_JSON",
+  SONG_UPDATE_FAILED: "SONG_UPDATE_FAILED",
 
   // ========== Sync Related ==========
   SYNC_SESSION_NOT_FOUND: "SYNC_SESSION_NOT_FOUND",
@@ -44,6 +54,8 @@ export const ERROR_CODES = {
   AUTH_UNAUTHORIZED: "AUTH_UNAUTHORIZED",
   AUTH_TOKEN_EXPIRED: "AUTH_TOKEN_EXPIRED",
   AUTH_INVALID_CREDENTIALS: "AUTH_INVALID_CREDENTIALS",
+  AUTH_MISSING_CREDENTIALS: "AUTH_MISSING_CREDENTIALS",
+  AUTH_FORBIDDEN: "AUTH_FORBIDDEN",
 
   // ========== Network Related ==========
   NET_NETWORK_ERROR: "NET_NETWORK_ERROR",
@@ -346,4 +358,27 @@ export function logError(error: unknown, context?: ErrorContext): void {
       console.error(`[Unknown Error]:`, { error, context });
     }
   }
+}
+
+/**
+ * Create error response for API routes
+ * Compatible with NextResponse.json()
+ */
+export function createErrorResponse(
+  code: ErrorCode,
+  message: string,
+  status: number = 500,
+  details?: Record<string, unknown>
+): Response {
+  return Response.json(
+    {
+      error: {
+        code,
+        message,
+        details,
+      },
+      timestamp: Date.now(),
+    },
+    { status }
+  );
 }

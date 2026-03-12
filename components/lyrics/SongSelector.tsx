@@ -11,8 +11,7 @@
 import { type FC, useEffect, useState, useMemo } from "react";
 import { Search, Music, Loader2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
-import { getSongs, type Song } from "@/lib/services/songService";
-import { createPartialSongListParams } from "@/lib/schemas";
+import { fetchSongs, type ClientSong } from "@/lib/api/songs";
 
 export interface SongSelectorProps {
   /** Optional custom class name for styling */
@@ -20,7 +19,7 @@ export interface SongSelectorProps {
   /** Placeholder text for the search input */
   placeholder?: string;
   /** Callback when a song is selected */
-  onSongSelect?: (song: Song) => void;
+  onSongSelect?: (song: ClientSong) => void;
   /** Whether to show the artist in the list */
   showArtist?: boolean;
   /** Maximum number of songs to display */
@@ -36,18 +35,18 @@ export const SongSelector: FC<SongSelectorProps> = ({
 }) => {
   const { currentSong, setCurrentSong, setError } = useLyricsStore();
 
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [songs, setSongs] = useState<ClientSong[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Fetch songs on mount
+  // 從 API 取得歌曲列表
   useEffect(() => {
-    const fetchSongs = async () => {
+    const loadSongs = async () => {
       setIsLoading(true);
       try {
-        const result = await getSongs(createPartialSongListParams({ limit: maxResults }));
+        const result = await fetchSongs({ limit: maxResults });
         setSongs(result.data);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load songs";
@@ -57,7 +56,7 @@ export const SongSelector: FC<SongSelectorProps> = ({
       }
     };
 
-    fetchSongs();
+    loadSongs();
   }, [maxResults, setError]);
 
   // Filter songs based on search query
@@ -75,7 +74,7 @@ export const SongSelector: FC<SongSelectorProps> = ({
   }, [songs, searchQuery]);
 
   // Handle song selection
-  const handleSelectSong = (song: Song) => {
+  const handleSelectSong = (song: ClientSong) => {
     setCurrentSong(song);
     setIsOpen(false);
     setSearchQuery("");
