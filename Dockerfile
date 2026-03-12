@@ -17,6 +17,12 @@ RUN npm ci
 COPY . .
 RUN mkdir -p public
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Next.js rewrites 在 build time 固化，需要在此時設定 Go backend URL
+# Railway internal domain 在 build time 不可用，所以 rewrites 使用 runtime env
+# 改為使用 Next.js middleware 或在 runner stage 傳入
+ARG GO_BACKEND_URL=http://ly-go-backend.railway.internal:8080
+ENV GO_BACKEND_URL=${GO_BACKEND_URL}
 RUN npm run build
 
 # Stage 3: 生產執行環境
