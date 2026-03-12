@@ -18,11 +18,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     // Validate query params using Zod
+    // searchParams.get() 回傳 null，Zod .optional() 只接受 undefined
     const paramsResult = songListParamsSchema.safeParse({
-      limit: searchParams.get("limit"),
-      offset: searchParams.get("offset"),
-      search: searchParams.get("search"),
-      userId: searchParams.get("userId"),
+      limit: searchParams.get("limit") ?? undefined,
+      offset: searchParams.get("offset") ?? undefined,
+      search: searchParams.get("search") ?? undefined,
+      userId: searchParams.get("userId") ?? undefined,
     });
 
     if (!paramsResult.success) {

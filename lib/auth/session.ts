@@ -7,22 +7,20 @@
  * @module lib/auth/session
  */
 
-import NextAuth from "next-auth";
-import type { AuthOptions } from "next-auth";
+import { getServerSession } from "next-auth";
+import type { AuthOptions, Session } from "next-auth";
 import { authConfig } from "./config";
-import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
 import { AppError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "@/lib/services/userService";
 
-// Create auth function
+// NextAuth v4 authOptions（供 getServerSession 使用）
 const nextAuthSecret: string = process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-export const { auth } = NextAuth({
+const authOptions: AuthOptions = {
   ...authConfig,
   secret: nextAuthSecret,
-} as unknown as AuthOptions);
+} as unknown as AuthOptions;
 
 // ============================================================================
 // Types
@@ -43,7 +41,7 @@ export interface AuthUser {
  * @returns The session or null if not authenticated
  */
 export async function getSession(): Promise<Session | null> {
-  return await auth();
+  return await getServerSession(authOptions);
 }
 
 /**
