@@ -13,7 +13,10 @@ import (
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/config"
 	"github.com/raymondchen/ly-backend/internal/ent"
+	"github.com/raymondchen/ly-backend/internal/handler"
+	lyredis "github.com/raymondchen/ly-backend/internal/redis"
 	"github.com/raymondchen/ly-backend/internal/service"
+	"github.com/raymondchen/ly-backend/internal/ws"
 )
 
 // Server 封裝 HTTP server 及其依賴
@@ -25,6 +28,8 @@ type Server struct {
 	http        *http.Server
 	jwtManager  *auth.JWTManager
 	userService *service.UserService
+	hub         *ws.Hub
+	wsHandler   *handler.WSHandler
 }
 
 // New 建立新的 Server 實例
@@ -48,6 +53,23 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 	// 初始化認證與使用者服務
 	s.jwtManager = auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 	s.userService = service.NewUserService(db)
+
+	// Redis 連線（WebSocket 必需）
+	if cfg.RedisURL != "" {
+		redisClient, err := lyredis.New(cfg.RedisURL)
+		if err != nil {
+			slog.Error("Redis 連線失敗，WebSocket 功能將停用", "error", err)
+		} else {
+			hub := ws.NewHub()
+			go hub.Run()
+
+			songSvc := service.NewSongService(db)
+			eventHandler := ws.NewEventHandler(hub, redisClient, songSvc)
+			s.hub = hub
+			s.wsHandler = handler.NewWSHandler(hub, eventHandler)
+			slog.Info("WebSocket Hub 已啟動")
+		}
+	}
 
 	s.setupMiddleware()
 	s.setupRoutes()

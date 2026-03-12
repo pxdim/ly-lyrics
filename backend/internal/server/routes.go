@@ -59,4 +59,9 @@ func (s *Server) setupRoutes() {
 			r.Post("/", settingsHandler.Reset)
 		})
 	})
+
+	// WebSocket 路由
+	if s.wsHandler != nil {
+		s.router.Get("/ws", s.wsHandler.ServeWS)
+	}
 }
