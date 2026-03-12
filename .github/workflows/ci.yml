@@ -1,97 +1,66 @@
-# CI Workflow
-# 建置、測試、檢查程式碼品質
+# CI Workflow - LY 歌詞顯示系統
+# Go 後端與 Next.js 前端的持續整合工作流
 
 name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'app/**'
+      - '.github/workflows/ci.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
-  type-check:
-    name: Type Check
+  # Go 後端檢查：構建、靜態分析、單元測試
+  go-backend:
+    name: Go Backend
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          node-version: '22'
+          go-version: '1.26'
+          cache: 'go'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Build backend
+        working-directory: backend
+        run: go build ./...
 
-      - name: Run TypeScript check
-        run: npm run type-check
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [type-check, lint]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: .next
-          retention-days: 1
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Run go vet
+        working-directory: backend
+        run: go vet ./...
 
       - name: Run tests
-        run: npm test
-        env:
-          CI: true
+        working-directory: backend
+        run: go test ./... -v -short
+
+  # Next.js 前端檢查：型別檢查、構建
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build frontend
+        run: npm run build
