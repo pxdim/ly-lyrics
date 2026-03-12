@@ -29,17 +29,19 @@ func UserIDFromContext(ctx context.Context) *uuid.UUID {
 func RequireAuth(jwtMgr *JWTManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, err := extractAndValidateToken(r, jwtMgr)
+			claims, err := extractAndValidateAccessToken(r, jwtMgr)
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
-				http.Error(w, `{"error":{"code":"AUTH_UNAUTHORIZED","message":"Authentication required"}}`, http.StatusUnauthorized)
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error":{"code":"AUTH_UNAUTHORIZED","message":"Authentication required"}}`))
 				return
 			}
 
 			userID, err := uuid.Parse(claims.Subject)
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
-				http.Error(w, `{"error":{"code":"AUTH_UNAUTHORIZED","message":"Invalid token"}}`, http.StatusUnauthorized)
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error":{"code":"AUTH_UNAUTHORIZED","message":"Invalid token"}}`))
 				return
 			}
 
@@ -79,4 +81,19 @@ func extractAndValidateToken(r *http.Request, jwtMgr *JWTManager) (*Claims, erro
 	}
 
 	return jwtMgr.ValidateToken(parts[1])
+}
+
+// extractAndValidateAccessToken 從 Authorization header 提取並驗證 access token
+func extractAndValidateAccessToken(r *http.Request, jwtMgr *JWTManager) (*Claims, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("missing authorization header")
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return nil, fmt.Errorf("invalid authorization format")
+	}
+
+	return jwtMgr.ValidateAccessToken(parts[1])
 }

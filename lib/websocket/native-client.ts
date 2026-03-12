@@ -33,6 +33,8 @@ export class NativeWSClient {
   private shouldReconnect = true;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private currentSessionId: string | null = null;
+  private lastRole: ClientRole | null = null;
+  private lastUserId: string | undefined;
 
   constructor(url?: string) {
     this.url =
@@ -54,6 +56,10 @@ export class NativeWSClient {
     this.ws.onopen = () => {
       console.log("[NativeWS] Connected to server");
       this.reconnectAttempts = 0;
+      // 重新連線後自動重新加入先前的 session
+      if (this.currentSessionId && this.lastRole) {
+        this.joinSession(this.currentSessionId, this.lastRole, this.lastUserId);
+      }
     };
 
     this.ws.onclose = () => {
@@ -80,6 +86,8 @@ export class NativeWSClient {
   disconnect(): void {
     this.shouldReconnect = false;
     this.currentSessionId = null;
+    this.lastRole = null;
+    this.lastUserId = undefined;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -120,6 +128,8 @@ export class NativeWSClient {
 
   joinSession(sessionId: string, role: ClientRole, userId?: string): void {
     this.currentSessionId = sessionId;
+    this.lastRole = role;
+    this.lastUserId = userId;
     const payload: { sessionId: string; role: ClientRole; userId?: string } = {
       sessionId,
       role,
@@ -132,6 +142,8 @@ export class NativeWSClient {
 
   leaveSession(): void {
     this.currentSessionId = null;
+    this.lastRole = null;
+    this.lastUserId = undefined;
     this.send("leave_session");
   }
 

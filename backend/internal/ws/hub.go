@@ -69,6 +69,7 @@ func (h *Hub) Run() {
 
 		case msg := <-h.broadcast:
 			h.mu.RLock()
+			var overflowed []*Client
 			if sc, ok := h.sessions[msg.SessionID]; ok {
 				for client := range sc {
 					if msg.Exclude != nil && client == msg.Exclude {
@@ -77,14 +78,15 @@ func (h *Hub) Run() {
 					select {
 					case client.send <- msg.Message:
 					default:
-						// send buffer 已滿，清理該 client
-						close(client.send)
-						delete(sc, client)
-						delete(h.clients, client)
+						overflowed = append(overflowed, client)
 					}
 				}
 			}
 			h.mu.RUnlock()
+			// 溢位的 client 透過 unregister channel 清理，避免在 RLock 下修改 map
+			for _, c := range overflowed {
+				h.unregister <- c
+			}
 		}
 	}
 }

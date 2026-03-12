@@ -56,7 +56,7 @@ export interface SessionState {
 export interface ServerToClientEvents {
   session_state: (state: SessionState) => void;
   line_changed: (data: { lineIndex: number; timestamp: number }) => void;
-  song_changed: (data: { songId: string; timestamp: number }) => void;
+  song_changed: (data: { songId: string; song: Song | null; timestamp: number }) => void;
   settings_updated: (data: { settings: DisplaySettings; timestamp: number }) => void;
   playing_changed: (data: { isPlaying: boolean; timestamp: number }) => void;
   client_joined: (data: {

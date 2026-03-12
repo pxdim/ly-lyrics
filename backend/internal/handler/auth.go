@@ -63,7 +63,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().Add(24 * time.Hour),
+		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,
@@ -113,7 +113,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().Add(24 * time.Hour),
+		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,
@@ -163,7 +163,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := h.jwtManager.ValidateToken(req.RefreshToken)
+	claims, err := h.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		writeError(w, "AUTH_TOKEN_EXPIRED", "Refresh token 無效或過期", http.StatusUnauthorized)
 		return
@@ -196,7 +196,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
-		ExpiresAt:    time.Now().Add(24 * time.Hour),
+		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,
