@@ -10,6 +10,7 @@ import {
   toSongListParams,
   toCreateSongInput,
 } from "@/lib/schemas";
+import { getUserId } from "@/lib/auth/session";
 
 // GET /api/songs - Get all songs
 export async function GET(request: NextRequest) {
@@ -33,7 +34,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await getSongs(toSongListParams(paramsResult.data));
+    // Get current user ID (falls back to demo user if not authenticated)
+    const userId = await getUserId();
+
+    // Override userId with actual user
+    const params = toSongListParams({
+      ...paramsResult.data,
+      userId,
+    });
+
+    const result = await getSongs(params);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -59,10 +69,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert to strict type and add default userId if not provided (demo user)
+    // Get current user ID (falls back to demo user if not authenticated)
+    const userId = await getUserId();
+
+    // Convert to strict type with actual user ID
     const input = toCreateSongInput({
       ...bodyResult.data,
-      userId: bodyResult.data.userId || "00000000-0000-0000-0000-000000000001",
+      userId,
     });
 
     const newSong = await createSong(input);

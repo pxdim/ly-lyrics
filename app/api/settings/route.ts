@@ -1,36 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getSettingsByUserId,
+  updateSettings,
+  resetSettings,
+} from "@/lib/services/settingsService";
+import { createErrorResponse } from "../_errors";
+import { getUserId } from "@/lib/auth/session";
+import { z } from "zod";
 
-const DEFAULT_DISPLAY_SETTINGS = {
-  displayLines: 4,
-  theme: "dark" as const,
-  fontSize: 32,
-  fontFamily: "Inter",
-  showBackground: true,
-  backgroundColor: "#000000",
-  textColor: "#ffffff",
-  highlightColor: "#0ea5e9",
-  autoScroll: true,
-  scrollDuration: 300,
-  enableAnimation: true,
-};
-
-const userSettings = {
-  id: "1",
-  userId: "user-1",
-  displaySettings: { ...DEFAULT_DISPLAY_SETTINGS },
-  ndiSettings: {
-    enabled: false,
-    width: 1920,
-    height: 1080,
-    frameRate: 30,
-    alphaChannel: true,
-  },
-  autoReconnect: true,
-};
+// Validation schema for settings update
+const updateSettingsSchema = z.object({
+  displaySettings: z.object({
+    displayLines: z.number().min(1).max(10).optional(),
+    fontSize: z.number().min(12).max(72).optional(),
+    fontFamily: z.string().optional(),
+    theme: z.enum(["light", "dark", "transparent"]).optional(),
+    showBackground: z.boolean().optional(),
+    backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+    textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+    highlightColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+    autoScroll: z.boolean().optional(),
+    scrollDuration: z.number().min(100).max(1000).optional(),
+    enableAnimation: z.boolean().optional(),
+  }).optional(),
+  autoReconnect: z.boolean().optional(),
+});
 
 // GET /api/settings - Get user settings
 export async function GET() {
-  return NextResponse.json(userSettings);
+  try {
+    const userId = await getUserId();
+    const settings = await getSettingsByUserId(userId);
+    return NextResponse.json(settings);
+  } catch (error) {
+    console.error("Error in GET /api/settings:", error);
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to fetch settings", 500);
+  }
 }
 
 // PUT /api/settings - Update settings
@@ -38,31 +43,41 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (body.displaySettings) {
-      userSettings.displaySettings = {
-        ...userSettings.displaySettings,
-        ...body.displaySettings,
-      };
+    // Validate request body
+    const bodyResult = updateSettingsSchema.safeParse(body);
+
+    if (!bodyResult.success) {
+      return createErrorResponse(
+        "SETTINGS_INVALID_FORMAT",
+        bodyResult.error.issues[0]?.message || "Invalid request body",
+        400,
+        { issues: bodyResult.error.issues }
+      );
     }
 
-    if (body.ndiSettings) {
-      userSettings.ndiSettings = {
-        ...userSettings.ndiSettings,
-        ...body.ndiSettings,
-      };
-    }
+    const userId = await getUserId();
+    const settings = await updateSettings(userId, bodyResult.data);
 
-    return NextResponse.json(userSettings);
+    return NextResponse.json(settings);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 },
-    );
+    console.error("Error in PUT /api/settings:", error);
+
+    if (error instanceof SyntaxError) {
+      return createErrorResponse("SETTINGS_INVALID_FORMAT", "Invalid JSON format", 400);
+    }
+
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to update settings", 500);
   }
 }
 
 // POST /api/settings/reset - Reset to default
 export async function POST() {
-  userSettings.displaySettings = { ...DEFAULT_DISPLAY_SETTINGS };
-  return NextResponse.json(userSettings.displaySettings);
+  try {
+    const userId = await getUserId();
+    const settings = await resetSettings(userId);
+    return NextResponse.json(settings);
+  } catch (error) {
+    console.error("Error in POST /api/settings/reset:", error);
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to reset settings", 500);
+  }
 }

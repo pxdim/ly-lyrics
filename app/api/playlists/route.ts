@@ -1,26 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getPlaylists,
+  createPlaylist,
+} from "@/lib/services/playlistService";
+import { createErrorResponse } from "../_errors";
+import { getUserId } from "@/lib/auth/session";
+import { z } from "zod";
 
-const playlists = [
-  {
-    id: "1",
-    name: "我的最愛",
-    userId: "user-1",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    songs: [],
-  },
-];
+// Validation schema for playlist creation
+const createPlaylistSchema = z.object({
+  name: z.string().min(1).max(255),
+  songIds: z.array(z.string()).optional(),
+});
 
 // GET /api/playlists - Get all playlists
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const limit = Number(searchParams.get("limit") || "20");
-  const offset = Number(searchParams.get("offset") || "0");
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = Number(searchParams.get("limit") || "20");
+    const offset = Number(searchParams.get("offset") || "0");
 
-  const total = playlists.length;
-  const data = playlists.slice(Number(offset), Number(offset) + Number(limit));
+    // Get current user ID (falls back to demo user if not authenticated)
+    const userId = await getUserId();
 
-  return NextResponse.json({ data, total, limit, offset });
+    const result = await getPlaylists({
+      limit,
+      offset,
+      userId,
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error in GET /api/playlists:", error);
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to fetch playlists", 500);
+  }
 }
 
 // POST /api/playlists - Create a new playlist
@@ -28,27 +41,35 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const newPlaylist = {
-      id: crypto.randomUUID(),
-      name: body.name,
-      userId: "user-1",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      songs:
-        body.songIds?.map((songId: string, orderIndex: number) => ({
-          id: crypto.randomUUID(),
-          playlistId: crypto.randomUUID(),
-          songId,
-          orderIndex,
-        })) ?? [],
-    };
+    // Validate request body
+    const bodyResult = createPlaylistSchema.safeParse(body);
 
-    playlists.push(newPlaylist);
+    if (!bodyResult.success) {
+      return createErrorResponse(
+        "PLAYLIST_INVALID_FORMAT",
+        bodyResult.error.issues[0]?.message || "Invalid request body",
+        400,
+        { issues: bodyResult.error.issues }
+      );
+    }
+
+    // Get current user ID (falls back to demo user if not authenticated)
+    const userId = await getUserId();
+
+    const newPlaylist = await createPlaylist({
+      name: bodyResult.data.name,
+      songIds: bodyResult.data.songIds,
+      userId,
+    });
+
     return NextResponse.json(newPlaylist, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 },
-    );
+    console.error("Error in POST /api/playlists:", error);
+
+    if (error instanceof SyntaxError) {
+      return createErrorResponse("PLAYLIST_INVALID_FORMAT", "Invalid JSON format", 400);
+    }
+
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to create playlist", 500);
   }
 }
