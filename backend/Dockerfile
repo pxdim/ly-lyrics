@@ -1,5 +1,6 @@
 # 階段一：建置 Go 二進位檔
-# Build context: repo root（Railway RAILWAY_DOCKERFILE_PATH=backend/Dockerfile）
+# Build context: backend/ 目錄
+# 部署方式：cd backend && railway up 或設定 Railway root directory 為 backend/
 FROM golang:1.26-alpine AS builder
 
 # 安裝 git（供 Go modules 使用）
@@ -8,11 +9,11 @@ RUN apk add --no-cache git
 WORKDIR /build
 
 # 先複製依賴清單，利用 Docker cache 層加速重複建置
-COPY backend/go.mod backend/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
 
-# 複製 Go 原始碼
-COPY backend/ .
+# 複製原始碼
+COPY . .
 
 # 編譯為靜態二進位檔，移除 debug 符號以縮小體積
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/server
