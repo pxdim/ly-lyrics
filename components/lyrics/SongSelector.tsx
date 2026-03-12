@@ -12,6 +12,7 @@ import { type FC, useEffect, useState, useMemo } from "react";
 import { Search, Music, Loader2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { getSongs, type Song } from "@/lib/services/songService";
+import { createPartialSongListParams } from "@/lib/schemas";
 
 export interface SongSelectorProps {
   /** Optional custom class name for styling */
@@ -46,7 +47,7 @@ export const SongSelector: FC<SongSelectorProps> = ({
     const fetchSongs = async () => {
       setIsLoading(true);
       try {
-        const result = await getSongs({ limit: maxResults });
+        const result = await getSongs(createPartialSongListParams({ limit: maxResults }));
         setSongs(result.data);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load songs";

@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Orbitron, Exo_2, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+// Error Handling Components
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ToastProvider } from "@/components/ui/Toast";
+
 // Dark Tech Theme Fonts
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -41,8 +45,17 @@ export default function RootLayout({
       <body
         className={`${orbitron.variable} ${exo2.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
       >
-        {children}
+        <ErrorBoundary>
+          <ToastProvider>
+            <ClientErrorWrapper>{children}</ClientErrorWrapper>
+          </ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
 }
+
+// Client component wrapper for error handling
+// Separated to enable "use client" directive
+// This file is split to avoid "use client" affecting the entire layout
+import { ClientErrorWrapper } from "./layout-client";

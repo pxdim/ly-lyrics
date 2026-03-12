@@ -6,6 +6,7 @@
 
 import { createServiceClient } from "../supabase/browser";
 import type { Database } from "../supabase/types";
+import { createPartialSongListParams } from "../schemas/index";
 
 type SongRow = Database["public"]["Tables"]["songs"]["Row"];
 type SongInsert = Database["public"]["Tables"]["songs"]["Insert"];
@@ -25,26 +26,26 @@ export interface Song {
 
 export interface CreateSongInput {
   title: string;
-  artist?: string;
+  artist: string | undefined;
   lyrics: string[];
-  lrcTimestamps?: number[];
-  language?: string;
+  lrcTimestamps: number[] | undefined;
+  language: string | undefined;
   userId: string;
 }
 
 export interface UpdateSongInput {
-  title?: string;
-  artist?: string;
-  lyrics?: string[];
-  lrcTimestamps?: number[];
-  language?: string;
+  title: string | undefined;
+  artist: string | undefined;
+  lyrics: string[] | undefined;
+  lrcTimestamps: number[] | undefined;
+  language: string | undefined;
 }
 
 export interface SongListParams {
-  limit?: number;
-  offset?: number;
-  search?: string;
-  userId?: string;
+  limit: number;
+  offset: number;
+  search: string | undefined;
+  userId: string | undefined;
 }
 
 export interface SongListResult {
@@ -98,21 +99,27 @@ function songToInsert(input: CreateSongInput): SongInsert {
  * Get list of songs with optional filtering and pagination
  */
 export async function getSongs(
-  params: SongListParams = {}
+  params?: Partial<SongListParams>
 ): Promise<SongListResult> {
+  const fullParams = createPartialSongListParams(params ?? {});
   const {
-    limit = 20,
-    offset = 0,
+    limit,
+    offset,
     search,
-    userId = "00000000-0000-0000-0000-000000000001", // Default user for demo (valid UUID)
-  } = params;
+    userId,
+  } = fullParams;
+
+  // Use default user ID if not provided
+  const effectiveUserId = userId
+    ? userId
+    : "00000000-0000-0000-0000-000000000001"; // Default user for demo (valid UUID)
 
   const supabase = createServiceClient();
 
   let query = supabase
     .from("songs")
     .select("*", { count: "exact" })
-    .eq("user_id", userId)
+    .eq("user_id", effectiveUserId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

@@ -2,38 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getSongs,
   createSong,
-  type CreateSongInput,
 } from "@/lib/services/songService";
+import { createErrorResponse } from "../_errors";
+import {
+  songListParamsSchema,
+  createSongSchema,
+  toSongListParams,
+  toCreateSongInput,
+} from "@/lib/schemas";
 
 // GET /api/songs - Get all songs
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Number(searchParams.get("limit") || "20");
-    const offset = Number(searchParams.get("offset") || "0");
-    const searchValue = searchParams.get("search");
-    const userIdValue = searchParams.get("userId");
 
-    // Build params object conditionally
-    const params: { limit: number; offset: number; search?: string; userId?: string } = {
-      limit,
-      offset,
-    };
-    if (searchValue) params.search = searchValue;
-    if (userIdValue) params.userId = userIdValue;
+    // Validate query params using Zod
+    const paramsResult = songListParamsSchema.safeParse({
+      limit: searchParams.get("limit"),
+      offset: searchParams.get("offset"),
+      search: searchParams.get("search"),
+      userId: searchParams.get("userId"),
+    });
 
-    const result = await getSongs(params);
+    if (!paramsResult.success) {
+      return createErrorResponse(
+        "SONG_INVALID_FORMAT",
+        "Invalid query parameters",
+        400,
+        { issues: paramsResult.error.issues }
+      );
+    }
+
+    const result = await getSongs(toSongListParams(paramsResult.data));
 
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error in GET /api/songs:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch songs",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to fetch songs", 500);
   }
 }
 
@@ -42,41 +47,35 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.title || typeof body.title !== "string") {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 }
+    // Validate request body using Zod
+    const bodyResult = createSongSchema.safeParse(body);
+
+    if (!bodyResult.success) {
+      return createErrorResponse(
+        "SONG_INVALID_FORMAT",
+        bodyResult.error.issues[0]?.message || "Invalid request body",
+        400,
+        { issues: bodyResult.error.issues }
       );
     }
 
-    if (!body.lyrics || !Array.isArray(body.lyrics)) {
-      return NextResponse.json(
-        { error: "Lyrics must be an array of strings" },
-        { status: 400 }
-      );
-    }
-
-    const input: CreateSongInput = {
-      title: body.title,
-      artist: body.artist,
-      lyrics: body.lyrics,
-      lrcTimestamps: body.lrcTimestamps,
-      language: body.language,
-      userId: body.userId || "00000000-0000-0000-0000-000000000001", // Default user for demo (valid UUID)
-    };
+    // Convert to strict type and add default userId if not provided (demo user)
+    const input = toCreateSongInput({
+      ...bodyResult.data,
+      userId: bodyResult.data.userId || "00000000-0000-0000-0000-000000000001",
+    });
 
     const newSong = await createSong(input);
 
     return NextResponse.json(newSong, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/songs:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create song",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+
+    // Handle JSON parse errors
+    if (error instanceof SyntaxError) {
+      return createErrorResponse("SONG_INVALID_FORMAT", "Invalid JSON format", 400);
+    }
+
+    return createErrorResponse("SYS_INTERNAL_ERROR", "Failed to create song", 500);
   }
 }
