@@ -1,28 +1,28 @@
 /**
  * Song Service
  *
- * Service layer for song CRUD operations using Supabase.
+ * Service layer for song CRUD operations using direct PostgreSQL connection.
+ * Replaces Supabase client with self-hosted solution.
+ *
+ * @module lib/services/songService
  */
 
-import { createServiceClient } from "../supabase/browser";
-import type { Database } from "../supabase/types";
-import { createPartialSongListParams } from "../schemas/index";
+import {
+  query,
+  queryOne,
+  buildInsertQuery,
+  buildUpdateQuery,
+  buildDeleteQuery,
+  isUniqueViolation,
+} from "@/lib/db/client";
+import type { Song, SongInsert, SongUpdate } from "@/lib/db/types";
+import { createPartialSongListParams } from "@/lib/schemas/index";
+import { createNotFoundError, isAppError } from "@/lib/errors/AppError";
+import { ensureDemoUser } from "./userService";
 
-type SongRow = Database["public"]["Tables"]["songs"]["Row"];
-type SongInsert = Database["public"]["Tables"]["songs"]["Insert"];
-type SongUpdate = Database["public"]["Tables"]["songs"]["Update"];
-
-export interface Song {
-  id: string;
-  title: string;
-  artist?: string;
-  lyrics: string[];
-  lrcTimestamps?: number[];
-  language?: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface CreateSongInput {
   title: string;
@@ -55,10 +55,14 @@ export interface SongListResult {
   offset: number;
 }
 
+// ============================================================================
+// Converters
+// ============================================================================
+
 /**
  * Convert database row to Song model
  */
-function rowToSong(row: SongRow): Song {
+function rowToSong(row: any): Song {
   const base: Omit<Song, "artist" | "lrcTimestamps" | "language"> = {
     id: row.id,
     title: row.title,
@@ -95,6 +99,10 @@ function songToInsert(input: CreateSongInput): SongInsert {
   };
 }
 
+// ============================================================================
+// CRUD Operations
+// ============================================================================
+
 /**
  * Get list of songs with optional filtering and pagination
  */
@@ -102,42 +110,41 @@ export async function getSongs(
   params?: Partial<SongListParams>
 ): Promise<SongListResult> {
   const fullParams = createPartialSongListParams(params ?? {});
-  const {
-    limit,
-    offset,
-    search,
-    userId,
-  } = fullParams;
+  const { limit, offset, search, userId } = fullParams;
 
   // Use default user ID if not provided
-  const effectiveUserId = userId
-    ? userId
-    : "00000000-0000-0000-0000-000000000001"; // Default user for demo (valid UUID)
+  const effectiveUserId = userId ?? "00000000-0000-0000-0000-000000000001";
 
-  const supabase = createServiceClient();
-
-  let query = supabase
-    .from("songs")
-    .select("*", { count: "exact" })
-    .eq("user_id", effectiveUserId)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  // Build query parts
+  let whereClause = "WHERE user_id = $1";
+  let queryParams: unknown[] = [effectiveUserId];
+  let paramIndex = 2;
 
   // Add search filter if provided
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,artist.ilike.%${search}%`);
+  if (search && search.trim()) {
+    whereClause += ` AND (title ILIKE $${paramIndex} OR artist ILIKE $${paramIndex + 1})`;
+    queryParams.push(`%${search.trim()}%`, `%${search.trim()}%`);
+    paramIndex += 2;
   }
 
-  const { data, error, count } = await query;
+  // Count total
+  const countResult = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM songs ${whereClause}`,
+    queryParams
+  );
 
-  if (error) {
-    console.error("Error fetching songs:", error);
-    throw new Error(`Failed to fetch songs: ${error.message}`);
-  }
+  // Get paginated data
+  const dataResult = await query(
+    `SELECT * FROM songs
+     ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    [...queryParams, limit, offset]
+  );
 
   return {
-    data: (data ?? []).map(rowToSong),
-    total: count ?? 0,
+    data: dataResult.rows.map(rowToSong),
+    total: parseInt(countResult?.count ?? "0", 10),
     limit,
     offset,
   };
@@ -147,46 +154,32 @@ export async function getSongs(
  * Get a single song by ID
  */
 export async function getSongById(id: string): Promise<Song | null> {
-  const supabase = createServiceClient();
+  const result = await queryOne(`SELECT * FROM songs WHERE id = $1`, [id]);
 
-  const { data, error } = await supabase
-    .from("songs")
-    .select()
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      // Not found
-      return null;
-    }
-    console.error("Error fetching song:", error);
-    throw new Error(`Failed to fetch song: ${error.message}`);
+  if (!result) {
+    return null;
   }
 
-  return rowToSong(data);
+  return rowToSong(result);
 }
 
 /**
  * Create a new song
  */
 export async function createSong(input: CreateSongInput): Promise<Song> {
-  const supabase = createServiceClient();
+  // Ensure user exists (for demo user)
+  await ensureDemoUser();
 
   const insertData = songToInsert(input);
+  const { text, params } = buildInsertQuery("songs", insertData, "id, title, artist, lyrics, lrc_timestamps, language, user_id, created_at, updated_at");
 
-  const { data, error } = await supabase
-    .from("songs")
-    .insert(insertData)
-    .select()
-    .single();
+  const result = await queryOne(text, params);
 
-  if (error) {
-    console.error("Error creating song:", error);
-    throw new Error(`Failed to create song: ${error.message}`);
+  if (!result) {
+    throw new Error("Failed to create song");
   }
 
-  return rowToSong(data);
+  return rowToSong(result);
 }
 
 /**
@@ -196,8 +189,6 @@ export async function updateSong(
   id: string,
   input: UpdateSongInput
 ): Promise<Song | null> {
-  const supabase = createServiceClient();
-
   // Build update object with only provided fields
   const updateData: SongUpdate = {};
   if (input.title !== undefined) updateData.title = input.title;
@@ -208,37 +199,78 @@ export async function updateSong(
   }
   if (input.language !== undefined) updateData.language = input.language ?? null;
 
-  const { data, error } = await supabase
-    .from("songs")
-    .update(updateData)
-    .eq("id", id)
-    .select()
-    .single();
+  // Add updated_at timestamp
+  updateData.updated_at = new Date().toISOString();
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      // Not found
-      return null;
-    }
-    console.error("Error updating song:", error);
-    throw new Error(`Failed to update song: ${error.message}`);
+  const { text, params } = buildUpdateQuery(
+    "songs",
+    updateData,
+    "id = $1",
+    [id],
+    "id, title, artist, lyrics, lrc_timestamps, language, user_id, created_at, updated_at"
+  );
+
+  const result = await queryOne(text, params);
+
+  if (!result) {
+    return null;
   }
 
-  return rowToSong(data);
+  return rowToSong(result);
 }
 
 /**
  * Delete a song
  */
 export async function deleteSong(id: string): Promise<boolean> {
-  const supabase = createServiceClient();
-
-  const { error } = await supabase.from("songs").delete().eq("id", id);
-
-  if (error) {
-    console.error("Error deleting song:", error);
-    throw new Error(`Failed to delete song: ${error.message}`);
+  // First check if song exists
+  const existing = await getSongById(id);
+  if (!existing) {
+    throw createNotFoundError("Song", id);
   }
 
-  return true;
+  const { rowCount } = await query("DELETE FROM songs WHERE id = $1", [id]);
+
+  return rowCount > 0;
+}
+
+/**
+ * Search songs by title or artist
+ */
+export async function searchSongs(query: string, limit = 20): Promise<Song[]> {
+  const effectiveUserId = "00000000-0000-0000-0000-000000000001";
+
+  const result = await query(
+    `SELECT * FROM songs
+     WHERE user_id = $1
+       AND (title ILIKE $2 OR artist ILIKE $2 OR lyrics ILIKE $2)
+     ORDER BY
+       CASE
+         WHEN title ILIKE $2 THEN 1
+         WHEN artist ILIKE $2 THEN 2
+         ELSE 3
+       END,
+       title ASC
+     LIMIT $3`,
+    [effectiveUserId, `%${query}%`, limit]
+  );
+
+  return result.rows.map(rowToSong);
+}
+
+/**
+ * Get songs by playlist ID
+ */
+export async function getSongsByPlaylistId(
+  playlistId: string
+): Promise<Song[]> {
+  const result = await query(
+    `SELECT s.* FROM songs s
+     INNER JOIN playlist_songs ps ON s.id = ps.song_id
+     WHERE ps.playlist_id = $1
+     ORDER BY ps.order_index ASC`,
+    [playlistId]
+  );
+
+  return result.rows.map(rowToSong);
 }
