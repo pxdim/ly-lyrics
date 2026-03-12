@@ -14,8 +14,10 @@ type Config struct {
 	DatabaseURL string `env:"DATABASE_URL,required"`
 	// RedisURL Redis 連線字串（Phase 2/3 WebSocket 遷移時使用）
 	RedisURL string `env:"REDIS_URL" envDefault:""`
-	// JWTSecret JWT 簽名密鑰（Phase 2 Auth 遷移時使用）
+	// JWTSecret JWT 簽名密鑰
 	JWTSecret string `env:"JWT_SECRET" envDefault:""`
+	// JWTExpiry JWT access token 有效時間（小時）
+	JWTExpiry int `env:"JWT_EXPIRY_HOURS" envDefault:"24"`
 	// Environment 執行環境（development / production）
 	Environment string `env:"ENVIRONMENT" envDefault:"development"`
 	// CORSOrigins 允許的跨域來源
