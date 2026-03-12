@@ -1,8 +1,8 @@
 /**
  * LyricsDisplay Component
  *
- * Displays lyrics with current line highlighting and smooth scrolling.
- * Connects to Zustand store for real-time state synchronization.
+ * Displays lyrics with Dark Tech neon glow effect and smooth scrolling.
+ * Design System v2.0 - Dark Tech Edition
  */
 
 "use client";
@@ -103,17 +103,23 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
   // Empty state
   if (lyrics.length === 0) {
     return (
-      <div style={containerStyle} className="lyrics-display">
+      <div
+        style={containerStyle}
+        className="lyrics-display min-h-screen flex flex-col items-center justify-center p-8"
+      >
         <div
+          className="text-center"
           style={{
             color: displaySettings.textColor,
             fontSize: `${displaySettings.fontSize}px`,
             opacity: 0.5,
-            textAlign: "center",
           }}
         >
-          <p>No lyrics loaded</p>
-          <p style={{ fontSize: `${displaySettings.fontSize * 0.6}px` }}>
+          <p className="font-heading text-xl tracking-wider">NO LYRICS LOADED</p>
+          <p
+            className="font-body"
+            style={{ fontSize: `${displaySettings.fontSize * 0.6}px` }}
+          >
             Select a song to begin
           </p>
         </div>
@@ -123,7 +129,11 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
 
   return (
     <div ref={containerRef} style={containerStyle} className="lyrics-display">
-      <div ref={scrollRef} style={lyricsContainerStyle} className="lyrics-container">
+      <div
+        ref={scrollRef}
+        style={lyricsContainerStyle}
+        className="lyrics-container"
+      >
         {visibleLyrics.map((line, idx) => (
           <LyricsLine
             key={`${startIndex + idx}-${line.slice(0, 20)}`}

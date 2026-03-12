@@ -1,7 +1,8 @@
 /**
  * LyricsLine Component
  *
- * A single lyric line with optional highlighting and animation.
+ * A single lyric line with Dark Tech styling, neon glow effect, and animation.
+ * Design System v2.0 - Dark Tech Edition
  */
 
 import { type FC } from "react";
@@ -32,32 +33,23 @@ export const LyricsLine: FC<LyricsLineProps> = ({
   enableAnimation,
   index,
 }) => {
-  // Build style object
-  const style: React.CSSProperties = {
-    fontSize: `${fontSize}px`,
-    color: isActive ? highlightColor : textColor,
-    opacity: isActive ? 1 : 0.5,
-    fontWeight: isActive ? "600" : "400",
-    textAlign: "center",
-    transition: enableAnimation
-      ? "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-      : "none",
-    transform: isActive ? "scale(1.05)" : "scale(1)",
-    textShadow: isActive
-      ? `0 0 20px ${highlightColor}40, 0 2px 4px rgba(0,0,0,0.3)`
-      : "none",
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-    minHeight: `${fontSize * 1.5}px`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
   return (
     <div
-      className="lyrics-line"
-      style={style}
+      className={`
+        lyrics-line
+        text-center
+        transition-all duration-300 ease-out
+        ${enableAnimation ? "" : "transition-none"}
+        ${isActive ? "scale-105 font-bold" : "opacity-40"}
+      `}
+      style={{
+        fontSize: `${fontSize}px`,
+        color: isActive ? highlightColor : textColor,
+        transform: isActive ? "scale(1.05)" : "scale(1)",
+        textShadow: isActive
+          ? `0 0 20px ${highlightColor}40, 0 0 40px ${highlightColor}30`
+          : "none",
+      }}
       data-index={index}
       data-active={isActive}
     >

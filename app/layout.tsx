@@ -1,11 +1,27 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Orbitron, Exo_2, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// Dark Tech Theme Fonts
+const orbitron = Orbitron({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-heading",
   display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+const exo2 = Exo_2({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -21,8 +37,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-TW" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="zh-TW" className="dark" suppressHydrationWarning>
+      <body
+        className={`${orbitron.variable} ${exo2.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
+      >
         {children}
       </body>
     </html>

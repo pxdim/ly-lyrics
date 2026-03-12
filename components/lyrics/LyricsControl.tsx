@@ -2,11 +2,13 @@
  * LyricsControl Component
  *
  * Navigation controls for lyrics display with prev/next buttons and line selector.
+ * Design System v2.0 - Dark Tech Edition
  */
 
 "use client";
 
 import { type FC } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { useLyricsStore, selectNavigationState } from "@/lib/store";
 
 export interface LyricsControlProps {
@@ -69,12 +71,12 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     alignItems: "center",
     gap: "1rem",
     padding: "1rem 1.5rem",
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    backdropFilter: "blur(8px)",
+    backgroundColor: "rgba(3, 3, 4, 0.9)",
+    backdropFilter: "blur(12px)",
     borderRadius: "9999px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    transition: "all 0.2s ease",
+    boxShadow: "0 0 10px rgba(0, 217, 255, 0.2)",
+    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
+    transition: "all 200ms ease-out",
     ...positionStyles[position],
   };
 
@@ -82,37 +84,41 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "2.5rem",
-    height: "2.5rem",
+    width: "2.75rem",
+    height: "2.75rem",
     borderRadius: "9999px",
-    border: "none",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    color: "white",
+    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
+    backgroundColor: "rgba(0, 217, 255, 0.1)",
+    color: "#00D9FF",
     cursor: "pointer",
-    transition: "all 0.2s ease",
-    fontSize: "1rem",
+    transition: "all 200ms ease-out",
   };
 
   const buttonDisabledStyle: React.CSSProperties = {
     ...buttonStyle,
     opacity: 0.3,
     cursor: "not-allowed",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    color: "rgba(255, 255, 255, 0.3)",
   };
 
   const selectStyle: React.CSSProperties = {
-    padding: "0.5rem 2rem 0.5rem 1rem",
+    padding: "0.625rem 2.5rem 0.625rem 1rem",
     borderRadius: "0.5rem",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    color: "white",
+    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
+    backgroundColor: "rgba(3, 3, 4, 0.8)",
+    color: "#FFFFFF",
     fontSize: "0.875rem",
+    fontFamily: "'Exo 2', sans-serif",
     cursor: "pointer",
     appearance: "none",
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300D9FF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat",
-    backgroundPosition: "right 0.5rem center",
+    backgroundPosition: "right 0.625rem center",
     backgroundSize: "1rem",
-    minWidth: "120px",
+    minWidth: "140px",
+    transition: "all 200ms ease-out",
   };
 
   // Empty state
@@ -132,28 +138,21 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         type="button"
         onMouseEnter={(e) => {
           if (canGoPrev) {
-            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+            e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
+            e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+          e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+          e.currentTarget.style.boxShadow = "none";
         }}
+        className="group"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          width={20}
-          height={20}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 15l7-7 7 7"
-          />
-        </svg>
+        <ChevronUp
+          size={20}
+          strokeWidth={2.5}
+          className="transition-transform duration-200 group-hover:-translate-y-0.5"
+        />
       </button>
 
       {/* Line Selector - hidden in compact mode */}
@@ -177,8 +176,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
       {/* Current Position (compact mode) */}
       {compact && (
         <span
+          className="font-mono text-primary"
           style={{
-            color: "white",
             fontSize: "0.875rem",
             fontWeight: "500",
             minWidth: "60px",
@@ -199,28 +198,21 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         type="button"
         onMouseEnter={(e) => {
           if (canGoNext) {
-            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+            e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
+            e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+          e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+          e.currentTarget.style.boxShadow = "none";
         }}
+        className="group"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          width={20}
-          height={20}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <ChevronDown
+          size={20}
+          strokeWidth={2.5}
+          className="transition-transform duration-200 group-hover:translate-y-0.5"
+        />
       </button>
     </div>
   );

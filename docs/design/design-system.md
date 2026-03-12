@@ -1,12 +1,26 @@
 # LY Design System Specification
 
-**Version:** 1.0
+**Version:** 1.0 (Legacy) → See [v2.0 Dark Tech Edition](./design-system-v2.md) for current design
 **Last Updated:** 2026-03-12
 **Author:** UI/UX Designer
 
 ---
 
-## Overview
+## ⚠️ Design System Update
+
+**New Dark Tech Design System (v2.0)** has been released with:
+
+- Dark mode color palette with neon accents
+- Orbitron + Exo 2 + JetBrains Mono fonts
+- Lucide Icons (no emojis)
+- Glassmorphism effects
+- Scanline overlays
+
+**→ See [design-system-v2.md](./design-system-v2.md) for current design tokens**
+
+---
+
+## Overview (v1.0 - Legacy)
 
 This document defines the complete design token specification for the LY Lyrics Display System. All frontend components must reference these tokens to ensure visual consistency across the application.
 
