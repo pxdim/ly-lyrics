@@ -44,8 +44,8 @@ RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
-# Railway 動態分配 PORT
-EXPOSE ${PORT:-3000}
-ENV PORT=3000
+# Railway 動態分配 PORT（預設 8080 以匹配 Railway routing）
+EXPOSE ${PORT:-8080}
+ENV PORT=8080
 
 CMD ["npx", "next", "start"]
