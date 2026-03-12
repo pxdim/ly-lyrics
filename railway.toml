@@ -1,12 +1,11 @@
 # Railway Deployment Configuration
-# LY Lyrics Display System - Self-hosted architecture
-# 使用 Docker 建置（支援自訂 server + Socket.IO）
+# LY 歌詞顯示系統 - Next.js 純前端（API 由 Go 後端處理）
 
 [build]
   dockerfilePath = "Dockerfile"
 
 [deploy]
-  healthcheckPath = "/api/health"
+  healthcheckPath = "/"
   healthcheckTimeout = 120
   restartPolicyType = "ON_FAILURE"
   restartPolicyMaxRetries = 3
