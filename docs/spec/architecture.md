@@ -30,7 +30,7 @@ LY 歌詞顯示系統採用 **Serverless + Real-time** 架構，使用 Next.js 1
 │  │              Next.js 15 App Router                  │   │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
 │  │  │   React     │  │  API Routes │  │  WebSocket  │ │   │
-│  │  │  Components │  │  (tRPC)     │  │   Handler    │ │   │
+│  │  │  Components │  │  (REST)     │  │   Handler    │ │   │
 │  │  └─────────────┘  └─────────────┘  └─────────────┘ │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
@@ -48,21 +48,19 @@ LY 歌詞顯示系統採用 **Serverless + Real-time** 架構，使用 Next.js 1
 
 | 技術 | 版本 | 用途 |
 |------|------|------|
-| Next.js | 15 | 全端框架 |
+| Next.js | 15.0.3 | 全端框架 |
 | React | 19 | UI 框架 |
-| TypeScript | 5.7+ | 型別安全 |
-| Tailwind CSS | 4.0+ | 樣式系統 |
-| Zustand / Jotai | Latest | 狀態管理 |
-| React Query | Latest | 資料獲取 |
+| TypeScript | 5.7 | 型別安全 |
+| Tailwind CSS | 3.4.19 | 樣式系統 |
+| Zustand | 5.0.11 | 狀態管理 |
 | Framer Motion | Latest | 動畫效果 |
 
 ### 後端
 
 | 技術 | 版本 | 用途 |
 |------|------|------|
-| Next.js API Routes | 15 | API 端點 |
-| tRPC | Latest | 端到端型別 API |
-| WebSocket | Native | 即時通訊 |
+| Next.js API Routes | 15 | REST API 端點 |
+| Socket.IO | 4.8.3 | WebSocket 即時通訊 |
 | Zod | Latest | 資料驗證 |
 
 ### 資料庫與儲存
@@ -114,8 +112,12 @@ app/
 │       └── page.tsx
 │
 ├── api/                       # API 路由
-│   ├── trpc/[...]/ts         # tRPC 處理器
-│   ├── websocket/route.ts    # WebSocket 升級
+│   ├── songs/                # 歌曲 REST API
+│   │   ├── route.ts          # GET/POST 所有歌曲
+│   │   └── [id]/route.ts     # GET/PUT/DELETE 單首歌曲
+│   ├── playlists/            # 播放列表 REST API
+│   ├── settings/             # 設定 REST API
+│   ├── ws/                   # WebSocket 資訊 API
 │   └── ai/                   # AI 相關 API
 │       └── listen/route.ts
 │
@@ -126,18 +128,17 @@ app/
 
 ```
 lib/
-├── trpc/                      # tRPC 設定
-│   ├── init.ts               # tRPC 初始化
-│   ├── router.ts             # 路由定義
-│   └── context.ts            # Context 建立
-│
 ├── db/                        # 資料庫
-│   ├── supabase.ts           # Supabase 客戶端
-│   ├── schema.ts             # 資料表 Schema
-│   └── queries.ts            # 資料庫查詢
+│   ├── supabase/             # Supabase 客戶端
+│   │   ├── client.ts         # Browser 客戶端
+│   │   └── server.ts         # Service Role 客戶端
+│   └── services/             # 業務邏輯層
+│       ├── songService.ts    # 歌曲 CRUD 服務
+│       ├── playlistService.ts
+│       └── settingsService.ts
 │
 ├── websocket/                 # WebSocket
-│   ├── server.ts             # WebSocket 伺服器
+│   ├── server.ts             # Socket.IO 伺服器
 │   ├── events.ts             # 事件定義
 │   └── handler.ts            # 事件處理
 │
@@ -561,8 +562,8 @@ socket.on('connection', async (socket) => {
 | ADR-001 | 使用 Next.js 全端框架 | AI 友善、開發效率高 | ✅ 採用 |
 | ADR-002 | 使用 Supabase 資料庫 | Railway 內建整合、免費層足夠 | ✅ 採用 |
 | ADR-003 | 使用 Google Gemini API | 音訊辨識能力強、價格實惠 | ✅ 採用 |
-| ADR-004 | 使用 WebSocket 即時通訊 | 低延遲雙向通訊 | ✅ 採用 |
-| ADR-005 | 使用 tRPC | 端到端型別安全 | ✅ 採用 |
+| ADR-004 | 使用 Socket.IO WebSocket | 低延遲雙向通訊、成熟穩定 | ✅ 採用 |
+| ADR-005 | 使用 REST API + Zod | 相容性最佳、易於測試 | ✅ 採用 |
 
 ---
 
@@ -574,5 +575,9 @@ socket.on('connection', async (socket) => {
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-11
+**文件版本:** 1.1
+**最後更新:** 2026-03-12
+
+**變更記錄:**
+- v1.1 (2026-03-12): 更新技術棧 - 移除 tRPC，改用 REST API；更新 Tailwind CSS 版本為 3.4.19
+- v1.0 (2026-03-11): 初始版本

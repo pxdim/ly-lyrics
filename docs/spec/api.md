@@ -2,9 +2,9 @@
 
 ## API 概覽
 
-LY 系統使用 **tRPC** 作為主要 API 通訊方式，提供端到端型別安全。
+LY 系統使用 **REST API** 作為主要 API 通訊方式，提供簡潔的標準 HTTP 介面。
 
-同時提供 **REST API** 用於外部整合，以及 **WebSocket** 用於即時通訊。
+同時提供 **WebSocket** (Socket.IO) 用於即時通訊與多裝置同步。
 
 ---
 
@@ -405,60 +405,38 @@ function goToLine(index: number) {
 
 ---
 
-## tRPC API
-
-tRPC 提供型別安全的 API 呼叫，定義於 `lib/trpc/router.ts`。
-
-### Router 結構
+## REST API 客戶端使用範例
 
 ```typescript
-// tRPC Router 結構
-appRouter = router({
-  // 歌曲
-  songs: {
-    list: procedure.query(() => Song[]),
-    byId: procedure.input(z.string()).query(({ input }) => Song),
-    create: procedure.input(CreateSongSchema).mutation(({ input }) => Song),
-    update: procedure.input(UpdateSongSchema).mutation(({ input }) => Song),
-    delete: procedure.input(z.string()).mutation(({ input }) => void),
-  },
-
-  // 播放列表
-  playlists: {
-    list: procedure.query(() => Playlist[]),
-    create: procedure.input(CreatePlaylistSchema).mutation(),
-    update: procedure.input(UpdatePlaylistSchema).mutation(),
-    delete: procedure.input(z.string()).mutation(),
-    addSong: procedure.input(AddSongSchema).mutation(),
-    removeSong: procedure.input(RemoveSongSchema).mutation(),
-  },
-
-  // 設定
-  settings: {
-    get: procedure.query(() => Settings),
-    update: procedure.input(UpdateSettingsSchema).mutation(),
-  },
-})
-```
-
-### 客戶端使用
-
-```typescript
-// 前端使用 tRPC
-import { trpc } from '@/lib/trpc/client'
+// 前端使用 fetch API
+import type { Song } from '@/types'
 
 // 取得歌曲列表
-const { data: songs } = trpc.songs.list.useQuery()
+async function getSongs(): Promise<Song[]> {
+  const res = await fetch('/api/songs')
+  const data = await res.json()
+  return data.data
+}
 
 // 建立歌曲
-const createSong = trpc.songs.create.useMutation()
+async function createSong(song: CreateSongInput): Promise<Song> {
+  const res = await fetch('/api/songs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(song),
+  })
+  return await res.json()
+}
 
-// 呼叫
-createSong.mutate({
-  title: '新歌',
-  artist: '歌手',
-  lyrics: '歌詞\n第二句'
-})
+// 更新歌曲
+async function updateSong(id: string, song: UpdateSongInput): Promise<Song> {
+  const res = await fetch(`/api/songs/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(song),
+  })
+  return await res.json()
+}
 ```
 
 ---
@@ -524,5 +502,9 @@ createSong.mutate({
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-11
+**文件版本:** 1.1
+**最後更新:** 2026-03-12
+
+**變更記錄:**
+- v1.1 (2026-03-12): 更新 API 文檔 - 移除 tRPC，改用 REST API
+- v1.0 (2026-03-11): 初始版本
