@@ -144,6 +144,16 @@ func (c *Client) AddClient(ctx context.Context, sessionID string, info ClientInf
 	return c.rdb.SAdd(ctx, key, data).Err()
 }
 
+// HasClients 檢查指定 session 是否還有已連線的客戶端
+func (c *Client) HasClients(ctx context.Context, sessionID string) (bool, error) {
+	key := sessionClientsPrefix + sessionID
+	count, err := c.rdb.SCard(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // RemoveClient 依 clientID 從 session 的 clients 集合中移除對應客戶端。
 // 需先讀取所有成員以找到匹配的 JSON 字串，因為 Redis SET 以完整值為鍵。
 func (c *Client) RemoveClient(ctx context.Context, sessionID string, clientID string) error {
