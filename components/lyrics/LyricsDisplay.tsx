@@ -1,0 +1,142 @@
+/**
+ * LyricsDisplay Component
+ *
+ * Displays lyrics with current line highlighting and smooth scrolling.
+ * Connects to Zustand store for real-time state synchronization.
+ */
+
+"use client";
+
+import { type FC, useEffect, useRef, useMemo } from "react";
+import { useLyricsStore } from "@/lib/store";
+import { LyricsLine } from "./LyricsLine";
+
+export interface LyricsDisplayProps {
+  /** Optional override for lyrics - if not provided, uses store */
+  lyrics?: string[];
+  /** Optional override for current index - if not provided, uses store */
+  currentIndex?: number;
+  /** Optional override for display lines - if not provided, uses store */
+  displayLines?: number;
+}
+
+export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
+  const {
+    lyrics: storeLyrics,
+    currentIndex: storeIndex,
+    displaySettings,
+  } = useLyricsStore();
+
+  // Use props if provided, otherwise use store values
+  const lyrics = props.lyrics ?? storeLyrics;
+  const currentIndex = props.currentIndex ?? storeIndex;
+  const displayLines = props.displayLines ?? displaySettings.displayLines;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Calculate visible lyrics range
+  const { visibleLyrics, startIndex, highlightIndex } = useMemo(() => {
+    if (lyrics.length === 0) {
+      return { visibleLyrics: [], startIndex: 0, highlightIndex: -1 };
+    }
+
+    const halfLines = Math.floor(displayLines / 2);
+    let startIdx = Math.max(0, currentIndex - halfLines);
+    const endIdx = Math.min(lyrics.length, startIdx + displayLines);
+
+    // Adjust start if we're near the end
+    if (endIdx - startIdx < displayLines) {
+      startIdx = Math.max(0, endIdx - displayLines);
+    }
+
+    const visible = lyrics.slice(startIdx, endIdx);
+    return {
+      visibleLyrics: visible,
+      startIndex: startIdx,
+      highlightIndex: currentIndex - startIdx,
+    };
+  }, [lyrics, currentIndex, displayLines]);
+
+  // Auto-scroll to keep active line centered
+  useEffect(() => {
+    if (!displaySettings.autoScroll || !scrollRef.current) return;
+
+    const activeElement = scrollRef.current.children[highlightIndex] as HTMLElement;
+    if (activeElement) {
+      activeElement.scrollIntoView({
+        behavior: displaySettings.enableAnimation ? "smooth" : "auto",
+        block: "center",
+      });
+    }
+  }, [highlightIndex, displaySettings.autoScroll, displaySettings.enableAnimation]);
+
+  // Build container style based on settings
+  const containerStyle: React.CSSProperties = {
+    backgroundColor: displaySettings.showBackground
+      ? displaySettings.backgroundColor
+      : "transparent",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "2rem",
+    transition: displaySettings.enableAnimation
+      ? `background-color ${displaySettings.scrollDuration}ms ease`
+      : "none",
+  };
+
+  const lyricsContainerStyle: React.CSSProperties = {
+    maxWidth: "1200px",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: `${displaySettings.fontSize * 0.5}px`,
+    overflowY: "auto",
+    maxHeight: "80vh",
+    padding: "2rem 0",
+    scrollBehavior: displaySettings.enableAnimation ? "smooth" : "auto",
+  };
+
+  // Empty state
+  if (lyrics.length === 0) {
+    return (
+      <div style={containerStyle} className="lyrics-display">
+        <div
+          style={{
+            color: displaySettings.textColor,
+            fontSize: `${displaySettings.fontSize}px`,
+            opacity: 0.5,
+            textAlign: "center",
+          }}
+        >
+          <p>No lyrics loaded</p>
+          <p style={{ fontSize: `${displaySettings.fontSize * 0.6}px` }}>
+            Select a song to begin
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} style={containerStyle} className="lyrics-display">
+      <div ref={scrollRef} style={lyricsContainerStyle} className="lyrics-container">
+        {visibleLyrics.map((line, idx) => (
+          <LyricsLine
+            key={`${startIndex + idx}-${line.slice(0, 20)}`}
+            text={line}
+            isActive={idx === highlightIndex}
+            fontSize={displaySettings.fontSize}
+            textColor={displaySettings.textColor}
+            highlightColor={displaySettings.highlightColor}
+            enableAnimation={displaySettings.enableAnimation}
+            index={startIndex + idx}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};

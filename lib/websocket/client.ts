@@ -17,7 +17,7 @@ export interface DisplaySettings {
   displayLines: number;
   fontSize: number;
   fontFamily: string;
-  theme: "light" | "dark";
+  theme: "light" | "dark" | "transparent";
   showBackground: boolean;
   backgroundColor: string;
   textColor: string;

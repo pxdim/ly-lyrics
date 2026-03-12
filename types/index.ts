@@ -93,7 +93,7 @@ export interface SessionClient {
 // Display Settings Types
 // ============================================
 
-export type Theme = "light" | "dark" | "auto";
+export type Theme = "light" | "dark" | "transparent";
 export type FontSize = 16 | 18 | 20 | 24 | 32 | 40 | 48 | 64;
 
 export interface DisplaySettings {
