@@ -2,11 +2,29 @@
  * WebSocket Server for Real-time Synchronization
  *
  * Handles real-time communication between controller and display clients.
+ * Enhanced with Redis for persistent session state across server restarts.
+ *
+ * @module lib/websocket/server
  */
 
 import { Server as SocketIOServer } from "socket.io";
 import { Server as HTTPServer } from "http";
 import { z } from "zod";
+import {
+  getSession,
+  createSession,
+  updateSessionSong,
+  updateSessionLine,
+  nextLine as redisNextLine,
+  prevLine as redisPrevLine,
+  updateSessionPlaying,
+  updateSessionSettings,
+  addClientToSession,
+  removeClientFromSession,
+  getSessionClients,
+  sessionExists,
+} from "@/lib/redis/session";
+import { getSongById } from "@/lib/services/songService";
 
 // ============================================================================
 // Types & Schemas
@@ -16,6 +34,7 @@ export type ClientRole = "controller" | "display" | "admin";
 
 export interface ClientSession {
   id: string;
+  sessionId: string;
   role: ClientRole;
   userId?: string;
   joinedAt: Date;
@@ -29,6 +48,8 @@ export interface SessionState {
   settings: DisplaySettings;
   controllerCount: number;
   displayCount: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Song {
@@ -47,11 +68,11 @@ export interface DisplaySettings {
   displayLines: number;
   fontSize: number;
   fontFamily: string;
-  theme: "light" | "dark";
+  theme: "light" | "dark" | "transparent";
   showBackground: boolean;
-  backgroundColor: string;
-  textColor: string;
-  highlightColor: string;
+  backgroundColor: string | null;
+  textColor: string | null;
+  highlightColor: string | null;
   autoScroll: boolean;
   scrollDuration: number;
   enableAnimation: boolean;
@@ -78,14 +99,19 @@ const SetSongSchema = z.object({
 const UpdateSettingsSchema = z.object({
   displayLines: z.number().int().min(1).max(10).optional(),
   fontSize: z.number().int().min(12).max(72).optional(),
-  theme: z.enum(["light", "dark"]).optional(),
+  fontFamily: z.string().optional(),
+  theme: z.enum(["light", "dark", "transparent"]).optional(),
   showBackground: z.boolean().optional(),
-  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  highlightColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  highlightColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
   autoScroll: z.boolean().optional(),
   scrollDuration: z.number().int().min(100).max(1000).optional(),
   enableAnimation: z.boolean().optional(),
+});
+
+const SetPlayingSchema = z.object({
+  isPlaying: z.boolean(),
 });
 
 // ============================================================================
@@ -94,8 +120,8 @@ const UpdateSettingsSchema = z.object({
 
 export class WebSocketServer {
   private io: SocketIOServer;
-  private sessions: Map<string, SessionState> = new Map();
-  private clients: Map<string, ClientSession> = new Map();
+  // Local tracking of socket -> session mapping for quick lookups
+  private socketSessions: Map<string, ClientSession> = new Map();
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -160,46 +186,39 @@ export class WebSocketServer {
     });
   }
 
-  private handleJoinSession(socket: any, data: unknown): void {
+  private async handleJoinSession(socket: any, data: unknown): Promise<void> {
     try {
       const parsed = JoinSessionSchema.parse(data);
       const { sessionId, role, userId } = parsed;
 
-      // Initialize session if not exists
-      if (!this.sessions.has(sessionId)) {
-        this.sessions.set(sessionId, {
-          sessionId,
-          currentSong: null,
-          currentLineIndex: 0,
-          isPlaying: false,
-          settings: this.getDefaultSettings(),
-          controllerCount: 0,
-          displayCount: 0,
-        });
-      }
+      // Get or create session from Redis
+      let session = await getSession(sessionId);
 
-      const session = this.sessions.get(sessionId)!;
+      if (!session) {
+        session = await createSession(sessionId);
+        console.log(`[WS] Created new session: ${sessionId}`);
+      }
 
       // Join the socket room
       socket.join(sessionId);
 
-      // Register client
-      const clientSessionBase: Omit<ClientSession, "userId"> = {
-        id: socket.id,
+      // Register client in Redis
+      await addClientToSession(sessionId, {
+        clientId: socket.id,
         role,
+        userId: userId || null,
+        joinedAt: Date.now(),
+      });
+
+      // Track locally for quick disconnect handling
+      const clientSession: ClientSession = {
+        id: socket.id,
+        sessionId,
+        role,
+        userId,
         joinedAt: new Date(),
       };
-      const clientSession = userId
-        ? ({ ...clientSessionBase, userId } as ClientSession)
-        : (clientSessionBase as ClientSession);
-      this.clients.set(socket.id, clientSession);
-
-      // Update session counts
-      if (role === "controller") {
-        session.controllerCount++;
-      } else if (role === "display") {
-        session.displayCount++;
-      }
+      this.socketSessions.set(socket.id, clientSession);
 
       console.log(
         `[WS] Client ${socket.id} joined session ${sessionId} as ${role}`
@@ -208,35 +227,32 @@ export class WebSocketServer {
       // Send current state to the new client
       socket.emit("session_state", session);
 
+      // Get updated client counts
+      const updatedSession = await getSession(sessionId);
+
       // Notify others in the session
       this.io.to(sessionId).emit("client_joined", {
         clientId: socket.id,
         role,
-        controllerCount: session.controllerCount,
-        displayCount: session.displayCount,
+        controllerCount: updatedSession?.controllerCount ?? 0,
+        displayCount: updatedSession?.displayCount ?? 0,
       });
     } catch (error) {
       console.error("[WS] Error in join_session:", error);
       socket.emit("error", {
         message: "Failed to join session",
-        details: error instanceof z.ZodError ? (error as z.ZodError).issues : undefined,
+        details: error instanceof z.ZodError ? error.issues : undefined,
       });
     }
   }
 
-  private handleChangeLine(socket: any, data: unknown): void {
+  private async handleChangeLine(socket: any, data: unknown): Promise<void> {
     try {
       const parsed = ChangeLineSchema.parse(data);
-      const clientSession = this.clients.get(socket.id);
+      const clientSession = this.socketSessions.get(socket.id);
 
       if (!clientSession) {
         socket.emit("error", { message: "Not in a session" });
-        return;
-      }
-
-      const session = this.sessions.get(clientSession.id);
-      if (!session) {
-        socket.emit("error", { message: "Session not found" });
         return;
       }
 
@@ -246,212 +262,207 @@ export class WebSocketServer {
         return;
       }
 
-      session.currentLineIndex = parsed.lineIndex;
-
-      // Broadcast to all clients in the session
-      this.io.to(clientSession.id).emit("line_changed", {
-        lineIndex: session.currentLineIndex,
-        timestamp: Date.now(),
-      });
-
-      console.log(
-        `[WS] Line changed to ${parsed.lineIndex} in session ${clientSession.id}`
+      // Update in Redis
+      const updatedSession = await updateSessionLine(
+        clientSession.sessionId,
+        parsed.lineIndex
       );
+
+      if (updatedSession) {
+        // Broadcast to all clients in the session
+        this.io.to(clientSession.sessionId).emit("line_changed", {
+          lineIndex: updatedSession.currentLineIndex,
+          timestamp: Date.now(),
+        });
+
+        console.log(
+          `[WS] Line changed to ${parsed.lineIndex} in session ${clientSession.sessionId}`
+        );
+      } else {
+        socket.emit("error", { message: "Session not found" });
+      }
     } catch (error) {
       console.error("[WS] Error in change_line:", error);
       socket.emit("error", { message: "Invalid request" });
     }
   }
 
-  private handleNextLine(socket: any): void {
-    const clientSession = this.clients.get(socket.id);
+  private async handleNextLine(socket: any): Promise<void> {
+    const clientSession = this.socketSessions.get(socket.id);
 
     if (!clientSession || clientSession.role !== "controller") {
       socket.emit("error", { message: "Unauthorized" });
       return;
     }
 
-    const session = this.sessions.get(clientSession.id);
-    if (!session) {
+    const updatedSession = await redisNextLine(clientSession.sessionId);
+
+    if (updatedSession) {
+      this.io.to(clientSession.sessionId).emit("line_changed", {
+        lineIndex: updatedSession.currentLineIndex,
+        timestamp: Date.now(),
+      });
+    } else {
       socket.emit("error", { message: "Session not found" });
-      return;
     }
-
-    const maxIndex = session.currentSong
-      ? session.currentSong.lyrics.length - 1
-      : 0;
-    const newIndex = Math.min(session.currentLineIndex + 1, maxIndex);
-
-    session.currentLineIndex = newIndex;
-
-    this.io.to(clientSession.id).emit("line_changed", {
-      lineIndex: session.currentLineIndex,
-      timestamp: Date.now(),
-    });
   }
 
-  private handlePrevLine(socket: any): void {
-    const clientSession = this.clients.get(socket.id);
+  private async handlePrevLine(socket: any): Promise<void> {
+    const clientSession = this.socketSessions.get(socket.id);
 
     if (!clientSession || clientSession.role !== "controller") {
       socket.emit("error", { message: "Unauthorized" });
       return;
     }
 
-    const session = this.sessions.get(clientSession.id);
-    if (!session) {
+    const updatedSession = await redisPrevLine(clientSession.sessionId);
+
+    if (updatedSession) {
+      this.io.to(clientSession.sessionId).emit("line_changed", {
+        lineIndex: updatedSession.currentLineIndex,
+        timestamp: Date.now(),
+      });
+    } else {
       socket.emit("error", { message: "Session not found" });
-      return;
     }
-
-    const newIndex = Math.max(session.currentLineIndex - 1, 0);
-
-    session.currentLineIndex = newIndex;
-
-    this.io.to(clientSession.id).emit("line_changed", {
-      lineIndex: session.currentLineIndex,
-      timestamp: Date.now(),
-    });
   }
 
-  private handleSetSong(socket: any, data: unknown): void {
+  private async handleSetSong(socket: any, data: unknown): Promise<void> {
     try {
       const parsed = SetSongSchema.parse(data);
-      const clientSession = this.clients.get(socket.id);
+      const clientSession = this.socketSessions.get(socket.id);
 
       if (!clientSession || clientSession.role !== "controller") {
         socket.emit("error", { message: "Unauthorized" });
         return;
       }
 
-      const session = this.sessions.get(clientSession.id);
-      if (!session) {
-        socket.emit("error", { message: "Session not found" });
+      // Fetch song from database
+      const song = await getSongById(parsed.songId);
+
+      if (!song) {
+        socket.emit("error", { message: "Song not found" });
         return;
       }
 
-      // In real implementation, fetch song from database
-      // For now, just acknowledge
-      this.io.to(clientSession.id).emit("song_changed", {
-        songId: parsed.songId,
-        timestamp: Date.now(),
-      });
+      // Update in Redis
+      const updatedSession = await updateSessionSong(clientSession.sessionId, song);
+
+      if (updatedSession) {
+        // Broadcast to all clients in the session
+        this.io.to(clientSession.sessionId).emit("song_changed", {
+          songId: parsed.songId,
+          song: updatedSession.currentSong,
+          timestamp: Date.now(),
+        });
+
+        console.log(
+          `[WS] Song changed to ${song.title} in session ${clientSession.sessionId}`
+        );
+      } else {
+        socket.emit("error", { message: "Session not found" });
+      }
     } catch (error) {
       console.error("[WS] Error in set_song:", error);
       socket.emit("error", { message: "Invalid request" });
     }
   }
 
-  private handleUpdateSettings(socket: any, data: unknown): void {
+  private async handleUpdateSettings(socket: any, data: unknown): Promise<void> {
     try {
       const parsed = UpdateSettingsSchema.parse(data);
-      const clientSession = this.clients.get(socket.id);
+      const clientSession = this.socketSessions.get(socket.id);
 
       if (!clientSession || clientSession.role !== "controller") {
         socket.emit("error", { message: "Unauthorized" });
         return;
       }
 
-      const session = this.sessions.get(clientSession.id);
-      if (!session) {
-        socket.emit("error", { message: "Session not found" });
-        return;
-      }
-
-      // Update settings (only override provided properties)
-      type DisplaySettingsKey = keyof DisplaySettings;
-      const keys = Object.keys(parsed) as Array<DisplaySettingsKey>;
-      for (const key of keys) {
-        const value = (parsed as Record<string, unknown>)[key];
-        if (value !== undefined) {
-          (session.settings as unknown as Record<string, unknown>)[key] = value;
-        }
-      }
-
-      // Broadcast to all clients
-      this.io.to(clientSession.id).emit("settings_updated", {
-        settings: session.settings,
-        timestamp: Date.now(),
-      });
-
-      console.log(
-        `[WS] Settings updated in session ${clientSession.id}`
+      // Update in Redis
+      const updatedSession = await updateSessionSettings(
+        clientSession.sessionId,
+        parsed
       );
+
+      if (updatedSession) {
+        // Broadcast to all clients
+        this.io.to(clientSession.sessionId).emit("settings_updated", {
+          settings: updatedSession.settings,
+          timestamp: Date.now(),
+        });
+
+        console.log(
+          `[WS] Settings updated in session ${clientSession.sessionId}`
+        );
+      } else {
+        socket.emit("error", { message: "Session not found" });
+      }
     } catch (error) {
       console.error("[WS] Error in update_settings:", error);
       socket.emit("error", { message: "Invalid request" });
     }
   }
 
-  private handleSetPlaying(socket: any, data: { isPlaying: boolean }): void {
-    const clientSession = this.clients.get(socket.id);
+  private async handleSetPlaying(socket: any, data: unknown): Promise<void> {
+    try {
+      const parsed = SetPlayingSchema.parse(data);
+      const clientSession = this.socketSessions.get(socket.id);
 
-    if (!clientSession || clientSession.role !== "controller") {
-      socket.emit("error", { message: "Unauthorized" });
-      return;
+      if (!clientSession || clientSession.role !== "controller") {
+        socket.emit("error", { message: "Unauthorized" });
+        return;
+      }
+
+      // Update in Redis
+      const updatedSession = await updateSessionPlaying(
+        clientSession.sessionId,
+        parsed.isPlaying
+      );
+
+      if (updatedSession) {
+        this.io.to(clientSession.sessionId).emit("playing_changed", {
+          isPlaying: updatedSession.isPlaying,
+          timestamp: Date.now(),
+        });
+      } else {
+        socket.emit("error", { message: "Session not found" });
+      }
+    } catch (error) {
+      console.error("[WS] Error in set_playing:", error);
+      socket.emit("error", { message: "Invalid request" });
     }
-
-    const session = this.sessions.get(clientSession.id);
-    if (!session) {
-      socket.emit("error", { message: "Session not found" });
-      return;
-    }
-
-    session.isPlaying = data.isPlaying;
-
-    this.io.to(clientSession.id).emit("playing_changed", {
-      isPlaying: session.isPlaying,
-      timestamp: Date.now(),
-    });
   }
 
-  private handleDisconnect(socket: any): void {
-    const clientSession = this.clients.get(socket.id);
+  private async handleDisconnect(socket: any): Promise<void> {
+    const clientSession = this.socketSessions.get(socket.id);
 
     if (clientSession) {
-      const session = this.sessions.get(clientSession.id);
+      // Remove from Redis
+      await removeClientFromSession(clientSession.sessionId, socket.id);
 
-      if (session) {
-        // Update counts
-        if (clientSession.role === "controller") {
-          session.controllerCount = Math.max(0, session.controllerCount - 1);
-        } else if (clientSession.role === "display") {
-          session.displayCount = Math.max(0, session.displayCount - 1);
-        }
+      // Get updated session
+      const updatedSession = await getSession(clientSession.sessionId);
 
+      if (updatedSession) {
         // Notify others
-        this.io.to(clientSession.id).emit("client_left", {
+        this.io.to(clientSession.sessionId).emit("client_left", {
           clientId: socket.id,
           role: clientSession.role,
-          controllerCount: session.controllerCount,
-          displayCount: session.displayCount,
+          controllerCount: updatedSession.controllerCount,
+          displayCount: updatedSession.displayCount,
         });
 
         console.log(
-          `[WS] Client ${socket.id} left session ${clientSession.id}`
+          `[WS] Client ${socket.id} left session ${clientSession.sessionId}`
         );
       }
 
-      this.clients.delete(socket.id);
+      // Leave the room
+      socket.leave(clientSession.sessionId);
+      this.socketSessions.delete(socket.id);
     }
 
     console.log(`[WS] Client disconnected: ${socket.id}`);
-  }
-
-  private getDefaultSettings(): DisplaySettings {
-    return {
-      displayLines: 4,
-      fontSize: 32,
-      fontFamily: "Inter",
-      theme: "dark",
-      showBackground: true,
-      backgroundColor: "#000000",
-      textColor: "#ffffff",
-      highlightColor: "#0ea5e9",
-      autoScroll: true,
-      scrollDuration: 300,
-      enableAnimation: true,
-    };
   }
 
   // ============================================================================
@@ -459,17 +470,24 @@ export class WebSocketServer {
   // ============================================================================
 
   /**
-   * Get current session state
+   * Get current session state from Redis
    */
-  public getSessionState(sessionId: string): SessionState | undefined {
-    return this.sessions.get(sessionId);
+  public async getSessionState(sessionId: string): Promise<SessionState | null> {
+    return await getSession(sessionId);
   }
 
   /**
-   * Get all active sessions
+   * Get clients in a session
    */
-  public getAllSessions(): SessionState[] {
-    return Array.from(this.sessions.values());
+  public async getSessionClients(sessionId: string): Promise<any[]> {
+    return await getSessionClients(sessionId);
+  }
+
+  /**
+   * Check if session exists
+   */
+  public async hasSession(sessionId: string): Promise<boolean> {
+    return await sessionExists(sessionId);
   }
 
   /**
@@ -484,10 +502,17 @@ export class WebSocketServer {
   }
 
   /**
-   * Get connected clients count
+   * Get connected clients count (local only)
    */
   public getClientsCount(): number {
-    return this.clients.size;
+    return this.socketSessions.size;
+  }
+
+  /**
+   * Get all local socket sessions
+   */
+  public getLocalSessions(): ClientSession[] {
+    return Array.from(this.socketSessions.values());
   }
 
   /**
