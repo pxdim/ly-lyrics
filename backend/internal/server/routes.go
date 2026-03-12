@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/handler"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
@@ -12,39 +13,50 @@ func (s *Server) setupRoutes() {
 	// 健康檢查
 	s.router.Get("/api/go-health", h.Check)
 
-	// 歌曲 CRUD 路由
-	songSvc := service.NewSongService(s.db)
-	songHandler := handler.NewSong(songSvc)
-	lrcHandler := handler.NewLRC(songSvc)
+	// Auth 路由（公開）
+	authHandler := handler.NewAuthHandler(s.userService, s.jwtManager)
+	s.router.Post("/api/auth/login", authHandler.Login)
+	s.router.Post("/api/auth/register", authHandler.Register)
+	s.router.Post("/api/auth/refresh", authHandler.Refresh)
 
-	s.router.Route("/api/songs", func(r chi.Router) {
-		r.Get("/", songHandler.List)
-		r.Post("/", songHandler.Create)
-		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", songHandler.Get)
-			r.Put("/", songHandler.Update)
-			r.Delete("/", songHandler.Delete)
-			r.Get("/export", lrcHandler.Export)
-			r.Post("/import", lrcHandler.Import)
+	// Auth 路由（需認證）
+	s.router.Group(func(r chi.Router) {
+		r.Use(auth.RequireAuth(s.jwtManager))
+		r.Get("/api/auth/me", authHandler.Me)
+	})
+
+	// CRUD 路由（OptionalAuth — 未認證使用 demo user）
+	s.router.Group(func(r chi.Router) {
+		r.Use(auth.OptionalAuth(s.jwtManager))
+
+		songSvc := service.NewSongService(s.db)
+		songHandler := handler.NewSong(songSvc)
+		lrcHandler := handler.NewLRC(songSvc)
+		r.Route("/api/songs", func(r chi.Router) {
+			r.Get("/", songHandler.List)
+			r.Post("/", songHandler.Create)
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", songHandler.Get)
+				r.Put("/", songHandler.Update)
+				r.Delete("/", songHandler.Delete)
+				r.Get("/export", lrcHandler.Export)
+				r.Post("/import", lrcHandler.Import)
+			})
 		})
-	})
 
-	// 播放清單 CRUD 路由
-	playlistSvc := service.NewPlaylistService(s.db)
-	playlistHandler := handler.NewPlaylist(playlistSvc)
+		playlistSvc := service.NewPlaylistService(s.db)
+		playlistHandler := handler.NewPlaylist(playlistSvc)
+		r.Route("/api/playlists", func(r chi.Router) {
+			r.Get("/", playlistHandler.List)
+			r.Post("/", playlistHandler.Create)
+		})
 
-	s.router.Route("/api/playlists", func(r chi.Router) {
-		r.Get("/", playlistHandler.List)
-		r.Post("/", playlistHandler.Create)
-	})
-
-	// 設定路由
-	settingsSvc := service.NewSettingsService(s.db)
-	settingsHandler := handler.NewSettings(settingsSvc)
-
-	s.router.Route("/api/settings", func(r chi.Router) {
-		r.Get("/", settingsHandler.Get)
-		r.Put("/", settingsHandler.Update)
-		r.Post("/", settingsHandler.Reset)
+		settingsSvc := service.NewSettingsService(s.db)
+		settingsHandler := handler.NewSettings(settingsSvc)
+		r.Route("/api/settings", func(r chi.Router) {
+			r.Get("/", settingsHandler.Get)
+			r.Put("/", settingsHandler.Update)
+			r.Post("/", settingsHandler.Reset)
+		})
 	})
 }

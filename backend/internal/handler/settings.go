@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
@@ -22,8 +23,11 @@ func NewSettings(svc *service.SettingsService) *Settings {
 
 // Get GET /api/settings — 取得使用者設定（不存在則自動建立預設值）
 func (h *Settings) Get(w http.ResponseWriter, r *http.Request) {
-	// 使用 DemoUserID（認證在 Phase 2 實作）
+	// 優先使用已認證使用者 ID，未認證時退回 DemoUserID
 	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
 
 	result, err := h.svc.GetByUserID(r.Context(), userID)
 	if err != nil {
@@ -42,7 +46,11 @@ func (h *Settings) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 優先使用已認證使用者 ID，未認證時退回 DemoUserID
 	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
 
 	result, err := h.svc.Update(r.Context(), userID, req)
 	if err != nil {
@@ -55,7 +63,11 @@ func (h *Settings) Update(w http.ResponseWriter, r *http.Request) {
 
 // Reset POST /api/settings — 重設為預設值
 func (h *Settings) Reset(w http.ResponseWriter, r *http.Request) {
+	// 優先使用已認證使用者 ID，未認證時退回 DemoUserID
 	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
 
 	result, err := h.svc.Reset(r.Context(), userID)
 	if err != nil {

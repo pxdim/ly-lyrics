@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
@@ -42,6 +43,14 @@ func (h *Playlist) List(w http.ResponseWriter, r *http.Request) {
 		params.UserID = &v
 	}
 
+	// 若未提供 userId query param，優先使用已認證使用者 ID
+	if params.UserID == nil {
+		if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+			uidStr := uid.String()
+			params.UserID = &uidStr
+		}
+	}
+
 	result, err := h.svc.List(r.Context(), params)
 	if err != nil {
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to fetch playlists", http.StatusInternalServerError)
@@ -69,7 +78,13 @@ func (h *Playlist) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlistResp, err := h.svc.Create(r.Context(), req)
+	// 優先使用已認證使用者 ID，未認證時退回 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	playlistResp, err := h.svc.Create(r.Context(), req, userID)
 	if err != nil {
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to create playlist", http.StatusInternalServerError)
 		return

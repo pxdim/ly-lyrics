@@ -90,11 +90,13 @@ func (s *SongService) GetByID(ctx context.Context, id uuid.UUID) (*dto.SongRespo
 	return &resp, nil
 }
 
-// Create 建立新歌曲
-func (s *SongService) Create(ctx context.Context, req dto.CreateSongRequest) (*dto.SongResponse, error) {
-	// 確保 demo user 存在
-	if err := EnsureDemoUser(ctx, s.client); err != nil {
-		return nil, fmt.Errorf("ensuring demo user: %w", err)
+// Create 建立新歌曲，userID 為歌曲擁有者
+func (s *SongService) Create(ctx context.Context, req dto.CreateSongRequest, userID uuid.UUID) (*dto.SongResponse, error) {
+	// 若為 demo user，確保其存在（FK 約束）
+	if userID == DemoUserID {
+		if err := EnsureDemoUser(ctx, s.client); err != nil {
+			return nil, fmt.Errorf("ensuring demo user: %w", err)
+		}
 	}
 
 	// 將 lyrics 序列化為 JSON TEXT
@@ -106,7 +108,7 @@ func (s *SongService) Create(ctx context.Context, req dto.CreateSongRequest) (*d
 	builder := s.client.Song.Create().
 		SetTitle(req.Title).
 		SetLyrics(string(lyricsJSON)).
-		SetUserID(DemoUserID).
+		SetUserID(userID).
 		SetNillableArtist(req.Artist).
 		SetNillableLanguage(req.Language)
 

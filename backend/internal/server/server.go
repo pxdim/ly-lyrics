@@ -10,17 +10,21 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/config"
 	"github.com/raymondchen/ly-backend/internal/ent"
+	"github.com/raymondchen/ly-backend/internal/service"
 )
 
 // Server 封裝 HTTP server 及其依賴
 type Server struct {
-	cfg    *config.Config
-	router *chi.Mux
-	db     *ent.Client
-	sqlDB  *sql.DB
-	http   *http.Server
+	cfg         *config.Config
+	router      *chi.Mux
+	db          *ent.Client
+	sqlDB       *sql.DB
+	http        *http.Server
+	jwtManager  *auth.JWTManager
+	userService *service.UserService
 }
 
 // New 建立新的 Server 實例
@@ -40,6 +44,10 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 			IdleTimeout:  60 * time.Second,
 		},
 	}
+
+	// 初始化認證與使用者服務
+	s.jwtManager = auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
+	s.userService = service.NewUserService(db)
 
 	s.setupMiddleware()
 	s.setupRoutes()

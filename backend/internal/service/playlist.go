@@ -71,11 +71,13 @@ func (s *PlaylistService) List(ctx context.Context, params dto.PlaylistListParam
 	}, nil
 }
 
-// Create 建立播放清單（含歌曲關聯）
-func (s *PlaylistService) Create(ctx context.Context, req dto.CreatePlaylistRequest) (*dto.PlaylistResponse, error) {
-	// 確保 demo user 存在（FK 約束）
-	if err := EnsureDemoUser(ctx, s.client); err != nil {
-		return nil, fmt.Errorf("ensuring demo user: %w", err)
+// Create 建立播放清單（含歌曲關聯），userID 為播放清單擁有者
+func (s *PlaylistService) Create(ctx context.Context, req dto.CreatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error) {
+	// 若為 demo user，確保其存在（FK 約束）
+	if userID == DemoUserID {
+		if err := EnsureDemoUser(ctx, s.client); err != nil {
+			return nil, fmt.Errorf("ensuring demo user: %w", err)
+		}
 	}
 
 	// 使用交易確保播放清單與歌曲關聯的一致性
@@ -87,7 +89,7 @@ func (s *PlaylistService) Create(ctx context.Context, req dto.CreatePlaylistRequ
 	// 建立播放清單
 	playlistEntity, err := tx.Playlist.Create().
 		SetName(req.Name).
-		SetUserID(DemoUserID).
+		SetUserID(userID).
 		Save(ctx)
 	if err != nil {
 		if rerr := tx.Rollback(); rerr != nil {

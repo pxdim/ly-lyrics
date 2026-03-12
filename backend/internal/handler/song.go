@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
@@ -47,6 +48,14 @@ func (h *Song) List(w http.ResponseWriter, r *http.Request) {
 		params.UserID = &v
 	}
 
+	// 若未提供 userId query param，優先使用已認證使用者 ID
+	if params.UserID == nil {
+		if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+			uidStr := uid.String()
+			params.UserID = &uidStr
+		}
+	}
+
 	result, err := h.svc.List(r.Context(), params)
 	if err != nil {
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to fetch songs", http.StatusInternalServerError)
@@ -70,7 +79,13 @@ func (h *Song) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songResp, err := h.svc.Create(r.Context(), req)
+	// 優先使用已認證使用者 ID，未認證時退回 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	songResp, err := h.svc.Create(r.Context(), req, userID)
 	if err != nil {
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to create song", http.StatusInternalServerError)
 		return
