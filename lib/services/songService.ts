@@ -12,16 +12,14 @@ import {
   queryOne,
   buildInsertQuery,
   buildUpdateQuery,
-  buildDeleteQuery,
-  isUniqueViolation,
 } from "@/lib/db/client";
-import type { Song, SongInsert, SongUpdate, ApiSong } from "@/lib/db/types";
+import type { SongInsert, ApiSong } from "@/lib/db/types";
 import { createPartialSongListParams } from "@/lib/schemas/index";
-import { createNotFoundError, isAppError } from "@/lib/errors/AppError";
+import { createNotFoundError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "./userService";
 
 // Re-export ApiSong as Song for external use
-export type { ApiSong as Song };
+export type Song = ApiSong;
 
 // ============================================================================
 // Types
@@ -65,7 +63,7 @@ export interface SongListResult {
 /**
  * Convert database row to Song model
  */
-function rowToSong(row: any): ApiSong {
+export function rowToSong(row: any): ApiSong {
   const base: Omit<ApiSong, "artist" | "lrcTimestamps" | "language"> = {
     id: row.id,
     title: row.title,
@@ -131,8 +129,8 @@ export async function getSongs(
     paramIndex += 2;
   }
 
-  // Count total
-  const countResult = await queryOne<{ count: number }>(
+  // Count total（PostgreSQL COUNT 回傳字串）
+  const countResult = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM songs ${whereClause}`,
     queryParams
   );
@@ -175,7 +173,7 @@ export async function createSong(input: CreateSongInput): Promise<Song> {
   await ensureDemoUser();
 
   const insertData = songToInsert(input);
-  const { text, params } = buildInsertQuery("songs", insertData, "id, title, artist, lyrics, lrc_timestamps, language, user_id, created_at, updated_at");
+  const { text, params } = buildInsertQuery("songs", insertData as unknown as Record<string, unknown>, "id, title, artist, lyrics, lrc_timestamps, language, user_id, created_at, updated_at");
 
   const result = await queryOne(text, params);
 
@@ -194,17 +192,17 @@ export async function updateSong(
   input: UpdateSongInput
 ): Promise<Song | null> {
   // Build update object with only provided fields
-  const updateData: SongUpdate = {};
-  if (input.title !== undefined) updateData.title = input.title;
-  if (input.artist !== undefined) updateData.artist = input.artist ?? null;
-  if (input.lyrics !== undefined) updateData.lyrics = JSON.stringify(input.lyrics);
+  const updateData: Record<string, unknown> = {};
+  if (input.title !== undefined) updateData["title"] = input.title;
+  if (input.artist !== undefined) updateData["artist"] = input.artist ?? null;
+  if (input.lyrics !== undefined) updateData["lyrics"] = JSON.stringify(input.lyrics);
   if (input.lrcTimestamps !== undefined) {
-    updateData.lrc_timestamps = JSON.stringify(input.lrcTimestamps);
+    updateData["lrc_timestamps"] = JSON.stringify(input.lrcTimestamps);
   }
-  if (input.language !== undefined) updateData.language = input.language ?? null;
+  if (input.language !== undefined) updateData["language"] = input.language ?? null;
 
   // Add updated_at timestamp
-  updateData.updated_at = new Date().toISOString();
+  updateData["updated_at"] = new Date().toISOString();
 
   const { text, params } = buildUpdateQuery(
     "songs",
@@ -233,15 +231,15 @@ export async function deleteSong(id: string): Promise<boolean> {
     throw createNotFoundError("Song", id);
   }
 
-  const { rowCount } = await query("DELETE FROM songs WHERE id = $1", [id]);
+  const result = await query("DELETE FROM songs WHERE id = $1", [id]);
 
-  return rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
  * Search songs by title or artist
  */
-export async function searchSongs(query: string, limit = 20): Promise<Song[]> {
+export async function searchSongs(searchTerm: string, limit = 20): Promise<Song[]> {
   const effectiveUserId = "00000000-0000-0000-0000-000000000001";
 
   const result = await query(
@@ -256,7 +254,7 @@ export async function searchSongs(query: string, limit = 20): Promise<Song[]> {
        END,
        title ASC
      LIMIT $3`,
-    [effectiveUserId, `%${query}%`, limit]
+    [effectiveUserId, `%${searchTerm}%`, limit]
   );
 
   return result.rows.map(rowToSong);

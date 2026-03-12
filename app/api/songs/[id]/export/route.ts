@@ -39,11 +39,10 @@ export async function GET(
     );
 
     // Create LRC file with metadata
-    const metadata: Record<string, string> = {
-      title: song.title,
-    };
+    const metadata: Record<string, string> = {};
+    metadata["title"] = song.title;
     if (song.artist) {
-      metadata.artist = song.artist;
+      metadata["artist"] = song.artist;
     }
 
     const lrcFile = {

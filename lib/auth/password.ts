@@ -143,7 +143,7 @@ export function generateRandomPassword(length: number = 16): string {
 
   let password = "";
   for (let i = 0; i < length; i++) {
-    password += charset[array[i] % charset.length];
+    password += charset[(array[i] ?? 0) % charset.length];
   }
 
   return password;

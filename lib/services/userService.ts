@@ -7,8 +7,8 @@
  * @module lib/services/userService
  */
 
-import type { User, UserInsert, UserUpdate } from "@/lib/db/types";
-import { query, queryOne, buildInsertQuery, isUniqueViolation } from "@/lib/db/client";
+import type { User, UserUpdate } from "@/lib/db/types";
+import { query, queryOne, buildInsertQuery } from "@/lib/db/client";
 import { hashPassword, getDemoUserHash } from "@/lib/auth/password";
 import { AppError, createNotFoundError } from "@/lib/errors/AppError";
 
@@ -66,7 +66,7 @@ export async function createUser(input: CreateUserInput): Promise<User> {
       "Email already registered",
       undefined,
       "error",
-      { metadata: { email: input.email } }
+      { location: "createUser", metadata: { email: input.email } }
     );
   }
 
@@ -120,7 +120,7 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<Us
 
   const result = await queryOne<User>(
     `UPDATE users SET ${Object.entries(updates)
-      .map(([key, value], i) => `${key} = $${i + 1}`)
+      .map(([key, _value], i) => `${key} = $${i + 1}`)
       .join(", ")}, updated_at = NOW() WHERE id = $${Object.keys(updates).length + 1} RETURNING *`,
     [...Object.values(updates), id]
   );
@@ -149,7 +149,7 @@ export async function deleteUser(id: string): Promise<boolean> {
     [id]
   );
 
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -200,6 +200,9 @@ export async function ensureDemoUser(): Promise<User> {
       ]
     );
 
+    if (!result) {
+      throw new AppError("SYS_INTERNAL_ERROR", "Failed to create demo user");
+    }
     user = result;
   }
 

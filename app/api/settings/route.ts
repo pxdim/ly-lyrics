@@ -57,10 +57,27 @@ export async function PUT(request: NextRequest) {
 
     const userId = await getUserId();
 
-    // Handle undefined displaySettings
-    const updateData = bodyResult.data.displaySettings
-      ? bodyResult.data
-      : { autoReconnect: bodyResult.data.autoReconnect };
+    // 組建更新資料，只包含有值的欄位（避免 exactOptionalPropertyTypes 衝突）
+    const updateData: Parameters<typeof updateSettings>[1] = {};
+    if (bodyResult.data.displaySettings) {
+      const ds = bodyResult.data.displaySettings;
+      const displaySettings: Partial<import("@/lib/services/settingsService").DisplaySettings> = {};
+      if (ds.displayLines !== undefined) displaySettings.displayLines = ds.displayLines;
+      if (ds.fontSize !== undefined) displaySettings.fontSize = ds.fontSize;
+      if (ds.fontFamily !== undefined) displaySettings.fontFamily = ds.fontFamily;
+      if (ds.theme !== undefined) displaySettings.theme = ds.theme;
+      if (ds.showBackground !== undefined) displaySettings.showBackground = ds.showBackground;
+      if (ds.backgroundColor !== undefined) displaySettings.backgroundColor = ds.backgroundColor;
+      if (ds.textColor !== undefined) displaySettings.textColor = ds.textColor;
+      if (ds.highlightColor !== undefined) displaySettings.highlightColor = ds.highlightColor;
+      if (ds.autoScroll !== undefined) displaySettings.autoScroll = ds.autoScroll;
+      if (ds.scrollDuration !== undefined) displaySettings.scrollDuration = ds.scrollDuration;
+      if (ds.enableAnimation !== undefined) displaySettings.enableAnimation = ds.enableAnimation;
+      updateData.displaySettings = displaySettings;
+    }
+    if (bodyResult.data.autoReconnect !== undefined) {
+      updateData.autoReconnect = bodyResult.data.autoReconnect;
+    }
 
     const settings = await updateSettings(userId, updateData);
 

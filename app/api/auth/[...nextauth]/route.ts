@@ -8,25 +8,22 @@
  */
 
 import NextAuth from "next-auth";
+import type { AuthOptions } from "next-auth";
 import { authConfig } from "@/lib/auth/config";
 
 // ============================================================================
 // Handler Configuration
 // ============================================================================
 
-const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuthSecret: string = process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production";
+
+const handler = NextAuth({
   ...authConfig,
-  secret: process.env["NEXTAUTH_SECRET"],
-});
+  secret: nextAuthSecret,
+} as unknown as AuthOptions);
 
 // ============================================================================
 // Export Handlers
 // ============================================================================
 
-export const { GET, POST } = handlers;
-
-// ============================================================================
-// Export Auth Functions
-// ============================================================================
-
-export { auth, signIn, signOut };
+export { handler as GET, handler as POST };

@@ -8,6 +8,7 @@
  */
 
 import NextAuth from "next-auth";
+import type { AuthOptions } from "next-auth";
 import { authConfig } from "./config";
 import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
@@ -15,10 +16,13 @@ import { AppError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "@/lib/services/userService";
 
 // Create auth function
+const nextAuthSecret: string = process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 export const { auth } = NextAuth({
   ...authConfig,
-  secret: process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production",
-});
+  secret: nextAuthSecret,
+} as unknown as AuthOptions);
 
 // ============================================================================
 // Types

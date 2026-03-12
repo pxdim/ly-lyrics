@@ -180,7 +180,11 @@ export async function redisDel(key: string | string[]): Promise<boolean> {
   }
 
   try {
-    await client.del(key);
+    if (Array.isArray(key)) {
+      await client.del(...key);
+    } else {
+      await client.del(key);
+    }
     return true;
   } catch (error) {
     console.error(`[Redis] Failed to delete key(s):`, error);

@@ -8,7 +8,7 @@
  */
 
 import { Pool } from "pg";
-import type { PoolConfig, QueryResult, PoolClient, QueryResultRow } from "pg";
+import type { PoolConfig, QueryResult, PoolClient } from "pg";
 import { logError } from "@/lib/errors/AppError";
 
 // ============================================================================
@@ -127,7 +127,7 @@ export async function closePool(): Promise<void> {
  * @returns QueryResult
  * @throws {DatabaseError} If query fails
  */
-export async function query<T = unknown>(
+export async function query<T extends Record<string, any> = Record<string, any>>(
   text: string,
   params?: unknown[]
 ): Promise<QueryResult<T>> {
@@ -170,7 +170,7 @@ export async function query<T = unknown>(
  * @param params - Query parameters
  * @returns First row or null
  */
-export async function queryOne<T = unknown>(
+export async function queryOne<T extends Record<string, any> = Record<string, any>>(
   text: string,
   params?: unknown[]
 ): Promise<T | null> {

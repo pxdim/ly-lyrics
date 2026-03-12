@@ -77,7 +77,9 @@ export function parseTimeTag(tag: string): number {
     throw new Error(`Invalid time tag: ${tag}`);
   }
 
-  const [, minutes, seconds, centiseconds] = match;
+  const minutes = match[1] ?? "0";
+  const seconds = match[2] ?? "0";
+  const centiseconds = match[3] ?? "0";
   const ms =
     parseInt(minutes, 10) * 60000 +
     parseInt(seconds, 10) * 1000 +
@@ -124,14 +126,14 @@ export function parseLRC(content: string): LrcFile {
     // Check for metadata tags
     const metaMatch = trimmedLine.match(METADATA_TAG_REGEX);
     if (metaMatch) {
-      const [, key, value] = metaMatch;
+      const key = metaMatch[1] ?? "";
+      const value = metaMatch[2] ?? "";
       const normalizedKey = normalizeMetadataKey(key);
 
       if (METADATA_KEYS.includes(normalizedKey) || METADATA_KEYS.includes(key)) {
-        if (normalizedKey === "length" && typeof value === "string") {
-          // Parse length (could be in mm:ss or milliseconds)
+        if (normalizedKey === "length") {
           metadata[normalizedKey] = parseLength(value);
-        } else if (normalizedKey === "offset" && typeof value === "string") {
+        } else if (normalizedKey === "offset") {
           metadata[normalizedKey] = parseInt(value, 10);
         } else {
           (metadata as Record<string, unknown>)[normalizedKey] = value;
@@ -145,8 +147,8 @@ export function parseLRC(content: string): LrcFile {
 
     if (timeTags.length > 0) {
       // Get the text after all time tags
-      const lastTag = timeTags[timeTags.length - 1];
-      const text = trimmedLine.slice(lastTag.index + lastTag[0].length).trim();
+      const lastTag = timeTags[timeTags.length - 1]!;
+      const text = trimmedLine.slice((lastTag.index ?? 0) + lastTag[0].length).trim();
 
       // Each time tag creates a separate line pointing to the same text
       for (const tag of timeTags) {
@@ -279,8 +281,8 @@ function parseLength(value: string): number {
   // Check if it's in mm:ss format
   const match = value.match(/^(\d+):(\d+)(\.(\d+))?$/);
   if (match) {
-    const minutes = parseInt(match[1], 10);
-    const seconds = parseInt(match[2], 10);
+    const minutes = parseInt(match[1] ?? "0", 10);
+    const seconds = parseInt(match[2] ?? "0", 10);
     const ms = match[4] ? parseInt(match[4].padEnd(3, "0"), 10) : 0;
     return minutes * 60000 + seconds * 1000 + ms;
   }
@@ -357,7 +359,8 @@ export function isValidLRC(content: string): boolean {
  */
 export function findLineAtTime(lines: LrcLine[], time: number): number {
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].time <= time) {
+    const line = lines[i];
+    if (line && line.time <= time) {
       return i;
     }
   }
@@ -389,24 +392,26 @@ export function mergeDuplicateLines(
   lines: LrcLine[],
   threshold = 100
 ): LrcLine[] {
-  if (lines.length === 0) {
+  const firstLine = lines[0];
+  if (!firstLine) {
     return [];
   }
 
-  const merged: LrcLine[] = [lines[0]];
+  const merged: LrcLine[] = [firstLine];
 
   for (let i = 1; i < lines.length; i++) {
-    const lastLine = merged[merged.length - 1];
+    const lastLine = merged[merged.length - 1]!;
     const currentLine = lines[i];
 
     // Check if lines are close together and have the same text
     if (
+      currentLine &&
       currentLine.time - lastLine.time <= threshold &&
       currentLine.text === lastLine.text
     ) {
       // Merge by updating the time
       lastLine.time = Math.min(lastLine.time, currentLine.time);
-    } else {
+    } else if (currentLine) {
       merged.push(currentLine);
     }
   }

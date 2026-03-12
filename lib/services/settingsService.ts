@@ -13,7 +13,7 @@ import {
   buildInsertQuery,
   buildUpdateQuery,
 } from "@/lib/db/client";
-import type { Settings, SettingsInsert, SettingsUpdate } from "@/lib/db/types";
+import type { Settings, SettingsInsert } from "@/lib/db/types";
 import { createNotFoundError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "./userService";
 
@@ -215,7 +215,7 @@ async function createDefaultSettings(userId: string): Promise<UserSettings> {
   const insertData = displaySettingsToInsert(userId, DEFAULT_DISPLAY_SETTINGS);
   const { text, params } = buildInsertQuery(
     "settings",
-    insertData,
+    insertData as unknown as Record<string, unknown>,
     "id, user_id, display_lines, font_size, font_family, theme, show_background, background_color, text_color, highlight_color, auto_scroll, scroll_duration, enable_animation, created_at, updated_at"
   );
 
@@ -255,27 +255,27 @@ export async function updateSettings(
   }
 
   const settings = rowToSettings(existing);
-  const updateData: SettingsUpdate = {};
+  const updateData: Record<string, unknown> = {};
 
   // Update display settings if provided
   if (input.displaySettings) {
     const ds = input.displaySettings;
 
-    if (ds.displayLines !== undefined) updateData.display_lines = ds.displayLines;
-    if (ds.fontSize !== undefined) updateData.font_size = ds.fontSize;
-    if (ds.fontFamily !== undefined) updateData.font_family = ds.fontFamily;
-    if (ds.theme !== undefined) updateData.theme = ds.theme;
-    if (ds.showBackground !== undefined) updateData.show_background = ds.showBackground;
-    if (ds.backgroundColor !== undefined) updateData.background_color = ds.backgroundColor;
-    if (ds.textColor !== undefined) updateData.text_color = ds.textColor;
-    if (ds.highlightColor !== undefined) updateData.highlight_color = ds.highlightColor;
-    if (ds.autoScroll !== undefined) updateData.auto_scroll = ds.autoScroll;
-    if (ds.scrollDuration !== undefined) updateData.scroll_duration = ds.scrollDuration;
-    if (ds.enableAnimation !== undefined) updateData.enable_animation = ds.enableAnimation;
+    if (ds.displayLines !== undefined) updateData["display_lines"] = ds.displayLines;
+    if (ds.fontSize !== undefined) updateData["font_size"] = ds.fontSize;
+    if (ds.fontFamily !== undefined) updateData["font_family"] = ds.fontFamily;
+    if (ds.theme !== undefined) updateData["theme"] = ds.theme;
+    if (ds.showBackground !== undefined) updateData["show_background"] = ds.showBackground;
+    if (ds.backgroundColor !== undefined) updateData["background_color"] = ds.backgroundColor;
+    if (ds.textColor !== undefined) updateData["text_color"] = ds.textColor;
+    if (ds.highlightColor !== undefined) updateData["highlight_color"] = ds.highlightColor;
+    if (ds.autoScroll !== undefined) updateData["auto_scroll"] = ds.autoScroll;
+    if (ds.scrollDuration !== undefined) updateData["scroll_duration"] = ds.scrollDuration;
+    if (ds.enableAnimation !== undefined) updateData["enable_animation"] = ds.enableAnimation;
   }
 
   // Add updated_at timestamp
-  updateData.updated_at = new Date().toISOString();
+  updateData["updated_at"] = new Date().toISOString();
 
   // Update if there are changes
   if (Object.keys(updateData).length > 1) { // > 1 because we always add updated_at
@@ -332,12 +332,12 @@ export async function resetSettings(userId: string): Promise<UserSettings> {
  * Delete settings
  */
 export async function deleteSettings(userId: string): Promise<boolean> {
-  const { rowCount } = await query(
+  const result = await query(
     `DELETE FROM settings WHERE user_id = $1`,
     [userId]
   );
 
-  return rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // ============================================================================

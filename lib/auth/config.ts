@@ -23,15 +23,15 @@ type NextAuthConfig = {
   session: { strategy: "jwt"; maxAge: number };
   pages: { signIn: string; error: string };
   callbacks: {
-    jwt: (params: { token: JWT; user?: NextAuthUser; trigger?: "signIn" | "update" }) => Promise<JWT> | JWT;
-    session: (params: { session: any; token: JWT; user?: NextAuthUser; trigger?: "signIn" | "update" }) => Promise<any> | any;
+    jwt: (params: { token: JWT; user?: NextAuthUser | undefined; trigger?: "signIn" | "signUp" | "update" | undefined }) => Promise<JWT> | JWT;
+    session: (params: { session: any; token: JWT; user?: NextAuthUser | undefined; trigger?: "signIn" | "signUp" | "update" | undefined }) => Promise<any> | any;
   };
   events: {
-    signIn?: (params: { user: NextAuthUser }) => Promise<void> | void;
-    signOut?: (params: { token: JWT; session?: any }) => Promise<void> | void;
-    error?: (params: { error: Error }) => Promise<void> | void;
+    signIn?: ((params: { user: NextAuthUser }) => Promise<void> | void) | undefined;
+    signOut?: ((params: { token: JWT; session?: any }) => Promise<void> | void) | undefined;
+    error?: ((params: { error: Error }) => Promise<void> | void) | undefined;
   };
-  debug?: boolean;
+  debug?: boolean | undefined;
 };
 
 export const authConfig: NextAuthConfig = {

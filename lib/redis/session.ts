@@ -8,7 +8,7 @@
  */
 
 import type { Song, DisplaySettings } from "@/lib/websocket/client";
-import { redisGet, redisSet, redisDel, redisSAdd, redisSRem, redisSMembers, redisSIsMember } from "./client";
+import { redisGet, redisSet, redisDel, redisSAdd, redisSMembers } from "./client";
 
 // ============================================================================
 // Types
@@ -356,10 +356,10 @@ export async function sessionExists(sessionId: string): Promise<boolean> {
  * Validate session access
  */
 export async function canAccessSession(
-  sessionId: string,
-  userId: string | null
+  _sessionId: string,
+  _userId: string | null
 ): Promise<boolean> {
-  // For now, allow access to any session
-  // In the future, you might want to check if the user owns the session
+  // 目前允許存取任何 session
+  // 未來可能需要檢查使用者是否擁有該 session
   return true;
 }

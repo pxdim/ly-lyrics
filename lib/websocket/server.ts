@@ -70,9 +70,9 @@ export interface DisplaySettings {
   fontFamily: string;
   theme: "light" | "dark" | "transparent";
   showBackground: boolean;
-  backgroundColor: string | null;
-  textColor: string | null;
-  highlightColor: string | null;
+  backgroundColor: string;
+  textColor: string;
+  highlightColor: string;
   autoScroll: boolean;
   scrollDuration: number;
   enableAnimation: boolean;
@@ -215,9 +215,11 @@ export class WebSocketServer {
         id: socket.id,
         sessionId,
         role,
-        userId,
         joinedAt: new Date(),
       };
+      if (userId !== undefined) {
+        clientSession.userId = userId;
+      }
       this.socketSessions.set(socket.id, clientSession);
 
       console.log(
@@ -338,12 +340,25 @@ export class WebSocketServer {
       }
 
       // Fetch song from database
-      const song = await getSongById(parsed.songId);
+      const apiSong = await getSongById(parsed.songId);
 
-      if (!song) {
+      if (!apiSong) {
         socket.emit("error", { message: "Song not found" });
         return;
       }
+
+      // 將 ApiSong 轉換為 WebSocket Song 格式（Date → string）
+      const song: Song = {
+        id: apiSong.id,
+        title: apiSong.title,
+        lyrics: apiSong.lyrics,
+        userId: apiSong.userId,
+        createdAt: apiSong.createdAt instanceof Date ? apiSong.createdAt.toISOString() : String(apiSong.createdAt),
+        updatedAt: apiSong.updatedAt instanceof Date ? apiSong.updatedAt.toISOString() : String(apiSong.updatedAt),
+      };
+      if (apiSong.artist !== undefined) song.artist = apiSong.artist;
+      if (apiSong.lrcTimestamps !== undefined) song.lrcTimestamps = apiSong.lrcTimestamps;
+      if (apiSong.language !== undefined) song.language = apiSong.language;
 
       // Update in Redis
       const updatedSession = await updateSessionSong(clientSession.sessionId, song);
@@ -378,10 +393,24 @@ export class WebSocketServer {
         return;
       }
 
+      // 移除 Zod 解析後的 undefined 值，符合 exactOptionalPropertyTypes
+      const settingsUpdate: Partial<DisplaySettings> = {};
+      if (parsed.displayLines !== undefined) settingsUpdate.displayLines = parsed.displayLines;
+      if (parsed.fontSize !== undefined) settingsUpdate.fontSize = parsed.fontSize;
+      if (parsed.fontFamily !== undefined) settingsUpdate.fontFamily = parsed.fontFamily;
+      if (parsed.theme !== undefined) settingsUpdate.theme = parsed.theme;
+      if (parsed.showBackground !== undefined) settingsUpdate.showBackground = parsed.showBackground;
+      if (parsed.backgroundColor !== undefined && parsed.backgroundColor !== null) settingsUpdate.backgroundColor = parsed.backgroundColor;
+      if (parsed.textColor !== undefined && parsed.textColor !== null) settingsUpdate.textColor = parsed.textColor;
+      if (parsed.highlightColor !== undefined && parsed.highlightColor !== null) settingsUpdate.highlightColor = parsed.highlightColor;
+      if (parsed.autoScroll !== undefined) settingsUpdate.autoScroll = parsed.autoScroll;
+      if (parsed.scrollDuration !== undefined) settingsUpdate.scrollDuration = parsed.scrollDuration;
+      if (parsed.enableAnimation !== undefined) settingsUpdate.enableAnimation = parsed.enableAnimation;
+
       // Update in Redis
       const updatedSession = await updateSessionSettings(
         clientSession.sessionId,
-        parsed
+        settingsUpdate
       );
 
       if (updatedSession) {

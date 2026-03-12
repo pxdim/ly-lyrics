@@ -12,13 +12,12 @@ import {
   queryOne,
   buildInsertQuery,
   buildUpdateQuery,
-  buildDeleteQuery,
-  isUniqueViolation,
+  transaction,
 } from "@/lib/db/client";
-import type { Playlist, PlaylistInsert, PlaylistUpdate, PlaylistSong, PlaylistSongInsert } from "@/lib/db/types";
-import { createNotFoundError, isAppError } from "@/lib/errors/AppError";
+import type { Playlist, PlaylistInsert, PlaylistSong, PlaylistSongInsert } from "@/lib/db/types";
+import { createNotFoundError } from "@/lib/errors/AppError";
 import { ensureDemoUser } from "./userService";
-import type { Song } from "./songService";
+import { rowToSong as songRowToSong, type Song } from "./songService";
 
 // ============================================================================
 // Types
@@ -74,6 +73,7 @@ function rowToPlaylist(row: any): Playlist {
   return {
     id: row.id,
     name: row.name,
+    description: row.description ?? null,
     user_id: row.user_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -89,6 +89,7 @@ function rowToPlaylistSong(row: any): PlaylistSong {
     playlist_id: row.playlist_id,
     song_id: row.song_id,
     order_index: row.order_index,
+    added_at: row.added_at ?? new Date(),
   };
 }
 
@@ -99,17 +100,6 @@ function playlistToInsert(input: CreatePlaylistInput): PlaylistInsert {
   return {
     name: input.name,
     user_id: input.userId,
-  };
-}
-
-/**
- * Convert AddSongInput to database insert format
- */
-function addSongToInsert(input: AddSongInput): PlaylistSongInsert {
-  return {
-    playlist_id: input.playlistId,
-    song_id: input.songId,
-    order_index: input.orderIndex ?? 0,
   };
 }
 
@@ -195,7 +185,7 @@ export async function createPlaylist(input: CreatePlaylistInput): Promise<Playli
   const insertData = playlistToInsert(input);
   const { text, params } = buildInsertQuery(
     "playlists",
-    insertData,
+    insertData as unknown as Record<string, unknown>,
     "id, name, user_id, created_at, updated_at"
   );
 
@@ -210,11 +200,14 @@ export async function createPlaylist(input: CreatePlaylistInput): Promise<Playli
   // Add songs if provided
   if (input.songIds && input.songIds.length > 0) {
     for (let i = 0; i < input.songIds.length; i++) {
-      await addSongToPlaylist({
-        playlistId: playlist.id,
-        songId: input.songIds[i],
-        orderIndex: i,
-      });
+      const songId = input.songIds[i];
+      if (songId) {
+        await addSongToPlaylist({
+          playlistId: playlist.id,
+          songId,
+          orderIndex: i,
+        });
+      }
     }
   }
 
@@ -229,11 +222,11 @@ export async function updatePlaylist(
   input: UpdatePlaylistInput
 ): Promise<PlaylistWithSongs | null> {
   // Build update object with only provided fields
-  const updateData: PlaylistUpdate = {};
-  if (input.name !== undefined) updateData.name = input.name;
+  const updateData: Record<string, unknown> = {};
+  if (input.name !== undefined) updateData["name"] = input.name;
 
   // Add updated_at timestamp
-  updateData.updated_at = new Date().toISOString();
+  updateData["updated_at"] = new Date().toISOString();
 
   const { text, params } = buildUpdateQuery(
     "playlists",
@@ -262,9 +255,9 @@ export async function deletePlaylist(id: string): Promise<boolean> {
     throw createNotFoundError("Playlist", id);
   }
 
-  const { rowCount } = await query("DELETE FROM playlists WHERE id = $1", [id]);
+  const result = await query("DELETE FROM playlists WHERE id = $1", [id]);
 
-  return rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // ============================================================================
@@ -275,8 +268,6 @@ export async function deletePlaylist(id: string): Promise<boolean> {
  * Get songs by playlist ID
  */
 export async function getSongsByPlaylistId(playlistId: string): Promise<Song[]> {
-  const { rowToSong: songRowToSong } = await import("./songService");
-
   const result = await query(
     `SELECT s.* FROM songs s
      INNER JOIN playlist_songs ps ON s.id = ps.song_id
@@ -310,7 +301,7 @@ export async function addSongToPlaylist(input: AddSongInput): Promise<PlaylistSo
 
   const { text, params } = buildInsertQuery(
     "playlist_songs",
-    insertData,
+    insertData as unknown as Record<string, unknown>,
     "id, playlist_id, song_id, order_index"
   );
 
@@ -330,17 +321,18 @@ export async function removeSongFromPlaylist(
   playlistId: string,
   songId: string
 ): Promise<boolean> {
-  const { rowCount } = await query(
+  const result = await query(
     `DELETE FROM playlist_songs WHERE playlist_id = $1 AND song_id = $2`,
     [playlistId, songId]
   );
+  const deleted = (result.rowCount ?? 0) > 0;
 
   // Reorder remaining songs
-  if (rowCount > 0) {
+  if (deleted) {
     await reorderRemainingSongs(playlistId);
   }
 
-  return rowCount > 0;
+  return deleted;
 }
 
 /**
@@ -350,13 +342,16 @@ export async function reorderPlaylistSongs(input: ReorderSongsInput): Promise<vo
   const { playlistId, songIds } = input;
 
   // Use transaction for atomic updates
-  await query(async (client) => {
+  await transaction(async (client) => {
     for (let i = 0; i < songIds.length; i++) {
-      await client.query(
-        `UPDATE playlist_songs SET order_index = $1
-         WHERE playlist_id = $2 AND song_id = $3`,
-        [i, playlistId, songIds[i]]
-      );
+      const songId = songIds[i];
+      if (songId) {
+        await client.query(
+          `UPDATE playlist_songs SET order_index = $1
+           WHERE playlist_id = $2 AND song_id = $3`,
+          [i, playlistId, songId]
+        );
+      }
     }
   });
 }
