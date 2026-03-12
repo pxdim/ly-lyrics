@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       lyrics: body.lyrics,
       lrcTimestamps: body.lrcTimestamps,
       language: body.language,
-      userId: body.userId || "user-1", // Default user for demo
+      userId: body.userId || "00000000-0000-0000-0000-000000000001", // Default user for demo (valid UUID)
     };
 
     const newSong = await createSong(input);

@@ -104,7 +104,7 @@ export async function getSongs(
     limit = 20,
     offset = 0,
     search,
-    userId = "user-1", // Default user for demo
+    userId = "00000000-0000-0000-0000-000000000001", // Default user for demo (valid UUID)
   } = params;
 
   const supabase = createServiceClient();
