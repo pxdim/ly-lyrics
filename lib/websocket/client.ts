@@ -53,7 +53,7 @@ export interface SessionState {
 // Event Types
 // ============================================================================
 
-interface ServerToClientEvents {
+export interface ServerToClientEvents {
   session_state: (state: SessionState) => void;
   line_changed: (data: { lineIndex: number; timestamp: number }) => void;
   song_changed: (data: { songId: string; timestamp: number }) => void;
@@ -74,7 +74,7 @@ interface ServerToClientEvents {
   error: (data: { message: string; details?: unknown }) => void;
 }
 
-interface ClientToServerEvents {
+export interface ClientToServerEvents {
   join_session: (data: {
     sessionId: string;
     role: ClientRole;
@@ -305,6 +305,34 @@ export class WSClient {
     this.socket?.disconnect();
     this.socket = null;
   }
+}
+
+// ============================================================================
+// Feature Flag: 原生 WebSocket（Go backend）vs Socket.IO（Node.js backend）
+// ============================================================================
+
+import { NativeWSClient, initNativeWSClient, getNativeWSClient } from "./native-client";
+
+const USE_NATIVE_WS = process.env["NEXT_PUBLIC_USE_NATIVE_WS"] === "true";
+
+/**
+ * 根據 feature flag 建立對應的 WebSocket client
+ */
+export function createWSClient(url?: string): WSClient | NativeWSClient {
+  if (USE_NATIVE_WS) {
+    return initNativeWSClient(url);
+  }
+  return initWSClient(url);
+}
+
+/**
+ * 取得當前的 WebSocket client（無論類型）
+ */
+export function getActiveWSClient(): WSClient | NativeWSClient | null {
+  if (USE_NATIVE_WS) {
+    return getNativeWSClient();
+  }
+  return getWSClient();
 }
 
 // ============================================================================
