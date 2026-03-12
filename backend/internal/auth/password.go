@@ -4,6 +4,7 @@ package auth
 
 import (
 	"fmt"
+	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -13,7 +14,8 @@ const bcryptCost = 10
 
 // HashPassword 將明文密碼轉換為 bcrypt 雜湊值
 func HashPassword(password string) (string, error) {
-	if len(password) < 8 || len(password) > 72 {
+	runeLen := utf8.RuneCountInString(password)
+	if runeLen < 8 || runeLen > 72 {
 		return "", fmt.Errorf("密碼長度必須為 8-72 個字元")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
