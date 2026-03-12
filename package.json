@@ -1,0 +1,46 @@
+{
+  "name": "ly-lyrics",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "dev:ws": "npx tsx server.ts",
+    "build": "next build",
+    "start": "next start",
+    "start:ws": "npx tsx server.ts",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "prepare": "husky install || true",
+    "postinstall": "husky install || true"
+  },
+  "$schema": "https://json.schemastore.org/package.json",
+  "dependencies": {
+    "@supabase/ssr": "^0.9.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "supabase": "^2.78.1",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.1.0",
+    "husky": "^8.0.3",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

@@ -1,0 +1,21 @@
+#!/bin/bash
+# LY Pre-commit Hook
+# 在每次 commit 前執行檢查
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. TypeScript 類型檢查
+echo "📝 TypeScript type check..."
+npm run type-check --silent
+
+# 2. Lint 檢查
+echo "✨ ESLint check..."
+npm run lint --silent
+
+# 3. 格式化檢查 (可選)
+# echo "🎨 Prettier check..."
+# npx prettier --check .
+
+echo "✅ All checks passed! Proceeding with commit..."

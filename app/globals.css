@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 300 76% 53%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 199 89% 48%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark Theme */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 300 76% 53%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 199 89% 48%;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Lyrics Display Styles */
+  .lyrics-container {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .lyrics-line {
+    @apply transition-all duration-200;
+  }
+
+  .lyrics-line-active {
+    @apply scale-105 font-bold;
+  }
+
+  .lyrics-line-inactive {
+    @apply opacity-50;
+  }
+
+  /* Smooth Scroll */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Display Mode: Full screen, minimal UI */
+.display-mode {
+  @apply fixed inset-0 overflow-hidden;
+}
+
+.display-mode .lyrics-line {
+  @apply text-center py-4;
+}
+
+/* Controller Mode: With controls visible */
+.controller-mode {
+  @apply min-h-screen;
+}
+
+/* Focus Line Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 20px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 30px currentColor, 0 0 40px currentColor;
+  }
+}
+
+.focus-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
