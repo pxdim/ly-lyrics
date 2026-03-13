@@ -125,7 +125,7 @@ export default function ControllerPage() {
 // ============================================================================
 
 function StatusBar({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
-  const isConnected = useLyricsStore((state) => state.isConnected);
+  const isConnected = useLyricsStore((state) => state.connectionState === "connected");
   const controllerCount = useLyricsStore((state) => state.controllerCount);
   const displayCount = useLyricsStore((state) => state.displayCount);
   const currentSong = useLyricsStore((state) => state.currentSong);

@@ -26,7 +26,8 @@ export interface LyricsState {
   lyrics: string[];
 
   // Connection state
-  isConnected: boolean;
+  connectionState: "connected" | "reconnecting" | "disconnected";
+  reconnectAttempt: number;
   sessionId: string | null;
   role: ClientRole | null;
   userId: string | null;
@@ -62,6 +63,9 @@ export interface LyricsActions {
   disconnect: () => void;
   joinSession: (sessionId: string, role: ClientRole, userId?: string) => void;
   leaveSession: () => void;
+
+  // Connection state (computed)
+  retryConnection: () => void;
 
   // Settings actions
   updateDisplaySettings: (settings: Partial<DisplaySettings>) => void;
@@ -111,7 +115,8 @@ export const useLyricsStore = create<LyricsStore>()(
         currentSong: null,
         currentIndex: 0,
         lyrics: [],
-        isConnected: false,
+        connectionState: "disconnected" as const,
+        reconnectAttempt: 0,
         sessionId: null,
         role: null,
         userId: null,
@@ -202,11 +207,20 @@ export const useLyricsStore = create<LyricsStore>()(
 
             // 連線狀態追蹤：透過內部事件同步真實 WebSocket 狀態
             ws.on("_connected", () => {
-              set({ isConnected: true });
+              set({ connectionState: "connected", reconnectAttempt: 0 });
             });
 
             ws.on("_disconnected", () => {
-              set({ isConnected: false });
+              // shouldReconnect 為 true 時會自動重試，先進入 reconnecting 狀態
+              set({ connectionState: "reconnecting" });
+            });
+
+            ws.on("_reconnecting", (data: { attempt: number; maxAttempts: number }) => {
+              set({ reconnectAttempt: data.attempt });
+            });
+
+            ws.on("_reconnect_exhausted", () => {
+              set({ connectionState: "disconnected" });
             });
 
             // 業務事件監聽
@@ -259,7 +273,7 @@ export const useLyricsStore = create<LyricsStore>()(
 
             // 如果 WebSocket 已經連上（singleton 可能已經在連線中），立即同步狀態
             if (ws.isConnected()) {
-              set({ isConnected: true });
+              set({ connectionState: "connected", reconnectAttempt: 0 });
             }
           } catch (error) {
             console.error("Failed to connect to WebSocket:", error);
@@ -274,7 +288,8 @@ export const useLyricsStore = create<LyricsStore>()(
           ws.removeAllListeners();
           ws.disconnect();
           set({
-            isConnected: false,
+            connectionState: "disconnected" as const,
+            reconnectAttempt: 0,
             sessionId: null,
             role: null,
             controllerCount: 0,
@@ -292,6 +307,12 @@ export const useLyricsStore = create<LyricsStore>()(
           const ws = initNativeWSClient();
           ws.leaveSession();
           set({ sessionId: null, role: null });
+        },
+
+        retryConnection: () => {
+          const ws = initNativeWSClient();
+          set({ connectionState: "reconnecting" as const, reconnectAttempt: 0 });
+          ws.resetAndReconnect();
         },
 
         // ========================================
@@ -403,7 +424,9 @@ export const selectVisibleLyrics = (state: LyricsState) => {
  */
 export const selectConnectionStatus = (state: LyricsState) => {
   return {
-    isConnected: state.isConnected,
+    isConnected: state.connectionState === "connected",
+    connectionState: state.connectionState,
+    reconnectAttempt: state.reconnectAttempt,
     isInSession: state.sessionId !== null,
     role: state.role,
     controllerCount: state.controllerCount,
