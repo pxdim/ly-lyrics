@@ -14,6 +14,7 @@ import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
 import { fetchPlaylists, createPlaylist, updatePlaylist, deletePlaylist, type ClientPlaylist } from "@/lib/api/playlists";
 import { AddSongModal } from "@/components/controller/AddSongModal";
+import { generateSessionCode } from "@/lib/websocket/session-code";
 
 // ============================================================================
 // 主頁面
@@ -22,15 +23,28 @@ import { AddSongModal } from "@/components/controller/AddSongModal";
 export default function ControllerPage() {
   const connect = useLyricsStore((state) => state.connect);
   const disconnect = useLyricsStore((state) => state.disconnect);
+  const joinSession = useLyricsStore((state) => state.joinSession);
+  const leaveSession = useLyricsStore((state) => state.leaveSession);
+  // 生成房間碼（僅在首次 mount 時產生，不隨 re-render 變動）
+  const sessionCodeRef = useRef<string | null>(null);
+  if (sessionCodeRef.current === null) {
+    sessionCodeRef.current = generateSessionCode();
+  }
 
   useEffect(() => {
     connect();
-    return () => { disconnect(); };
+    // 以 controller 角色加入 session（NativeWSClient 會儲存 session 資訊，
+    // 若 WS 尚未連線，onopen 時會自動重新 join）
+    joinSession(sessionCodeRef.current!, "controller");
+    return () => {
+      leaveSession();
+      disconnect();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
-      <StatusBar />
+      <StatusBar sessionCode={sessionCodeRef.current!} />
       <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
         {/* 左欄：歌曲庫 + 播放清單 */}
         <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
@@ -73,15 +87,25 @@ export default function ControllerPage() {
 // 頂部狀態列
 // ============================================================================
 
-function StatusBar() {
+function StatusBar({ sessionCode }: { sessionCode: string }) {
   const isConnected = useLyricsStore((state) => state.isConnected);
   const controllerCount = useLyricsStore((state) => state.controllerCount);
   const displayCount = useLyricsStore((state) => state.displayCount);
   const currentSong = useLyricsStore((state) => state.currentSong);
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+
+  const copyToClipboard = useCallback(async (type: "code" | "link") => {
+    const text = type === "code"
+      ? sessionCode
+      : `${window.location.origin}/display?code=${sessionCode}`;
+    await navigator.clipboard.writeText(text);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  }, [sessionCode]);
 
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-[#2A2D35] bg-[#16181D] px-6 py-2 shrink-0 h-12">
-      {/* 左：標題 */}
+      {/* 左：標題 + 房間碼 */}
       <div className="flex items-center gap-4">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
           <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
@@ -89,6 +113,54 @@ function StatusBar() {
         <h2 className="text-[16px] font-semibold leading-tight tracking-[-0.015em]">
           Control Desk
         </h2>
+
+        {/* 房間碼：點擊複製 */}
+        <div className="flex items-center gap-1.5 ml-2">
+          <button
+            type="button"
+            onClick={() => copyToClipboard("code")}
+            className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/30 rounded-md hover:bg-primary/20 hover:border-primary/50 transition-all group cursor-pointer"
+            title="點擊複製房間碼"
+          >
+            <span className="text-[11px] font-mono text-primary/70 uppercase tracking-wider">Room</span>
+            <span className="text-[15px] font-mono font-bold text-primary tracking-[0.2em]">
+              {sessionCode}
+            </span>
+            {/* 複製圖示 */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/50 group-hover:text-primary transition-colors">
+              {copied === "code" ? (
+                <path d="M20 6L9 17l-5-5" />
+              ) : (
+                <>
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                </>
+              )}
+            </svg>
+          </button>
+
+          {/* 複製顯示端連結按鈕 */}
+          <button
+            type="button"
+            onClick={() => copyToClipboard("link")}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#090A0C] border border-[#2A2D35] rounded-md hover:border-primary/40 hover:bg-primary/5 transition-all text-[11px] font-mono text-[#6B7280] hover:text-primary cursor-pointer"
+            title="複製顯示端連結"
+          >
+            {/* 連結圖示 */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {copied === "link" ? (
+                <path d="M20 6L9 17l-5-5" />
+              ) : (
+                <>
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </>
+              )}
+            </svg>
+            {copied === "link" ? "已複製" : "複製連結"}
+          </button>
+        </div>
+
         {currentSong && (
           <span className="text-[12px] font-mono border border-[#2A2D35] px-2 py-0.5 bg-[#090A0C] text-[#6B7280] ml-2 truncate max-w-[200px]">
             {currentSong.title}

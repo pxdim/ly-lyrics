@@ -8,23 +8,45 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Link2, Check } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { LyricsDisplay } from "@/components/lyrics/LyricsDisplay";
 import { LyricsControl } from "@/components/lyrics/LyricsControl";
 
-export default function DisplayPage() {
-  const [connectionCode, setConnectionCode] = useState("");
+/**
+ * Suspense 外層包裝（Next.js 15 要求 useSearchParams 必須在 Suspense 內使用）
+ */
+export default function DisplayPageWrapper() {
+  return (
+    <Suspense fallback={<DisplayLoading />}>
+      <DisplayPage />
+    </Suspense>
+  );
+}
+
+function DisplayLoading() {
+  return (
+    <div className="fixed inset-0 bg-void flex items-center justify-center">
+      <div className="text-primary font-heading text-2xl animate-pulse">LY</div>
+    </div>
+  );
+}
+
+function DisplayPage() {
+  const searchParams = useSearchParams();
+  const urlCode = searchParams.get("code")?.toUpperCase().slice(0, 6) ?? "";
+
+  const [connectionCode, setConnectionCode] = useState(urlCode);
   const [isConnected, setIsConnected] = useState(false);
   const connect = useLyricsStore((state) => state.connect);
   const disconnect = useLyricsStore((state) => state.disconnect);
   const joinSession = useLyricsStore((state) => state.joinSession);
   const leaveSession = useLyricsStore((state) => state.leaveSession);
-  const wsConnected = useLyricsStore((state) => state.isConnected);
   const currentSong = useLyricsStore((state) => state.currentSong);
 
-  // 連線並加入 session — 當輸入完 6 碼同步碼後觸發
+  // 連線並加入 session — 當輸入完 6 碼同步碼後觸發（含 URL ?code= 自動連線）
   useEffect(() => {
     if (connectionCode.length === 6) {
       connect();
@@ -43,13 +65,6 @@ export default function DisplayPage() {
       disconnect();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 若 WebSocket 斷線，同步更新 UI（實際連線狀態來自 store）
-  useEffect(() => {
-    if (!wsConnected && isConnected) {
-      // WebSocket 斷線但 UI 仍顯示已連線 — 保持 UI 不變，等待自動重連
-    }
-  }, [wsConnected, isConnected]);
 
   // Connection Screen
   if (!isConnected) {
@@ -98,17 +113,12 @@ export default function DisplayPage() {
               </div>
             </div>
 
-            {/* Quick connect button (for demo) */}
-            <button
-              onClick={() => setConnectionCode("DEMO01")}
-              className="group w-full px-8 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold tracking-wider uppercase transition-all duration-300 hover:shadow-glow-lg hover:-translate-y-1 relative overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <Link2 className="w-5 h-5" strokeWidth={1.5} />
-                連接
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </button>
+            {/* 當碼不足 6 位時顯示提示；碼完整時顯示連接狀態 */}
+            {connectionCode.length < 6 && connectionCode.length > 0 && (
+              <p className="text-[13px] font-mono text-primary/50">
+                {connectionCode.length}/6
+              </p>
+            )}
           </div>
 
           {/* Instructions */}
@@ -122,21 +132,24 @@ export default function DisplayPage() {
             <ol className="list-decimal list-inside space-y-3 font-body text-sm text-text-muted">
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">1.</span>
-                <span>在控制器上選擇歌曲</span>
+                <span>開啟控制台頁面</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">2.</span>
-                <span>複製控制器顯示的同步碼</span>
+                <span>點擊頂部狀態列的房間碼複製</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">3.</span>
-                <span>在上方輸入框輸入同步碼</span>
+                <span>在上方輸入框貼上 6 碼同步碼</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">4.</span>
-                <span>點擊連接按鈕</span>
+                <span>輸入完畢自動連線</span>
               </li>
             </ol>
+            <p className="text-xs text-text-muted/60 pt-2 border-t border-border-dim">
+              或直接使用控制台的「複製連結」功能，在瀏覽器開啟即自動連線
+            </p>
           </div>
         </div>
       </div>
