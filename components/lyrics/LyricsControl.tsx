@@ -8,7 +8,7 @@
 "use client";
 
 import { type FC } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 
 export interface LyricsControlProps {
@@ -18,12 +18,18 @@ export interface LyricsControlProps {
   compact?: boolean;
   /** Position of the controls */
   position?: "top" | "bottom" | "floating";
+  /** Whether the display is currently in fullscreen */
+  isFullscreen?: boolean;
+  /** Callback to toggle fullscreen mode */
+  onToggleFullscreen?: () => void;
 }
 
 export const LyricsControl: FC<LyricsControlProps> = ({
   className = "",
   compact = false,
   position = "bottom",
+  isFullscreen = false,
+  onToggleFullscreen,
 }) => {
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const lyrics = useLyricsStore((state) => state.lyrics);
@@ -221,6 +227,37 @@ export const LyricsControl: FC<LyricsControlProps> = ({
           className="transition-transform duration-200 group-hover:translate-y-0.5"
         />
       </button>
+
+      {/* Fullscreen Toggle (only when callback provided) */}
+      {onToggleFullscreen && (
+        <>
+          {/* Separator */}
+          <div style={{ width: "1px", height: "1.75rem", backgroundColor: "rgba(0, 217, 255, 0.3)", margin: "0 0.25rem" }} />
+
+          <button
+            style={buttonStyle}
+            onClick={onToggleFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={isFullscreen ? "退出全螢幕 (F)" : "全螢幕 (F)"}
+            type="button"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
+              e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+            className="group"
+          >
+            {isFullscreen ? (
+              <Minimize2 size={18} strokeWidth={2} className="transition-transform duration-200" />
+            ) : (
+              <Maximize2 size={18} strokeWidth={2} className="transition-transform duration-200" />
+            )}
+          </button>
+        </>
+      )}
     </div>
   );
 };
