@@ -14,6 +14,8 @@ import { Link2, Check } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { LyricsDisplay } from "@/components/lyrics/LyricsDisplay";
 import { LyricsControl } from "@/components/lyrics/LyricsControl";
+import { ConnectionStatusBar } from "@/components/display/ConnectionStatusBar";
+import { ConnectionIndicator } from "@/components/display/ConnectionIndicator";
 
 /**
  * Suspense 外層包裝（Next.js 15 要求 useSearchParams 必須在 Suspense 內使用）
@@ -49,6 +51,7 @@ function DisplayPage() {
   const joinSession = useLyricsStore((state) => state.joinSession);
   const leaveSession = useLyricsStore((state) => state.leaveSession);
   const currentSong = useLyricsStore((state) => state.currentSong);
+  const connectionState = useLyricsStore((state) => state.connectionState);
 
   // 連線並加入 session — 當輸入完 6 碼同步碼後觸發（含 URL ?code= 自動連線）
   useEffect(() => {
@@ -168,8 +171,13 @@ function DisplayPage() {
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-20 pointer-events-none" />
 
+      {/* Disconnect/Reconnect Status Banner */}
+      <ConnectionStatusBar />
+
       {/* Main Lyrics Display */}
-      <LyricsDisplay />
+      <div style={{ opacity: connectionState === "disconnected" ? 0.5 : 1, transition: "opacity 300ms ease" }}>
+        <LyricsDisplay />
+      </div>
 
       {/* Floating Controls */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
@@ -190,13 +198,7 @@ function DisplayPage() {
 
       {/* Connection Status Indicator (top right) */}
       <div className="fixed top-6 right-6 z-40">
-        <div className="flex items-center gap-3 bg-elevated/80 backdrop-blur-md rounded-full px-5 py-2 border border-accent/30 shadow-glow-accent">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
-          </span>
-          <span className="font-body text-xs font-medium text-accent">已連接</span>
-        </div>
+        <ConnectionIndicator />
       </div>
     </div>
   );
