@@ -3,12 +3,26 @@ import type { NextConfig } from "next";
 // Go 後端 URL（由環境變數設定，預設為本地開發位址）
 const goBackendUrl = process.env["GO_BACKEND_URL"] || "http://localhost:8080";
 
-// 推導 WebSocket URL：優先使用明確設定，否則從 Go backend domain 推導
-const goWsUrl =
-  process.env["NEXT_PUBLIC_GO_WS_URL"] ||
-  (process.env["RAILWAY_SERVICE_LY_GO_BACKEND_URL"]
-    ? `wss://${process.env["RAILWAY_SERVICE_LY_GO_BACKEND_URL"]}/ws`
-    : "");
+// 推導客戶端 WebSocket URL
+// Railway build step 不提供 NEXT_PUBLIC_* 和 RAILWAY_SERVICE_* 變數，
+// 所以 production 環境直接使用已知的公開網域
+function resolveWsUrl(): string {
+  // 1. 明確設定優先
+  if (process.env["NEXT_PUBLIC_GO_WS_URL"]) {
+    return process.env["NEXT_PUBLIC_GO_WS_URL"];
+  }
+  // 2. 從 Railway service URL 推導
+  if (process.env["RAILWAY_SERVICE_LY_GO_BACKEND_URL"]) {
+    return `wss://${process.env["RAILWAY_SERVICE_LY_GO_BACKEND_URL"]}/ws`;
+  }
+  // 3. Production 環境使用已知網域
+  if (process.env["NODE_ENV"] === "production" || process.env["RAILWAY_ENVIRONMENT"]) {
+    return "wss://ly-go-backend-production.up.railway.app/ws";
+  }
+  // 4. 本地開發
+  return "ws://localhost:8080/ws";
+}
+const goWsUrl = resolveWsUrl();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
