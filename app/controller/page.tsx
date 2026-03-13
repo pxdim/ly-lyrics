@@ -1,27 +1,15 @@
 /**
- * 演出控制台
+ * 演出控制台 — Broadcast Console 風格
  *
- * 三欄式專業控制面板：歌曲庫 | 歌詞預覽 | 快速設定
+ * 可拖曳調整大小的三欄面板：歌曲庫 | Cue Grid 歌詞 | 預覽 + 設定
+ * 右欄垂直分割：上方即時預覽 | 下方快速設定
  * 所有演出流程相關功能集中在同一頁面。
  */
 
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import {
-  Search,
-  Plus,
-  Trash2,
-  Music,
-  Wifi,
-  WifiOff,
-  Monitor,
-  Users,
-  ChevronUp,
-  ChevronDown,
-  Palette,
-  Settings,
-} from "lucide-react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { Panel, Group, Separator } from "react-resizable-panels";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
 import { AddSongModal } from "@/components/controller/AddSongModal";
@@ -40,14 +28,42 @@ export default function ControllerPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen flex flex-col bg-void text-text-primary overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
       <StatusBar />
-      <div className="flex-1 flex min-h-0">
-        <SongLibrary />
-        <LyricsPanel />
-        <QuickSettings />
-      </div>
-      <ControlBar />
+      <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
+        {/* 左欄：歌曲庫 */}
+        <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
+          <SongLibrary />
+        </Panel>
+        <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
+          <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+        </Separator>
+
+        {/* 中欄：Cue Grid */}
+        <Panel id="cues" defaultSize="45%" minSize="30%">
+          <CueGrid />
+        </Panel>
+        <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
+          <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+        </Separator>
+
+        {/* 右欄：預覽 + 設定 (垂直分割) */}
+        <Panel id="right" defaultSize="35%" minSize="20%" maxSize="50%">
+          <Group orientation="vertical" id="controller-right">
+            {/* 上：即時預覽 */}
+            <Panel id="preview" defaultSize="45%" minSize="20%">
+              <LivePreview />
+            </Panel>
+            <Separator className="h-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-row-resize flex items-center justify-center group">
+              <div className="h-px w-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+            </Separator>
+            {/* 下：快速設定 */}
+            <Panel id="settings" defaultSize="55%" minSize="25%">
+              <QuickSettings />
+            </Panel>
+          </Group>
+        </Panel>
+      </Group>
     </div>
   );
 }
@@ -63,52 +79,51 @@ function StatusBar() {
   const currentSong = useLyricsStore((state) => state.currentSong);
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-surface border-b border-border-dim shrink-0">
+    <header className="flex items-center justify-between whitespace-nowrap border-b border-[#2A2D35] bg-[#16181D] px-6 py-2 shrink-0 h-12">
       {/* 左：標題 */}
-      <div className="flex items-center gap-2">
-        <Music size={16} className="text-primary" />
-        <span className="font-heading text-sm font-bold tracking-wider text-primary">
-          LY 演出控制台
-        </span>
-      </div>
-
-      {/* 中：當前歌曲 */}
-      <div className="flex items-center gap-2 text-xs font-body text-text-muted">
-        {currentSong ? (
-          <>
-            <span className="text-text-primary font-semibold">{currentSong.title}</span>
-            {currentSong.artist && (
-              <span className="text-text-dim">— {currentSong.artist}</span>
-            )}
-          </>
-        ) : (
-          <span className="text-text-dim">未選擇歌曲</span>
+      <div className="flex items-center gap-4">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+          <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+        </svg>
+        <h2 className="text-[16px] font-semibold leading-tight tracking-[-0.015em]">
+          Control Desk
+        </h2>
+        {currentSong && (
+          <span className="text-[12px] font-mono border border-[#2A2D35] px-2 py-0.5 bg-[#090A0C] text-[#6B7280] ml-2 truncate max-w-[200px]">
+            {currentSong.title}
+            {currentSong.artist ? ` — ${currentSong.artist}` : ""}
+          </span>
         )}
       </div>
 
       {/* 右：連線狀態 */}
-      <div className="flex items-center gap-4 text-xs font-body">
-        <div className="flex items-center gap-1.5">
-          {isConnected ? (
-            <Wifi size={12} className="text-accent" />
-          ) : (
-            <WifiOff size={12} className="text-red-400" />
-          )}
-          <span className={isConnected ? "text-accent" : "text-red-400"}>
-            {isConnected ? "已連線" : "離線"}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`} />
+          <span className={`text-[12px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}>
+            {isConnected ? "SYSTEM READY" : "OFFLINE"}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-text-muted">
-          <Monitor size={12} />
-          <span>{controllerCount}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-text-muted">
-          <Users size={12} />
-          <span>{displayCount}</span>
-        </div>
-        {/* 同步碼 */}
-        <div className="font-mono text-xs text-primary font-bold tracking-widest px-2 py-0.5 bg-primary/10 border border-primary/20 rounded">
-          {currentSong?.id.slice(-6).toUpperCase() || "------"}
+        <div className="h-5 w-px bg-[#2A2D35]" />
+        <div className="flex items-center gap-4 text-[12px] font-mono text-[#6B7280]">
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" />
+            </svg>
+            WS
+          </span>
+          <span className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="3" width="20" height="14" rx="0" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            CTL: {controllerCount}
+          </span>
+          <span className="flex items-center gap-1.5 text-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            DSP: {displayCount}
+          </span>
         </div>
       </div>
     </header>
@@ -156,7 +171,6 @@ function SongLibrary() {
   }, [search, loadSongs]);
 
   const handleSelectSong = (song: ClientSong) => {
-    // 使用 as 轉型，ClientSong 與 Song 結構相同
     setCurrentSong(song as Parameters<typeof setCurrentSong>[0]);
   };
 
@@ -180,72 +194,98 @@ function SongLibrary() {
 
   return (
     <>
-      <aside className="w-[280px] shrink-0 flex flex-col bg-surface border-r border-border-dim">
-        {/* 搜尋 + 新增 */}
-        <div className="p-3 space-y-2 border-b border-border-dim">
+      <div className="h-full flex flex-col border-r border-[#2A2D35] bg-[#090A0C]">
+        {/* 標題列 */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+          <h3 className="text-[13px] font-semibold tracking-wider text-[#6B7280] uppercase">
+            Song Library
+          </h3>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
+            type="button"
+            title="新增歌曲"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 搜尋 */}
+        <div className="px-3 py-2 border-b border-[#2A2D35] shrink-0">
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-dim" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6B7280]">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜尋歌曲..."
-              className="w-full pl-8 pr-3 py-1.5 bg-void/50 border border-border-dim rounded-lg text-xs text-text-primary placeholder:text-text-dim focus:outline-none focus:border-primary/40 transition-colors font-body"
+              className="w-full pl-8 pr-3 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
             />
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary font-semibold hover:bg-primary/20 transition-colors font-body"
-            type="button"
-          >
-            <Plus size={13} />
-            新增歌曲
-          </button>
         </div>
 
         {/* 歌曲列表 */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {isLoading ? (
-            <div className="p-4 text-center text-xs text-text-dim font-body">載入中...</div>
+            <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">LOADING...</div>
           ) : songs.length === 0 ? (
-            <div className="p-4 text-center text-xs text-text-dim font-body">
-              {search ? "找不到歌曲" : "尚無歌曲"}
+            <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">
+              {search ? "NO RESULTS" : "EMPTY"}
             </div>
           ) : (
-            songs.map((song) => {
+            songs.map((song, idx) => {
               const isActive = currentSong?.id === song.id;
               return (
                 <div
                   key={song.id}
                   onClick={() => handleSelectSong(song)}
-                  className={`group flex items-center gap-2 px-3 py-2 cursor-pointer border-l-2 transition-colors ${
+                  className={`group flex items-center gap-3 px-4 py-2.5 border-b border-[#2A2D35]/50 cursor-pointer transition-colors ${
                     isActive
-                      ? "bg-primary/10 border-primary text-text-primary"
-                      : "border-transparent hover:bg-elevated text-text-muted hover:text-text-primary"
+                      ? "bg-[#16181D] text-[#E4E7EB] border-l-2 border-l-primary relative"
+                      : "hover:bg-[#16181D]/50 text-[#6B7280] hover:text-[#E4E7EB]"
                   }`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold truncate font-body">
+                  {isActive && (
+                    <div className="absolute inset-y-0 left-0 w-full bg-primary/5 pointer-events-none" />
+                  )}
+                  <span className="font-mono text-[11px] w-5 shrink-0 text-right">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  {isActive ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-primary shrink-0">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280] shrink-0">
+                      <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                    </svg>
+                  )}
+                  <div className="flex-1 min-w-0 relative z-10">
+                    <p className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}>
                       {song.title}
-                    </div>
+                    </p>
                     {song.artist && (
-                      <div className="text-[10px] text-text-dim truncate font-body">
-                        {song.artist}
-                      </div>
+                      <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-[10px] text-text-dim font-mono">
-                      {song.lyrics.length}行
+                  <div className="flex items-center gap-1 shrink-0 relative z-10">
+                    <span className="font-mono text-[10px] text-[#6B7280]">
+                      {song.lyrics.length}L
                     </span>
                     <button
                       onClick={(e) => handleDeleteSong(e, song.id)}
                       disabled={deletingId === song.id}
-                      className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                      className="p-1 opacity-0 group-hover:opacity-100 text-[#6B7280] hover:text-red-400 transition-all"
                       type="button"
                       title="刪除歌曲"
                     >
-                      <Trash2 size={11} className="text-red-400" />
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -254,11 +294,11 @@ function SongLibrary() {
           )}
         </div>
 
-        {/* 歌曲數量 */}
-        <div className="px-3 py-1.5 border-t border-border-dim text-[10px] text-text-dim font-body">
-          共 {songs.length} 首歌曲
+        {/* 底部統計 */}
+        <div className="px-4 py-2 border-t border-[#2A2D35] bg-[#16181D] text-[11px] font-mono text-[#6B7280] shrink-0">
+          {songs.length} TRACKS
         </div>
-      </aside>
+      </div>
 
       <AddSongModal
         isOpen={showAddModal}
@@ -270,17 +310,22 @@ function SongLibrary() {
 }
 
 // ============================================================================
-// 中欄：歌詞面板（全部歌詞 + 點擊跳轉）
+// 中欄：Cue Grid（歌詞 + 點擊跳轉 + Transport）
 // ============================================================================
 
-function LyricsPanel() {
+function CueGrid() {
   const lyrics = useLyricsStore((state) => state.lyrics);
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const jumpToLine = useLyricsStore((state) => state.jumpToLine);
   const currentSong = useLyricsStore((state) => state.currentSong);
   const displaySettings = useLyricsStore((state) => state.displaySettings);
+  const nextLine = useLyricsStore((state) => state.nextLine);
+  const prevLine = useLyricsStore((state) => state.prevLine);
 
   const activeLineRef = useRef<HTMLDivElement>(null);
+  const totalLines = lyrics.length;
+  const canGoPrev = currentIndex > 0;
+  const canGoNext = currentIndex < totalLines - 1;
 
   // 自動滾動到當前行
   useEffect(() => {
@@ -292,228 +337,7 @@ function LyricsPanel() {
     }
   }, [currentIndex, displaySettings.autoScroll]);
 
-  if (!currentSong || lyrics.length === 0) {
-    return (
-      <main className="flex-1 flex items-center justify-center bg-void/50">
-        <div className="text-center space-y-2">
-          <Music size={32} className="mx-auto text-text-dim opacity-30" />
-          <p className="font-heading text-sm text-text-dim tracking-wider">
-            未選擇歌曲
-          </p>
-          <p className="font-body text-xs text-text-dim opacity-60">
-            從左側歌曲庫選擇一首歌曲開始
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className="flex-1 flex flex-col min-w-0 bg-void/30">
-      {/* 歌曲標題 */}
-      <div className="px-4 py-2 border-b border-border-dim bg-surface/50 shrink-0">
-        <div className="flex items-center gap-2">
-          <Music size={14} className="text-primary shrink-0" />
-          <span className="font-body text-sm font-semibold text-text-primary truncate">
-            {currentSong.title}
-          </span>
-          {currentSong.artist && (
-            <span className="font-body text-xs text-text-dim truncate">
-              — {currentSong.artist}
-            </span>
-          )}
-          <span className="ml-auto font-mono text-[10px] text-text-dim shrink-0">
-            {lyrics.length} 行
-          </span>
-        </div>
-      </div>
-
-      {/* 歌詞列表 */}
-      <div className="flex-1 overflow-y-auto px-2 py-2">
-        {lyrics.map((line, idx) => {
-          const isActive = idx === currentIndex;
-          return (
-            <div
-              key={idx}
-              ref={isActive ? activeLineRef : undefined}
-              onClick={() => jumpToLine(idx)}
-              className={`flex items-start gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-150 ${
-                isActive
-                  ? "bg-primary/10 shadow-glow-sm"
-                  : "hover:bg-elevated/50"
-              }`}
-            >
-              {/* 行號 */}
-              <span
-                className={`shrink-0 w-7 text-right font-mono text-[10px] leading-5 ${
-                  isActive ? "text-primary font-bold" : "text-text-dim"
-                }`}
-              >
-                {idx + 1}
-              </span>
-
-              {/* 歌詞文字 */}
-              <span
-                className={`flex-1 text-sm leading-5 font-body transition-all duration-150 ${
-                  isActive
-                    ? "font-bold"
-                    : "text-text-muted"
-                }`}
-                style={isActive ? { color: displaySettings.highlightColor } : undefined}
-              >
-                {line || "(空行)"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </main>
-  );
-}
-
-// ============================================================================
-// 右欄：快速設定
-// ============================================================================
-
-const HIGHLIGHT_COLORS = [
-  { value: "#00D9FF", label: "藍" },
-  { value: "#A855F7", label: "紫" },
-  { value: "#00FF88", label: "綠" },
-  { value: "#FF3366", label: "粉" },
-  { value: "#FFB800", label: "金" },
-  { value: "#FF6B00", label: "橘" },
-] as const;
-
-function QuickSettings() {
-  const displaySettings = useLyricsStore((state) => state.displaySettings);
-  const updateDisplaySettings = useLyricsStore((state) => state.updateDisplaySettings);
-
-  return (
-    <aside className="w-[220px] shrink-0 flex flex-col bg-surface border-l border-border-dim overflow-y-auto">
-      {/* 標題 */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border-dim">
-        <Settings size={13} className="text-primary" />
-        <span className="font-heading text-[11px] font-semibold uppercase tracking-wider text-primary">
-          顯示設定
-        </span>
-      </div>
-
-      <div className="p-3 space-y-4 text-xs">
-        {/* 顯示行數 */}
-        <SettingRow label="顯示行數" value={displaySettings.displayLines}>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            value={displaySettings.displayLines}
-            onChange={(e) => updateDisplaySettings({ displayLines: parseInt(e.target.value, 10) })}
-            className="w-full h-1 rounded bg-primary/20 accent-primary cursor-pointer"
-          />
-        </SettingRow>
-
-        {/* 字體大小 */}
-        <SettingRow label="字體大小" value={`${displaySettings.fontSize}px`}>
-          <input
-            type="range"
-            min={16}
-            max={64}
-            step={2}
-            value={displaySettings.fontSize}
-            onChange={(e) => updateDisplaySettings({ fontSize: parseInt(e.target.value, 10) })}
-            className="w-full h-1 rounded bg-primary/20 accent-primary cursor-pointer"
-          />
-        </SettingRow>
-
-        {/* 高亮色 */}
-        <div>
-          <div className="flex items-center gap-1.5 mb-2">
-            <Palette size={11} className="text-text-muted" />
-            <span className="font-body text-[11px] text-text-muted uppercase tracking-wider">
-              高亮色
-            </span>
-          </div>
-          <div className="grid grid-cols-6 gap-1.5">
-            {HIGHLIGHT_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => updateDisplaySettings({ highlightColor: color.value })}
-                className={`w-full aspect-square rounded-md transition-all ${
-                  displaySettings.highlightColor === color.value
-                    ? "ring-2 ring-offset-1 ring-offset-surface scale-110"
-                    : "hover:scale-105 opacity-70 hover:opacity-100"
-                }`}
-                style={{
-                  backgroundColor: color.value,
-                  "--tw-ring-color": color.value,
-                } as React.CSSProperties}
-                type="button"
-                title={color.label}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* 主題 */}
-        <div>
-          <span className="block font-body text-[11px] text-text-muted uppercase tracking-wider mb-2">
-            主題
-          </span>
-          <div className="flex gap-1">
-            {(["dark", "light"] as const).map((theme) => (
-              <button
-                key={theme}
-                onClick={() => updateDisplaySettings({ theme })}
-                className={`flex-1 py-1 rounded text-[11px] font-body transition-colors ${
-                  displaySettings.theme === theme
-                    ? "bg-primary/20 text-primary border border-primary/30"
-                    : "bg-void/50 text-text-dim border border-border-dim hover:border-primary/20"
-                }`}
-                type="button"
-              >
-                {theme === "dark" ? "深色" : "淺色"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 開關選項 */}
-        <div className="space-y-2">
-          <ToggleRow
-            label="背景顯示"
-            checked={displaySettings.showBackground}
-            onChange={(v) => updateDisplaySettings({ showBackground: v })}
-          />
-          <ToggleRow
-            label="自動滾動"
-            checked={displaySettings.autoScroll}
-            onChange={(v) => updateDisplaySettings({ autoScroll: v })}
-          />
-          <ToggleRow
-            label="動畫效果"
-            checked={displaySettings.enableAnimation}
-            onChange={(v) => updateDisplaySettings({ enableAnimation: v })}
-          />
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-// ============================================================================
-// 底部控制列
-// ============================================================================
-
-function ControlBar() {
-  const currentIndex = useLyricsStore((state) => state.currentIndex);
-  const lyrics = useLyricsStore((state) => state.lyrics);
-  const nextLine = useLyricsStore((state) => state.nextLine);
-  const prevLine = useLyricsStore((state) => state.prevLine);
-
-  const totalLines = lyrics.length;
-  const canGoPrev = currentIndex > 0;
-  const canGoNext = currentIndex < totalLines - 1;
-
-  // 鍵盤快捷鍵：方向鍵控制上下句
+  // 鍵盤快捷鍵
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
@@ -522,7 +346,7 @@ function ControlBar() {
       if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
         e.preventDefault();
         if (canGoPrev) prevLine();
-      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      } else if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
         if (canGoNext) nextLine();
       }
@@ -532,84 +356,387 @@ function ControlBar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [canGoPrev, canGoNext, prevLine, nextLine]);
 
-  if (totalLines === 0) {
+  if (!currentSong || totalLines === 0) {
     return (
-      <footer className="flex items-center justify-center px-4 py-2.5 bg-surface border-t border-border-dim shrink-0">
-        <span className="text-xs text-text-dim font-body">選擇歌曲以啟用控制</span>
-      </footer>
+      <div className="h-full flex flex-col bg-[#090A0C] relative">
+        <div className="flex items-center px-4 py-3 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+          <div className="w-14 font-mono text-[11px] text-[#6B7280] uppercase">Line</div>
+          <div className="flex-1 font-mono text-[11px] text-[#6B7280] uppercase pl-3">Lyric Payload</div>
+          <div className="w-14 font-mono text-[11px] text-[#6B7280] uppercase text-right">Action</div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-[#2A2D35]">
+              <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+            <p className="font-mono text-[13px] text-[#6B7280] tracking-wider uppercase">
+              No Track Selected
+            </p>
+            <p className="font-mono text-[11px] text-[#2A2D35]">
+              Select a track from the library to begin
+            </p>
+          </div>
+        </div>
+        <div className="p-3 border-t border-[#2A2D35] shrink-0">
+          <div className="w-full h-10 bg-[#16181D] border border-[#2A2D35] flex items-center justify-center text-[#2A2D35] font-mono text-[13px] tracking-widest">
+            [ SPACE ] — GO TO NEXT CUE
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <footer className="flex items-center justify-center gap-6 px-4 py-2 bg-surface border-t border-border-dim shrink-0">
-      {/* 上一句 */}
-      <button
-        onClick={prevLine}
-        disabled={!canGoPrev}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-dim text-xs font-body hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        type="button"
-        title="上一句 (↑)"
-      >
-        <ChevronUp size={14} />
-        上一句
-      </button>
-
-      {/* 進度 */}
-      <div className="flex items-center gap-3">
-        <span className="font-mono text-sm text-primary font-bold">
-          {currentIndex + 1}
-        </span>
-        <div className="w-32 h-1 bg-void rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-200"
-            style={{ width: `${((currentIndex + 1) / totalLines) * 100}%` }}
-          />
-        </div>
-        <span className="font-mono text-sm text-text-dim">
-          {totalLines}
-        </span>
+    <div className="h-full flex flex-col bg-[#090A0C] relative">
+      {/* Cue Grid Header */}
+      <div className="flex items-center px-4 py-3 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+        <div className="w-14 font-mono text-[11px] text-[#6B7280] uppercase">Line</div>
+        <div className="flex-1 font-mono text-[11px] text-[#6B7280] uppercase pl-3">Lyric Payload</div>
+        <div className="w-14 font-mono text-[11px] text-[#6B7280] uppercase text-right">Action</div>
       </div>
 
-      {/* 下一句 */}
-      <button
-        onClick={nextLine}
-        disabled={!canGoNext}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-xs text-primary font-semibold font-body hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        type="button"
-        title="下一句 (↓)"
-      >
-        下一句
-        <ChevronDown size={14} />
-      </button>
-    </footer>
+      {/* Cue Grid Body */}
+      <div className="flex-1 overflow-y-auto pb-20 min-h-0">
+        {lyrics.map((line, idx) => {
+          const isActive = idx === currentIndex;
+          const isPast = idx < currentIndex;
+          const isNext = idx === currentIndex + 1;
+
+          if (isActive) {
+            return (
+              <div
+                key={idx}
+                ref={activeLineRef}
+                onClick={() => jumpToLine(idx)}
+                className="flex items-center px-4 py-3.5 bg-[#16181D] border-y border-primary/30 relative cursor-pointer"
+                style={{ boxShadow: "inset 4px 0 0 0 var(--color-primary, #00D9FF)" }}
+              >
+                <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                <div className="w-14 font-mono text-[13px] text-primary flex items-center gap-1.5 relative z-10">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  {String(idx + 1).padStart(2, "0")}
+                </div>
+                <div
+                  className="flex-1 pl-3 text-[16px] font-bold tracking-wide relative z-10"
+                  style={{ color: displaySettings.highlightColor, fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif" }}
+                >
+                  {line || "(空行)"}
+                </div>
+                <div className="w-14 text-right relative z-10">
+                  <span className="text-[9px] font-mono border border-primary text-primary px-1.5 py-0.5 bg-primary/10">
+                    LIVE
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={idx}
+              onClick={() => jumpToLine(idx)}
+              className={`group flex items-center px-4 py-2.5 border-b border-[#2A2D35]/30 cursor-crosshair transition-colors ${
+                isNext
+                  ? "bg-[#16181D]/30 hover:bg-[#16181D]/80"
+                  : "hover:bg-[#16181D]/50"
+              }`}
+            >
+              <div className={`w-14 font-mono text-[13px] ${isPast ? "text-[#6B7280]" : isNext ? "text-[#E4E7EB]" : "text-[#6B7280]"}`}>
+                {String(idx + 1).padStart(2, "0")}
+              </div>
+              <div
+                className={`flex-1 pl-3 text-[14px] ${isPast ? "text-[#6B7280]" : isNext ? "text-[#E4E7EB]" : "text-[#6B7280]"}`}
+                style={{ fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif" }}
+              >
+                {line || "(空行)"}
+              </div>
+              <div className="w-14 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[9px] font-mono border border-[#2A2D35] text-[#6B7280] px-1.5 py-0.5 bg-[#090A0C]">
+                  JUMP
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Transport Controls (Fixed Bottom) */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#090A0C] border-t border-[#2A2D35]">
+        <div className="flex items-center gap-3 mb-2 px-1">
+          <span className="font-mono text-[11px] text-primary font-semibold">
+            {String(currentIndex + 1).padStart(2, "0")}
+          </span>
+          <div className="flex-1 h-[2px] bg-[#2A2D35] relative">
+            <div
+              className="absolute inset-y-0 left-0 bg-primary transition-all duration-200"
+              style={{ width: `${((currentIndex + 1) / totalLines) * 100}%` }}
+            />
+          </div>
+          <span className="font-mono text-[11px] text-[#6B7280]">
+            {String(totalLines).padStart(2, "0")}
+          </span>
+        </div>
+        <button
+          onClick={() => { if (canGoNext) nextLine(); }}
+          disabled={!canGoNext}
+          className="w-full h-10 bg-[#16181D] border border-primary text-primary font-mono text-[13px] tracking-widest flex items-center justify-center gap-2 hover:bg-primary hover:text-[#090A0C] transition-colors active:scale-[0.99] disabled:opacity-30 disabled:hover:bg-[#16181D] disabled:hover:text-primary disabled:cursor-not-allowed"
+          type="button"
+        >
+          [ SPACE ] — GO TO NEXT CUE
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// 右上：即時預覽（模擬 Display 端的實際輸出）
+// ============================================================================
+
+function LivePreview() {
+  const lyrics = useLyricsStore((state) => state.lyrics);
+  const currentIndex = useLyricsStore((state) => state.currentIndex);
+  const currentSong = useLyricsStore((state) => state.currentSong);
+  const displaySettings = useLyricsStore((state) => state.displaySettings);
+
+  // 模擬 Display 端的可見行計算邏輯（同 LyricsDisplay.tsx）
+  const visibleLines = useMemo(() => {
+    if (lyrics.length === 0) return [];
+    const { displayLines } = displaySettings;
+    const halfLines = Math.floor(displayLines / 2);
+    let startIdx = Math.max(0, currentIndex - halfLines);
+    const endIdx = Math.min(lyrics.length, startIdx + displayLines);
+    if (endIdx - startIdx < displayLines) {
+      startIdx = Math.max(0, endIdx - displayLines);
+    }
+    return lyrics.slice(startIdx, endIdx).map((text, i) => ({
+      text,
+      isActive: startIdx + i === currentIndex,
+    }));
+  }, [lyrics, currentIndex, displaySettings]);
+
+  // 預覽容器的背景色
+  const previewBg = displaySettings.showBackground
+    ? displaySettings.backgroundColor
+    : "#000000";
+
+  return (
+    <div className="h-full flex flex-col border-b border-[#2A2D35] bg-[#090A0C]">
+      {/* 標題 */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+        <h3 className="text-[11px] font-mono tracking-wider text-[#6B7280] uppercase">
+          Program Out
+        </h3>
+        <div className="flex items-center gap-2">
+          {currentSong && (
+            <span className="bg-red-600 text-white text-[9px] font-mono px-1.5 py-0.5">LIVE</span>
+          )}
+          <span className="text-[11px] font-mono text-primary">Preview</span>
+        </div>
+      </div>
+
+      {/* 16:9 預覽區 — 精確模擬 Display 端 */}
+      <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+        <div
+          className="w-full aspect-video max-h-full border border-[#2A2D35] relative overflow-hidden flex flex-col items-center justify-center"
+          style={{ backgroundColor: previewBg }}
+        >
+          {/* Safe Area 導引線 */}
+          <div className="absolute inset-[5%] border border-white/5 pointer-events-none" />
+
+          {currentSong && visibleLines.length > 0 ? (
+            <div className="flex flex-col items-center justify-center gap-1 px-[10%] w-full">
+              {visibleLines.map((item, i) => (
+                <p
+                  key={i}
+                  className="text-center leading-tight transition-all duration-300"
+                  style={{
+                    fontSize: `clamp(10px, 2.5vw, ${Math.round(displaySettings.fontSize * 0.45)}px)`,
+                    color: item.isActive ? displaySettings.highlightColor : displaySettings.textColor,
+                    opacity: item.isActive ? 1 : 0.4,
+                    transform: item.isActive ? "scale(1.05)" : "scale(1)",
+                    fontWeight: item.isActive ? 700 : 400,
+                    textShadow: item.isActive
+                      ? `0 0 12px ${displaySettings.highlightColor}40, 0 0 24px ${displaySettings.highlightColor}20`
+                      : "none",
+                    fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif",
+                  }}
+                >
+                  {item.text || "\u00A0"}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[12px] text-[#2A2D35] font-mono">NO SIGNAL</p>
+          )}
+
+          {/* 角標 */}
+          <div className="absolute top-2 left-2 text-[9px] font-mono text-[#6B7280]/50">
+            {displaySettings.displayLines}L / {displaySettings.fontSize}px
+          </div>
+          <div className="absolute bottom-2 right-2 text-[9px] font-mono text-[#6B7280]/50">
+            CH 1
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// 右下：快速設定
+// ============================================================================
+
+const HIGHLIGHT_COLORS = [
+  { value: "#00D9FF", label: "Cyan" },
+  { value: "#A855F7", label: "Purple" },
+  { value: "#00FF88", label: "Green" },
+  { value: "#FF3366", label: "Pink" },
+  { value: "#FFB800", label: "Gold" },
+  { value: "#FF6B00", label: "Orange" },
+] as const;
+
+function QuickSettings() {
+  const displaySettings = useLyricsStore((state) => state.displaySettings);
+  const updateDisplaySettings = useLyricsStore((state) => state.updateDisplaySettings);
+
+  return (
+    <div className="h-full flex flex-col bg-[#16181D]">
+      {/* 標題 */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+        <h3 className="text-[11px] font-mono tracking-wider text-[#6B7280] uppercase">
+          Display Config
+        </h3>
+      </div>
+
+      {/* 設定內容 */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+        {/* 顯示行數 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-mono text-[#6B7280] uppercase">Lines</span>
+            <span className="text-[11px] font-mono text-primary">{displaySettings.displayLines}</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            value={displaySettings.displayLines}
+            onChange={(e) => updateDisplaySettings({ displayLines: parseInt(e.target.value, 10) })}
+            className="w-full h-[2px] bg-[#2A2D35] accent-primary cursor-pointer appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-none"
+          />
+        </div>
+
+        {/* 字體大小 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-mono text-[#6B7280] uppercase">Font Size</span>
+            <span className="text-[11px] font-mono text-primary">{displaySettings.fontSize}px</span>
+          </div>
+          <input
+            type="range"
+            min={16}
+            max={64}
+            step={2}
+            value={displaySettings.fontSize}
+            onChange={(e) => updateDisplaySettings({ fontSize: parseInt(e.target.value, 10) })}
+            className="w-full h-[2px] bg-[#2A2D35] accent-primary cursor-pointer appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-none"
+          />
+        </div>
+
+        {/* 高亮色 */}
+        <div>
+          <span className="block text-[11px] font-mono text-[#6B7280] uppercase mb-1.5">
+            Highlight
+          </span>
+          <div className="grid grid-cols-6 gap-1.5">
+            {HIGHLIGHT_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => updateDisplaySettings({ highlightColor: color.value })}
+                className={`w-full aspect-square border transition-all ${
+                  displaySettings.highlightColor === color.value
+                    ? "border-[#E4E7EB] scale-110"
+                    : "border-[#2A2D35] opacity-70 hover:opacity-100 hover:border-[#6B7280]"
+                }`}
+                style={{ backgroundColor: color.value }}
+                type="button"
+                title={color.label}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* 主題 */}
+        <div>
+          <span className="block text-[11px] font-mono text-[#6B7280] uppercase mb-1.5">
+            Theme
+          </span>
+          <div className="flex gap-1.5">
+            {(["dark", "light"] as const).map((theme) => (
+              <button
+                key={theme}
+                onClick={() => updateDisplaySettings({ theme })}
+                className={`flex-1 py-1.5 text-[11px] font-mono transition-colors border ${
+                  displaySettings.theme === theme
+                    ? "bg-primary/10 text-primary border-primary/40"
+                    : "bg-[#090A0C] text-[#6B7280] border-[#2A2D35] hover:border-[#6B7280]"
+                }`}
+                type="button"
+              >
+                {theme === "dark" ? "DARK" : "LIGHT"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 開關選項 */}
+        <div className="space-y-0.5">
+          <ToggleRow
+            label="BACKGROUND"
+            checked={displaySettings.showBackground}
+            onChange={(v) => updateDisplaySettings({ showBackground: v })}
+          />
+          <ToggleRow
+            label="AUTO SCROLL"
+            checked={displaySettings.autoScroll}
+            onChange={(v) => updateDisplaySettings({ autoScroll: v })}
+          />
+          <ToggleRow
+            label="ANIMATION"
+            checked={displaySettings.enableAnimation}
+            onChange={(v) => updateDisplaySettings({ enableAnimation: v })}
+          />
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="p-3 border-t border-[#2A2D35] grid grid-cols-2 gap-1.5 shrink-0">
+        <button
+          onClick={() => {
+            useLyricsStore.getState().disconnect();
+            useLyricsStore.getState().connect();
+          }}
+          className="bg-[#090A0C] border border-[#2A2D35] p-2 text-[10px] font-mono text-[#6B7280] hover:text-[#E4E7EB] hover:bg-[#16181D]/50 text-center transition-colors"
+          type="button"
+        >
+          RESTART WS
+        </button>
+        <button
+          onClick={() => useLyricsStore.getState().setCurrentSong(null)}
+          className="bg-[#090A0C] border border-[#2A2D35] p-2 text-[10px] font-mono text-[#6B7280] hover:text-[#E4E7EB] hover:bg-[#16181D]/50 text-center transition-colors"
+          type="button"
+        >
+          BLACKOUT
+        </button>
+      </div>
+    </div>
   );
 }
 
 // ============================================================================
 // 共用小元件
 // ============================================================================
-
-function SettingRow({
-  label,
-  value,
-  children,
-}: {
-  label: string;
-  value: string | number;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="font-body text-[11px] text-text-muted uppercase tracking-wider">
-          {label}
-        </span>
-        <span className="font-mono text-[11px] text-primary font-semibold">{value}</span>
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function ToggleRow({
   label,
@@ -621,22 +748,23 @@ function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between cursor-pointer group">
-      <span className="font-body text-[11px] text-text-muted group-hover:text-text-primary transition-colors">
+    <label className="flex items-center justify-between py-2 cursor-pointer group border-b border-[#2A2D35]/30">
+      <span className="text-[11px] font-mono text-[#6B7280] group-hover:text-[#E4E7EB] transition-colors">
         {label}
       </span>
-      <div
+      <button
         onClick={() => onChange(!checked)}
-        className={`w-7 h-4 rounded-full transition-colors cursor-pointer flex items-center ${
-          checked ? "bg-primary/40" : "bg-void"
+        className={`w-8 h-4 transition-colors flex items-center border ${
+          checked ? "bg-primary/20 border-primary/40" : "bg-[#090A0C] border-[#2A2D35]"
         }`}
+        type="button"
       >
         <div
-          className={`w-3 h-3 rounded-full transition-all ${
-            checked ? "translate-x-3.5 bg-primary" : "translate-x-0.5 bg-text-dim"
+          className={`w-3 h-3 transition-all ${
+            checked ? "translate-x-[18px] bg-primary" : "translate-x-[1px] bg-[#6B7280]"
           }`}
         />
-      </div>
+      </button>
     </label>
   );
 }

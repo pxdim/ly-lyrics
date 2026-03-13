@@ -1,5 +1,5 @@
 /**
- * 新增歌曲對話框
+ * 新增歌曲對話框 — Broadcast Console 風格
  *
  * 支援手動輸入歌名、歌手、歌詞（一行一句）。
  */
@@ -7,7 +7,6 @@
 "use client";
 
 import { type FC, useState, useRef, useEffect } from "react";
-import { X, Plus, Music } from "lucide-react";
 import { createSong } from "@/lib/api/songs";
 
 interface AddSongModalProps {
@@ -80,6 +79,9 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
 
   if (!isOpen) return null;
 
+  const inputClass =
+    "w-full px-3 py-2 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -91,21 +93,25 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
       {/* 對話框 */}
-      <div className="relative w-full max-w-lg mx-4 bg-elevated border border-border-primary rounded-xl overflow-hidden shadow-glow-md">
+      <div className="relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] overflow-hidden">
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border-dim bg-void/50">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2A2D35] bg-[#090A0C]">
           <div className="flex items-center gap-2">
-            <Music size={16} className="text-primary" />
-            <span className="font-heading text-sm font-semibold uppercase tracking-wider text-primary">
-              新增歌曲
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+              <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+            <span className="font-mono text-[13px] font-semibold uppercase tracking-wider text-primary">
+              Add Track
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg border border-border-dim hover:bg-primary/10 hover:border-primary/30 transition-colors"
+            className="p-1.5 border border-[#2A2D35] hover:bg-primary/10 hover:border-primary/30 transition-colors"
             type="button"
           >
-            <X size={14} className="text-text-muted" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280]">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -113,8 +119,8 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
         <div className="p-5 space-y-4">
           {/* 歌名 */}
           <div>
-            <label className="block font-body text-xs text-text-muted uppercase tracking-wider mb-1.5">
-              歌曲名稱 *
+            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+              Title *
             </label>
             <input
               ref={titleRef}
@@ -122,63 +128,65 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="輸入歌曲名稱..."
-              className="w-full px-3 py-2 bg-void/50 border border-border-dim rounded-lg text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-primary/50 transition-colors font-body"
+              className={inputClass}
             />
           </div>
 
           {/* 歌手 */}
           <div>
-            <label className="block font-body text-xs text-text-muted uppercase tracking-wider mb-1.5">
-              歌手
+            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+              Artist
             </label>
             <input
               type="text"
               value={artist}
               onChange={(e) => setArtist(e.target.value)}
               placeholder="輸入歌手名稱（選填）..."
-              className="w-full px-3 py-2 bg-void/50 border border-border-dim rounded-lg text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-primary/50 transition-colors font-body"
+              className={inputClass}
             />
           </div>
 
           {/* 歌詞 */}
           <div>
-            <label className="block font-body text-xs text-text-muted uppercase tracking-wider mb-1.5">
-              歌詞 *（一行一句）
+            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+              Lyrics * (one line per cue)
             </label>
             <textarea
               value={lyricsText}
               onChange={(e) => setLyricsText(e.target.value)}
               placeholder={"第一行歌詞\n第二行歌詞\n第三行歌詞\n..."}
               rows={10}
-              className="w-full px-3 py-2 bg-void/50 border border-border-dim rounded-lg text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-primary/50 transition-colors font-body resize-y"
+              className={`${inputClass} resize-y`}
             />
           </div>
 
           {/* 錯誤訊息 */}
           {error && (
-            <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400 font-body">
+            <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 text-[13px] text-red-400 font-mono">
               {error}
             </div>
           )}
         </div>
 
         {/* 按鈕列 */}
-        <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-border-dim bg-void/30">
+        <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-border-dim text-sm text-text-muted hover:bg-elevated transition-colors font-body"
+            className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono"
             type="button"
           >
-            取消
+            CANCEL
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 border border-primary/40 text-sm text-primary font-semibold hover:bg-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-body"
+            className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-mono"
             type="button"
           >
-            <Plus size={14} />
-            {isSubmitting ? "建立中..." : "新增歌曲"}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {isSubmitting ? "ADDING..." : "ADD TRACK"}
           </button>
         </div>
       </div>
