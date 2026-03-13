@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -49,6 +50,9 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
+			// 禁用 HTTP/2，確保 reverse proxy（Railway edge）使用 HTTP/1.1 與後端通訊，
+			// 保留 WebSocket upgrade 所需的 Connection 和 Upgrade hop-by-hop headers
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 		},
 	}
 
