@@ -55,7 +55,10 @@ func (h *EventHandler) HandleMessage(client *Client, msg *Message) {
 	}
 }
 
-// HandleDisconnect 處理客戶端斷線，清理 Redis 與 Hub 狀態
+// HandleDisconnect 處理客戶端斷線，清理 Redis 與 Hub 狀態。
+// 注意：此方法在 ReadPump defer 中呼叫，client 即將被 unregister。
+// Hub.unregister 會在此方法之後執行，因此 GetSessionCounts 仍包含此 client。
+// 這裡先從 Hub session 分組移除，確保計數正確。
 func (h *EventHandler) HandleDisconnect(client *Client) {
 	if client.sessionID == "" {
 		return
@@ -63,6 +66,10 @@ func (h *EventHandler) HandleDisconnect(client *Client) {
 
 	ctx := context.Background()
 	sessionID := client.sessionID
+	clientRole := client.role
+
+	// 先從 Hub session 分組移除，確保後續 GetSessionCounts 不包含自己
+	h.hub.LeaveSession(client)
 
 	// 從 Redis 移除 client
 	if err := h.redisClient.RemoveClient(ctx, sessionID, client.id); err != nil {
@@ -84,7 +91,7 @@ func (h *EventHandler) HandleDisconnect(client *Client) {
 		return
 	}
 
-	// 更新 session 中的連線計數
+	// 取得移除後的正確計數
 	controllers, displays := h.hub.GetSessionCounts(sessionID)
 	state, _ := h.redisClient.GetSession(ctx, sessionID)
 	if state != nil {
@@ -96,7 +103,7 @@ func (h *EventHandler) HandleDisconnect(client *Client) {
 	// 廣播 client_left 事件
 	h.broadcastJSON(sessionID, MsgClientLeft, ClientEventPayload{
 		ClientID:        client.id,
-		Role:            client.role,
+		Role:            clientRole,
 		ControllerCount: controllers,
 		DisplayCount:    displays,
 	}, nil)
@@ -170,6 +177,10 @@ func (h *EventHandler) handleLeaveSession(ctx context.Context, client *Client) {
 	}
 
 	sessionID := client.sessionID
+	clientRole := client.role
+
+	// 先從 Hub session 分組移除，確保後續 GetSessionCounts 不包含自己
+	h.hub.LeaveSession(client)
 
 	// 從 Redis 移除 client
 	if err := h.redisClient.RemoveClient(ctx, sessionID, client.id); err != nil {
@@ -186,7 +197,7 @@ func (h *EventHandler) handleLeaveSession(ctx context.Context, client *Client) {
 		// 無其他 client，清理 session
 		_ = h.redisClient.DeleteSession(ctx, sessionID)
 	} else {
-		// 更新連線計數並廣播
+		// 取得移除後的正確計數
 		controllers, displays := h.hub.GetSessionCounts(sessionID)
 		state, _ := h.redisClient.GetSession(ctx, sessionID)
 		if state != nil {
@@ -196,14 +207,11 @@ func (h *EventHandler) handleLeaveSession(ctx context.Context, client *Client) {
 		}
 		h.broadcastJSON(sessionID, MsgClientLeft, ClientEventPayload{
 			ClientID:        client.id,
-			Role:            client.role,
+			Role:            clientRole,
 			ControllerCount: controllers,
 			DisplayCount:    displays,
 		}, nil)
 	}
-
-	// 從 Hub 的 session 分組中移除
-	h.hub.LeaveSession(client)
 }
 
 // handleChangeLine 處理指定行切換（僅 controller 可操作）
@@ -222,6 +230,12 @@ func (h *EventHandler) handleChangeLine(ctx context.Context, client *Client, pay
 	state, err := h.redisClient.GetSession(ctx, client.sessionID)
 	if err != nil || state == nil {
 		h.sendError(client, "Session 不存在")
+		return
+	}
+
+	// 上界驗證：防止 lineIndex 超出歌詞範圍
+	if state.CurrentSong != nil && p.LineIndex >= len(state.CurrentSong.Lyrics) {
+		h.sendError(client, "lineIndex 超出歌詞行數範圍")
 		return
 	}
 

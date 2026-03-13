@@ -83,9 +83,26 @@ func (h *Hub) Run() {
 				}
 			}
 			h.mu.RUnlock()
-			// 溢位的 client 透過 unregister channel 清理，避免在 RLock 下修改 map
-			for _, c := range overflowed {
-				h.unregister <- c
+			// 溢位的 client 直接在此處清理，避免向 unregister channel 發送造成自我死鎖
+			// （Run() 是唯一消費 unregister 的 goroutine，在此處發送會永久阻塞）
+			if len(overflowed) > 0 {
+				h.mu.Lock()
+				for _, c := range overflowed {
+					if _, ok := h.clients[c]; ok {
+						delete(h.clients, c)
+						if c.sessionID != "" {
+							if sc, ok := h.sessions[c.sessionID]; ok {
+								delete(sc, c)
+								if len(sc) == 0 {
+									delete(h.sessions, c.sessionID)
+								}
+							}
+						}
+						close(c.send)
+						slog.Warn("WebSocket client 因 send buffer 溢位被移除", "clientID", c.id)
+					}
+				}
+				h.mu.Unlock()
 			}
 		}
 	}

@@ -155,21 +155,22 @@ func (c *Client) HasClients(ctx context.Context, sessionID string) (bool, error)
 }
 
 // RemoveClient 依 clientID 從 session 的 clients 集合中移除對應客戶端。
-// 需先讀取所有成員以找到匹配的 JSON 字串，因為 Redis SET 以完整值為鍵。
+// 直接使用 SMembers 原始字串做 SREM，避免重新序列化 JSON 時因 key 順序不同導致 SREM 靜默失敗。
 func (c *Client) RemoveClient(ctx context.Context, sessionID string, clientID string) error {
-	clients, err := c.GetSessionClients(ctx, sessionID)
+	key := sessionClientsPrefix + sessionID
+	members, err := c.rdb.SMembers(ctx, key).Result()
 	if err != nil {
-		return err
+		return fmt.Errorf("redis smembers for removal: %w", err)
 	}
 
-	key := sessionClientsPrefix + sessionID
-	for _, cl := range clients {
-		if cl.ClientID == clientID {
-			data, err := json.Marshal(cl)
-			if err != nil {
-				return fmt.Errorf("marshal client for removal: %w", err)
-			}
-			return c.rdb.SRem(ctx, key, data).Err()
+	for _, raw := range members {
+		var info ClientInfo
+		if err := json.Unmarshal([]byte(raw), &info); err != nil {
+			continue
+		}
+		if info.ClientID == clientID {
+			// 用原始 raw 字串做 SREM，確保完全匹配
+			return c.rdb.SRem(ctx, key, raw).Err()
 		}
 	}
 

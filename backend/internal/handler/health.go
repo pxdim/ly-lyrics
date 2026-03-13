@@ -50,5 +50,9 @@ func (h *Health) Check(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// 回傳正確的 HTTP status code，讓 Railway/Docker 健康檢查能正確偵測服務降級
+	if status != "ok" {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
 	json.NewEncoder(w).Encode(resp)
 }

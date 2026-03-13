@@ -126,10 +126,11 @@ export const useLyricsStore = create<LyricsStore>()(
         // Song Actions
         // ========================================
         setCurrentSong: (song) => {
-          set({ currentSong: song, currentIndex: 0 });
-          if (song?.lyrics) {
-            set({ lyrics: song.lyrics });
-          }
+          set({
+            currentSong: song,
+            currentIndex: 0,
+            lyrics: song?.lyrics ?? [],
+          });
         },
 
         setLyrics: (lyrics) => {
@@ -188,7 +189,19 @@ export const useLyricsStore = create<LyricsStore>()(
           try {
             const ws = initNativeWSClient();
 
-            // Set up event listeners
+            // 先清除所有舊監聽器，防止多次 connect() 導致監聽器累積（記憶體洩漏）
+            ws.removeAllListeners();
+
+            // 連線狀態追蹤：透過內部事件同步真實 WebSocket 狀態
+            ws.on("_connected", () => {
+              set({ isConnected: true });
+            });
+
+            ws.on("_disconnected", () => {
+              set({ isConnected: false });
+            });
+
+            // 業務事件監聽
             ws.on("line_changed", ({ lineIndex }) => {
               set({ currentIndex: lineIndex });
             });
@@ -228,7 +241,10 @@ export const useLyricsStore = create<LyricsStore>()(
               set({ error: message });
             });
 
-            set({ isConnected: true });
+            // 如果 WebSocket 已經連上（singleton 可能已經在連線中），立即同步狀態
+            if (ws.isConnected()) {
+              set({ isConnected: true });
+            }
           } catch (error) {
             console.error("Failed to connect to WebSocket:", error);
             set({
@@ -239,6 +255,7 @@ export const useLyricsStore = create<LyricsStore>()(
 
         disconnect: () => {
           const ws = initNativeWSClient();
+          ws.removeAllListeners();
           ws.disconnect();
           set({
             isConnected: false,

@@ -128,7 +128,8 @@ func TestSettingsUpdate_NonJSON(t *testing.T) {
 	rr := executeRequest(h.Update, req)
 
 	assertStatus(t, rr, http.StatusBadRequest)
-	assertErrorCode(t, rr, "SETTINGS_INVALID_FORMAT")
+	// 改用 decodeAndValidate 後，JSON 解析錯誤統一回傳 VALIDATION_ERROR
+	assertErrorCode(t, rr, "VALIDATION_ERROR")
 }
 
 // ────────────────────────────────────────────────────────────

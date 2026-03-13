@@ -18,6 +18,14 @@ interface WSMessage {
 
 type EventCallback = (...args: never[]) => void;
 
+// 內部事件（連線狀態通知），與 ServerToClientEvents 分開
+type InternalEvents = {
+  _connected: () => void;
+  _disconnected: () => void;
+};
+
+type AllEvents = ServerToClientEvents & InternalEvents;
+
 // ============================================================================
 // NativeWSClient
 // ============================================================================
@@ -48,6 +56,12 @@ export class NativeWSClient {
   // ============================================================================
 
   connect(): void {
+    // SSR 保護：伺服器端不支援 WebSocket
+    if (typeof WebSocket === "undefined") {
+      console.warn("[NativeWS] WebSocket 不可用（可能在 SSR 環境）");
+      return;
+    }
+
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
     this.ws = new WebSocket(this.url);
@@ -56,6 +70,7 @@ export class NativeWSClient {
     this.ws.onopen = () => {
       console.log("[NativeWS] Connected to server");
       this.reconnectAttempts = 0;
+      this.emit("_connected", undefined);
       // 重新連線後自動重新加入先前的 session
       if (this.currentSessionId && this.lastRole) {
         this.joinSession(this.currentSessionId, this.lastRole, this.lastUserId);
@@ -64,6 +79,7 @@ export class NativeWSClient {
 
     this.ws.onclose = () => {
       console.log("[NativeWS] Disconnected");
+      this.emit("_disconnected", undefined);
       if (this.shouldReconnect) {
         this.attemptReconnect();
       }
@@ -175,9 +191,9 @@ export class NativeWSClient {
   // 事件監聽
   // ============================================================================
 
-  on<K extends keyof ServerToClientEvents>(
+  on<K extends keyof AllEvents>(
     event: K,
-    callback: ServerToClientEvents[K]
+    callback: AllEvents[K]
   ): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -185,15 +201,23 @@ export class NativeWSClient {
     this.listeners.get(event)!.add(callback as EventCallback);
   }
 
-  off<K extends keyof ServerToClientEvents>(
+  off<K extends keyof AllEvents>(
     event: K,
-    callback?: ServerToClientEvents[K]
+    callback?: AllEvents[K]
   ): void {
     if (callback) {
       this.listeners.get(event)?.delete(callback as EventCallback);
     } else {
+      // 移除該事件的所有監聽器
       this.listeners.delete(event);
     }
+  }
+
+  /**
+   * 移除所有事件監聽器（用於 connect 前清理，防止監聽器累積）
+   */
+  removeAllListeners(): void {
+    this.listeners.clear();
   }
 
   // ============================================================================
@@ -233,32 +257,21 @@ export class NativeWSClient {
 
 let nativeWSClientInstance: NativeWSClient | null = null;
 
+/**
+ * 取得或建立 NativeWSClient singleton。
+ * SSR 環境下安全：不會在伺服器端建立 WebSocket 連線。
+ */
 export function initNativeWSClient(url?: string): NativeWSClient {
   if (!nativeWSClientInstance) {
     nativeWSClientInstance = new NativeWSClient(url);
-    nativeWSClientInstance.connect();
+    // 只在瀏覽器環境自動連線
+    if (typeof window !== "undefined") {
+      nativeWSClientInstance.connect();
+    }
   }
   return nativeWSClientInstance;
 }
 
 export function getNativeWSClient(): NativeWSClient | null {
   return nativeWSClientInstance;
-}
-
-// ============================================================================
-// 相容性輔助函式（取代舊 Socket.IO client 的對外介面）
-// ============================================================================
-
-/**
- * 建立原生 WebSocket client（使用 Go backend）
- */
-export function createWSClient(url?: string): NativeWSClient {
-  return initNativeWSClient(url);
-}
-
-/**
- * 取得當前的 WebSocket client
- */
-export function getActiveWSClient(): NativeWSClient | null {
-  return getNativeWSClient();
 }

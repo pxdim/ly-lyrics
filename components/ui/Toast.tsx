@@ -267,14 +267,9 @@ export const ToastProvider: FC<ToastProviderProps> = ({
         return [...trimmed, newToast];
       });
 
-      // Auto-remove if duration is set
-      if (toast.duration !== 0) {
-        setTimeout(() => {
-          removeToast(id);
-        }, toast.duration ?? 5000);
-      }
+      // 自動移除由 ToastItem useEffect 統一處理，避免雙重 timer
     },
-    [maxToasts, removeToast]
+    [maxToasts]
   );
 
   const showError = useCallback(

@@ -4,7 +4,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -52,11 +51,10 @@ func (h *Settings) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
-// Update PUT /api/settings — 更新設定（僅更新提供的欄位）
+// Update PUT /api/settings — 更新設定（僅更新提供的欄位，含 validate tag 驗證）
 func (h *Settings) Update(w http.ResponseWriter, r *http.Request) {
 	var req dto.UpdateSettingsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "SETTINGS_INVALID_FORMAT", "Invalid JSON format", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 

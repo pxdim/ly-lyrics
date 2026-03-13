@@ -23,14 +23,22 @@ func (s *Server) setupMiddleware() {
 	// 結構化日誌（使用 slog）
 	s.router.Use(structuredLogger)
 
-	// CORS
+	// CORS — 禁止 wildcard(*) + credentials 組合（瀏覽器會拒絕）
 	origins := strings.Split(s.cfg.CORSOrigins, ",")
+	allowCredentials := true
+	for _, o := range origins {
+		if strings.TrimSpace(o) == "*" {
+			allowCredentials = false
+			slog.Warn("CORS_ORIGINS 包含 wildcard(*)，已自動停用 AllowCredentials 以符合瀏覽器規範")
+			break
+		}
+	}
 	s.router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   origins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
+		AllowCredentials: allowCredentials,
 		MaxAge:           300,
 	}))
 

@@ -14,7 +14,7 @@ type Config struct {
 	DatabaseURL string `env:"DATABASE_URL,required"`
 	// RedisURL Redis 連線字串（Phase 2/3 WebSocket 遷移時使用）
 	RedisURL string `env:"REDIS_URL" envDefault:""`
-	// JWTSecret JWT 簽名密鑰
+	// JWTSecret JWT 簽名密鑰（生產環境必填）
 	JWTSecret string `env:"JWT_SECRET" envDefault:""`
 	// JWTExpiry JWT access token 有效時間（小時）
 	JWTExpiry int `env:"JWT_EXPIRY_HOURS" envDefault:"24"`
@@ -30,5 +30,15 @@ func Load() (*Config, error) {
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("解析設定失敗: %w", err)
 	}
+
+	// 生產環境必須設定 JWT_SECRET，防止空密鑰導致 token 可被偽造
+	if cfg.Environment == "production" && cfg.JWTSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET 在生產環境中為必填項")
+	}
+	// 開發環境給予預設值避免啟動失敗，但仍記錄警告
+	if cfg.JWTSecret == "" {
+		cfg.JWTSecret = "dev-insecure-jwt-secret-do-not-use-in-production"
+	}
+
 	return cfg, nil
 }

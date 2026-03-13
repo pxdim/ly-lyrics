@@ -23,16 +23,17 @@ import (
 
 // Server 封裝 HTTP server 及其依賴
 type Server struct {
-	cfg         *config.Config
-	router      *chi.Mux
-	db          *ent.Client
-	sqlDB       *sql.DB
-	http        *http.Server
-	jwtManager  *auth.JWTManager
-	userService *service.UserService
-	hub         *ws.Hub
-	wsHandler   *handler.WSHandler
-	authLimiter *middleware.RateLimiter
+	cfg            *config.Config
+	router         *chi.Mux
+	db             *ent.Client
+	sqlDB          *sql.DB
+	http           *http.Server
+	jwtManager     *auth.JWTManager
+	userService    *service.UserService
+	sessionService *service.SessionService
+	hub            *ws.Hub
+	wsHandler      *handler.WSHandler
+	authLimiter    *middleware.RateLimiter
 }
 
 // New 建立新的 Server 實例
@@ -59,6 +60,7 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 	// 初始化認證與使用者服務
 	s.jwtManager = auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 	s.userService = service.NewUserService(db)
+	s.sessionService = service.NewSessionService(db)
 
 	// 初始化 Auth 速率限制器（每分鐘 10 次）
 	s.authLimiter = middleware.NewRateLimiter(10, 60)

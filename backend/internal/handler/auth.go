@@ -5,6 +5,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -22,10 +23,22 @@ type UserServicer interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*ent.User, error)
 }
 
+// SessionStore 定義 refresh token 撤銷所需的 session 儲存介面。
+// 當提供此介面時，refresh handler 會驗證 token JTI 是否有效，並在輪換後撤銷舊 token。
+type SessionStore interface {
+	// StoreRefreshToken 將 refresh token 的 JTI 寫入儲存，記錄 userID 及過期時間
+	StoreRefreshToken(ctx context.Context, jti string, userID uuid.UUID, expiresAt time.Time) error
+	// ValidateRefreshToken 驗證 JTI 是否存在且有效
+	ValidateRefreshToken(ctx context.Context, jti string) (bool, error)
+	// RevokeRefreshToken 撤銷指定 JTI 的 refresh token
+	RevokeRefreshToken(ctx context.Context, jti string) error
+}
+
 // AuthHandler 認證相關 HTTP handlers
 type AuthHandler struct {
-	userService UserServicer
-	jwtManager  *auth.JWTManager
+	userService  UserServicer
+	jwtManager   *auth.JWTManager
+	sessionStore SessionStore // 可選：為 nil 時 refresh 不驗證 JTI（向下相容測試）
 }
 
 // NewAuthHandler 建立 AuthHandler 實例（使用具體的 *service.UserService）
@@ -36,6 +49,27 @@ func NewAuthHandler(userService *service.UserService, jwtManager *auth.JWTManage
 // NewAuthHandlerWithService 建立 AuthHandler 實例，接受 UserServicer 介面（便於測試注入 mock）
 func NewAuthHandlerWithService(userService UserServicer, jwtManager *auth.JWTManager) *AuthHandler {
 	return &AuthHandler{userService: userService, jwtManager: jwtManager}
+}
+
+// NewAuthHandlerFull 建立完整的 AuthHandler，包含 session store 以支援 refresh token 撤銷
+func NewAuthHandlerFull(userService *service.UserService, jwtManager *auth.JWTManager, sessionStore SessionStore) *AuthHandler {
+	return &AuthHandler{userService: userService, jwtManager: jwtManager, sessionStore: sessionStore}
+}
+
+// storeRefreshTokenJTI 將 refresh token 的 JTI 存入 session store（若 store 可用）
+func (h *AuthHandler) storeRefreshTokenJTI(ctx context.Context, refreshToken string, userID uuid.UUID) {
+	if h.sessionStore == nil {
+		return
+	}
+	claims, err := h.jwtManager.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		slog.Error("解析新 refresh token 以儲存 JTI 失敗", "error", err)
+		return
+	}
+	expiresAt := claims.ExpiresAt.Time
+	if err := h.sessionStore.StoreRefreshToken(ctx, claims.ID, userID, expiresAt); err != nil {
+		slog.Error("儲存 refresh token JTI 失敗", "error", err)
+	}
 }
 
 // Login POST /api/auth/login — 使用者登入
@@ -66,6 +100,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "SYS_INTERNAL_ERROR", "Token 生成失敗", http.StatusInternalServerError)
 		return
 	}
+
+	// 將 refresh token JTI 寫入 session store（若可用）
+	h.storeRefreshTokenJTI(r.Context(), refreshToken, u.ID)
 
 	writeJSON(w, http.StatusOK, dto.AuthResponse{
 		AccessToken:  accessToken,
@@ -110,6 +147,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "SYS_INTERNAL_ERROR", "Token 生成失敗", http.StatusInternalServerError)
 		return
 	}
+
+	// 將 refresh token JTI 寫入 session store（若可用）
+	h.storeRefreshTokenJTI(r.Context(), refreshToken, u.ID)
 
 	writeJSON(w, http.StatusCreated, dto.AuthResponse{
 		AccessToken:  accessToken,
@@ -156,7 +196,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Refresh POST /api/auth/refresh — 更新 access token
+// Refresh POST /api/auth/refresh — 更新 access token（含 token 輪換與撤銷）
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshRequest
 	if !decodeAndValidate(w, r, &req) {
@@ -167,6 +207,20 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, "AUTH_TOKEN_EXPIRED", "Refresh token 無效或過期", http.StatusUnauthorized)
 		return
+	}
+
+	// 若有 session store，驗證 JTI 是否仍有效（防止已撤銷的 token 被重用）
+	if h.sessionStore != nil && claims.ID != "" {
+		valid, err := h.sessionStore.ValidateRefreshToken(r.Context(), claims.ID)
+		if err != nil {
+			slog.Error("驗證 refresh token JTI 失敗", "error", err)
+			writeError(w, "SYS_INTERNAL_ERROR", "內部錯誤", http.StatusInternalServerError)
+			return
+		}
+		if !valid {
+			writeError(w, "AUTH_TOKEN_REVOKED", "Refresh token 已被撤銷", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	userID, err := uuid.Parse(claims.Subject)
@@ -192,6 +246,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "SYS_INTERNAL_ERROR", "Token 生成失敗", http.StatusInternalServerError)
 		return
 	}
+
+	// Token 輪換：撤銷舊 token，儲存新 token
+	if h.sessionStore != nil && claims.ID != "" {
+		if err := h.sessionStore.RevokeRefreshToken(r.Context(), claims.ID); err != nil {
+			slog.Error("撤銷舊 refresh token 失敗", "error", err)
+		}
+	}
+	h.storeRefreshTokenJTI(r.Context(), newRefreshToken, u.ID)
 
 	writeJSON(w, http.StatusOK, dto.AuthResponse{
 		AccessToken:  accessToken,

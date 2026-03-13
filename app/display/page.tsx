@@ -19,24 +19,37 @@ export default function DisplayPage() {
   const [isConnected, setIsConnected] = useState(false);
   const connect = useLyricsStore((state) => state.connect);
   const disconnect = useLyricsStore((state) => state.disconnect);
+  const joinSession = useLyricsStore((state) => state.joinSession);
+  const leaveSession = useLyricsStore((state) => state.leaveSession);
+  const wsConnected = useLyricsStore((state) => state.isConnected);
   const currentSong = useLyricsStore((state) => state.currentSong);
 
-  // Handle connection — connect is a stable Zustand action, exclude from deps
+  // 連線並加入 session — 當輸入完 6 碼同步碼後觸發
   useEffect(() => {
     if (connectionCode.length === 6) {
-      // Simulate connection - in production, this would validate via WebSocket
-      setIsConnected(true);
       connect();
+      // 使用同步碼作為 sessionId，以 display 角色加入
+      joinSession(connectionCode, "display");
+      setIsConnected(true);
     }
+    // connect/joinSession 是穩定的 Zustand action
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionCode]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      leaveSession();
       disconnect();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 若 WebSocket 斷線，同步更新 UI（實際連線狀態來自 store）
+  useEffect(() => {
+    if (!wsConnected && isConnected) {
+      // WebSocket 斷線但 UI 仍顯示已連線 — 保持 UI 不變，等待自動重連
+    }
+  }, [wsConnected, isConnected]);
 
   // Connection Screen
   if (!isConnected) {

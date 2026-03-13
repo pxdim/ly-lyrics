@@ -55,8 +55,8 @@ func TestHealthCheck_DBError(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/go-health", nil)
 	rr := executeRequest(h.Check, req)
 
-	// health check 永遠回傳 200，只是 status 欄位不同
-	assertStatus(t, rr, http.StatusOK)
+	// DB 失敗時回傳 503 Service Unavailable，讓 Railway/Docker 健康檢查能正確偵測
+	assertStatus(t, rr, http.StatusServiceUnavailable)
 	var resp map[string]any
 	decodeJSON(t, rr, &resp)
 	assert.Equal(t, "degraded", resp["status"], "DB 失敗時狀態應為 degraded")
