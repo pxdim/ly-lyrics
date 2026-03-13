@@ -14,6 +14,7 @@ import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
 import { fetchPlaylists, createPlaylist, updatePlaylist, deletePlaylist, type ClientPlaylist } from "@/lib/api/playlists";
 import { AddSongModal } from "@/components/controller/AddSongModal";
+import { QRCodePanel } from "@/components/controller/QRCodePanel";
 import { generateSessionCode } from "@/lib/websocket/session-code";
 
 // ============================================================================
@@ -82,40 +83,47 @@ export default function ControllerPage() {
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
       <StatusBar sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />
-      <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
-        {/* 左欄：歌曲庫 + 播放清單 */}
-        <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
-          <LibraryPanel />
-        </Panel>
-        <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
-          <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-        </Separator>
+      <div className="flex flex-1 min-h-0">
+        <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
+          {/* 左欄：歌曲庫 + 播放清單 */}
+          <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
+            <LibraryPanel />
+          </Panel>
+          <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
+            <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+          </Separator>
 
-        {/* 中欄：Cue Grid */}
-        <Panel id="cues" defaultSize="45%" minSize="30%">
-          <CueGrid />
-        </Panel>
-        <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
-          <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-        </Separator>
+          {/* 中欄：Cue Grid */}
+          <Panel id="cues" defaultSize="45%" minSize="30%">
+            <CueGrid />
+          </Panel>
+          <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
+            <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+          </Separator>
 
-        {/* 右欄：預覽 + 設定 (垂直分割) */}
-        <Panel id="right" defaultSize="35%" minSize="20%" maxSize="50%">
-          <Group orientation="vertical" id="controller-right">
-            {/* 上：即時預覽 */}
-            <Panel id="preview" defaultSize="45%" minSize="20%">
-              <LivePreview />
-            </Panel>
-            <Separator className="h-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-row-resize flex items-center justify-center group">
-              <div className="h-px w-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-            </Separator>
-            {/* 下：快速設定 */}
-            <Panel id="settings" defaultSize="55%" minSize="25%">
-              <QuickSettings />
-            </Panel>
-          </Group>
-        </Panel>
-      </Group>
+          {/* 右欄：預覽 + 設定 (垂直分割) */}
+          <Panel id="right" defaultSize="35%" minSize="20%" maxSize="50%">
+            <Group orientation="vertical" id="controller-right">
+              {/* 上：即時預覽 */}
+              <Panel id="preview" defaultSize="45%" minSize="20%">
+                <LivePreview />
+              </Panel>
+              <Separator className="h-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-row-resize flex items-center justify-center group">
+                <div className="h-px w-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
+              </Separator>
+              {/* 下：快速設定 */}
+              <Panel id="settings" defaultSize="55%" minSize="25%">
+                <QuickSettings />
+              </Panel>
+            </Group>
+          </Panel>
+        </Group>
+
+        {/* 桌面 QR 側欄（≥1280px 才顯示） */}
+        <aside className="hidden xl:flex w-[200px] border-l border-[#2A2D35] bg-[#16181D] flex-col items-center justify-center shrink-0">
+          <QRCodePanel sessionCode={sessionCode} size={130} />
+        </aside>
+      </div>
     </div>
   );
 }
@@ -130,6 +138,7 @@ function StatusBar({ sessionCode, onRegenerate }: { sessionCode: string; onRegen
   const displayCount = useLyricsStore((state) => state.displayCount);
   const currentSong = useLyricsStore((state) => state.currentSong);
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const [showQR, setShowQR] = useState(false);
 
   const copyToClipboard = useCallback(async (type: "code" | "link") => {
     const text = type === "code"
@@ -210,6 +219,55 @@ function StatusBar({ sessionCode, onRegenerate }: { sessionCode: string; onRegen
             </svg>
             新房間
           </button>
+
+          {/* QR Code 按鈕（平板/手機用） */}
+          <div className="relative xl:hidden">
+            <button
+              type="button"
+              onClick={() => setShowQR(!showQR)}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-[#090A0C] border border-[#2A2D35] rounded-md hover:border-primary/40 hover:bg-primary/5 transition-all text-[11px] font-mono text-[#6B7280] hover:text-primary cursor-pointer"
+              title="顯示 QR Code"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="3" height="3" />
+                <path d="M21 14h-3v3" /><path d="M21 21h-3v-3" />
+              </svg>
+              QR
+            </button>
+
+            {/* Popover (平板) / Modal (手機) */}
+            {showQR && (
+              <>
+                {/* 背景遮罩 — 手機為半透明，平板為透明（僅用於 click-outside） */}
+                <div
+                  className="fixed inset-0 z-40 bg-black/50 md:bg-transparent"
+                  onClick={() => setShowQR(false)}
+                />
+
+                {/* 手機：居中 Modal */}
+                <div className="fixed inset-0 z-50 flex items-center justify-center md:hidden">
+                  <div className="bg-[#16181D] border border-[#2A2D35] rounded-2xl shadow-xl">
+                    <QRCodePanel sessionCode={sessionCode} size={200} />
+                    <div className="px-4 pb-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowQR(false)}
+                        className="px-4 py-1.5 text-xs text-[#6B7280] hover:text-white transition-colors cursor-pointer"
+                      >
+                        關閉
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 平板：Popover 下拉 */}
+                <div className="hidden md:block absolute right-0 top-full mt-2 z-50 bg-[#16181D] border border-[#2A2D35] rounded-xl shadow-xl">
+                  <QRCodePanel sessionCode={sessionCode} size={140} />
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {currentSong && (
