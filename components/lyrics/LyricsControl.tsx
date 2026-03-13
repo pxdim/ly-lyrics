@@ -7,9 +7,10 @@
 
 "use client";
 
-import { type FC, useState, useEffect } from "react";
+import { type FC, useState, useEffect, useCallback } from "react";
 import { ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
+import { useDebouncedCallback } from "@/lib/hooks/useDebounce";
 
 export interface LyricsControlProps {
   /** Optional custom class name for styling */
@@ -51,17 +52,24 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   const canGoNext = currentIndex < totalLines - 1;
   const canGoPrev = currentIndex > 0;
 
-  const handlePrev = () => {
-    if (canGoPrev) {
-      prevLine();
-    }
-  };
+  // 防抖處理：避免快速連點導致過多 WebSocket 訊息
+  const handlePrev = useDebouncedCallback(
+    useCallback(() => {
+      if (canGoPrev) {
+        prevLine();
+      }
+    }, [canGoPrev, prevLine]),
+    150
+  );
 
-  const handleNext = () => {
-    if (canGoNext) {
-      nextLine();
-    }
-  };
+  const handleNext = useDebouncedCallback(
+    useCallback(() => {
+      if (canGoNext) {
+        nextLine();
+      }
+    }, [canGoNext, nextLine]),
+    150
+  );
 
   const handleJump = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const index = parseInt(e.target.value, 10);
