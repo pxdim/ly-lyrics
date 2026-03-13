@@ -9,7 +9,7 @@
 
 import { type FC } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { useLyricsStore, selectNavigationState } from "@/lib/store";
+import { useLyricsStore } from "@/lib/store";
 
 export interface LyricsControlProps {
   /** Optional custom class name for styling */
@@ -25,10 +25,15 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   compact = false,
   position = "bottom",
 }) => {
-  const { currentIndex, totalLines, canGoNext, canGoPrev } = useLyricsStore(selectNavigationState);
+  const currentIndex = useLyricsStore((state) => state.currentIndex);
+  const lyrics = useLyricsStore((state) => state.lyrics);
   const nextLine = useLyricsStore((state) => state.nextLine);
   const prevLine = useLyricsStore((state) => state.prevLine);
   const jumpToLine = useLyricsStore((state) => state.jumpToLine);
+
+  const totalLines = lyrics.length;
+  const canGoNext = currentIndex < totalLines - 1;
+  const canGoPrev = currentIndex > 0;
 
   const handlePrev = () => {
     if (canGoPrev) {
