@@ -12,6 +12,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
+import { fetchPlaylists, createPlaylist, type ClientPlaylist } from "@/lib/api/playlists";
 import { AddSongModal } from "@/components/controller/AddSongModal";
 
 // ============================================================================
@@ -31,9 +32,9 @@ export default function ControllerPage() {
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
       <StatusBar />
       <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
-        {/* 左欄：歌曲庫 */}
+        {/* 左欄：歌曲庫 + 播放清單 */}
         <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
-          <SongLibrary />
+          <LibraryPanel />
         </Panel>
         <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
           <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
@@ -134,7 +135,42 @@ function StatusBar() {
 // 左欄：歌曲庫
 // ============================================================================
 
-function SongLibrary() {
+type LibraryTab = "songs" | "playlists";
+
+function LibraryPanel() {
+  const [activeTab, setActiveTab] = useState<LibraryTab>("songs");
+
+  return (
+    <div className="h-full flex flex-col border-r border-[#2A2D35] bg-[#090A0C]">
+      {/* Tab 切換 */}
+      <div className="flex border-b border-[#2A2D35] bg-[#16181D] shrink-0">
+        {(["songs", "playlists"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2.5 text-[11px] font-mono tracking-wider uppercase transition-colors border-b-2 ${
+              activeTab === tab
+                ? "text-primary border-primary bg-primary/5"
+                : "text-[#6B7280] border-transparent hover:text-[#E4E7EB] hover:bg-[#16181D]/80"
+            }`}
+            type="button"
+          >
+            {tab === "songs" ? "Songs" : "Playlists"}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 內容 */}
+      {activeTab === "songs" ? <SongListPanel /> : <PlaylistListPanel />}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Songs Tab
+// ────────────────────────────────────────────────────────────
+
+function SongListPanel() {
   const [songs, setSongs] = useState<ClientSong[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -194,55 +230,244 @@ function SongLibrary() {
 
   return (
     <>
-      <div className="h-full flex flex-col border-r border-[#2A2D35] bg-[#090A0C]">
-        {/* 標題列 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A2D35] bg-[#16181D] shrink-0">
-          <h3 className="text-[13px] font-semibold tracking-wider text-[#6B7280] uppercase">
-            Song Library
-          </h3>
+      {/* 標題列 */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2A2D35] shrink-0">
+        <span className="text-[11px] font-mono text-[#6B7280]">{songs.length} TRACKS</span>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
+          type="button"
+          title="新增歌曲"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* 搜尋 */}
+      <div className="px-3 py-2 border-b border-[#2A2D35] shrink-0">
+        <div className="relative">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6B7280]">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜尋歌曲..."
+            className="w-full pl-8 pr-3 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
+          />
+        </div>
+      </div>
+
+      {/* 歌曲列表 */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {isLoading ? (
+          <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">LOADING...</div>
+        ) : songs.length === 0 ? (
+          <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">
+            {search ? "NO RESULTS" : "EMPTY"}
+          </div>
+        ) : (
+          songs.map((song, idx) => {
+            const isActive = currentSong?.id === song.id;
+            return (
+              <div
+                key={song.id}
+                onClick={() => handleSelectSong(song)}
+                className={`group flex items-center gap-3 px-4 py-2.5 border-b border-[#2A2D35]/50 cursor-pointer transition-colors ${
+                  isActive
+                    ? "bg-[#16181D] text-[#E4E7EB] border-l-2 border-l-primary relative"
+                    : "hover:bg-[#16181D]/50 text-[#6B7280] hover:text-[#E4E7EB]"
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute inset-y-0 left-0 w-full bg-primary/5 pointer-events-none" />
+                )}
+                <span className="font-mono text-[11px] w-5 shrink-0 text-right">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                {isActive ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-primary shrink-0">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280] shrink-0">
+                    <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                  </svg>
+                )}
+                <div className="flex-1 min-w-0 relative z-10">
+                  <p className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}>
+                    {song.title}
+                  </p>
+                  {song.artist && (
+                    <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0 relative z-10">
+                  <span className="font-mono text-[10px] text-[#6B7280]">
+                    {song.lyrics.length}L
+                  </span>
+                  <button
+                    onClick={(e) => handleDeleteSong(e, song.id)}
+                    disabled={deletingId === song.id}
+                    className="p-1 opacity-0 group-hover:opacity-100 text-[#6B7280] hover:text-red-400 transition-all"
+                    type="button"
+                    title="刪除歌曲"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <AddSongModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSongAdded={() => loadSongs(search)}
+      />
+    </>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Playlists Tab
+// ────────────────────────────────────────────────────────────
+
+function PlaylistListPanel() {
+  const [playlists, setPlaylists] = useState<ClientPlaylist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<ClientPlaylist | null>(null);
+
+  // 載入所有歌曲（用於建立播放清單時的歌曲選擇 + 載入播放清單歌曲）
+  const [allSongs, setAllSongs] = useState<ClientSong[]>([]);
+  const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
+
+  const setCurrentSong = useLyricsStore((state) => state.setCurrentSong);
+  const currentSong = useLyricsStore((state) => state.currentSong);
+
+  const loadPlaylists = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const result = await fetchPlaylists({ limit: 100 });
+      setPlaylists(result.data);
+    } catch (err) {
+      console.error("載入播放清單失敗:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadAllSongs = useCallback(async () => {
+    try {
+      const result = await fetchSongs({ limit: 200 });
+      setAllSongs(result.data);
+    } catch (err) {
+      console.error("載入歌曲失敗:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPlaylists();
+    loadAllSongs();
+  }, [loadPlaylists, loadAllSongs]);
+
+  // 建立播放清單
+  const handleCreate = async () => {
+    if (!newName.trim() || selectedSongIds.size === 0) return;
+    setCreating(true);
+    try {
+      await createPlaylist({
+        name: newName.trim(),
+        songIds: Array.from(selectedSongIds),
+      });
+      setNewName("");
+      setSelectedSongIds(new Set());
+      setShowCreate(false);
+      await loadPlaylists();
+    } catch (err) {
+      console.error("建立播放清單失敗:", err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const toggleSongSelection = (songId: string) => {
+    setSelectedSongIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(songId)) {
+        next.delete(songId);
+      } else {
+        next.add(songId);
+      }
+      return next;
+    });
+  };
+
+  // 選取播放清單 → 顯示其歌曲
+  const handleSelectPlaylist = (pl: ClientPlaylist) => {
+    setSelectedPlaylist(pl);
+    setShowCreate(false);
+  };
+
+  // 從播放清單中選曲
+  const handleSelectSongFromPlaylist = (song: ClientSong) => {
+    setCurrentSong(song as Parameters<typeof setCurrentSong>[0]);
+  };
+
+  // 返回播放清單列表
+  const handleBack = () => {
+    setSelectedPlaylist(null);
+  };
+
+  // ── 播放清單歌曲詳情畫面 ──
+  if (selectedPlaylist) {
+    const playlistSongs = selectedPlaylist.songIds
+      .map((id) => allSongs.find((s) => s.id === id))
+      .filter((s): s is ClientSong => s !== undefined);
+
+    return (
+      <>
+        {/* 返回 + 標題 */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2D35] shrink-0">
           <button
-            onClick={() => setShowAddModal(true)}
-            className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
+            onClick={handleBack}
+            className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors p-1"
             type="button"
-            title="新增歌曲"
+            title="返回播放清單"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-        </div>
-
-        {/* 搜尋 */}
-        <div className="px-3 py-2 border-b border-[#2A2D35] shrink-0">
-          <div className="relative">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6B7280]">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜尋歌曲..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
-            />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-[#E4E7EB] truncate">{selectedPlaylist.name}</p>
+            <p className="text-[10px] font-mono text-[#6B7280]">{playlistSongs.length} TRACKS</p>
           </div>
         </div>
 
         {/* 歌曲列表 */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          {isLoading ? (
-            <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">LOADING...</div>
-          ) : songs.length === 0 ? (
+          {playlistSongs.length === 0 ? (
             <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">
-              {search ? "NO RESULTS" : "EMPTY"}
+              NO SONGS FOUND
             </div>
           ) : (
-            songs.map((song, idx) => {
+            playlistSongs.map((song, idx) => {
               const isActive = currentSong?.id === song.id;
               return (
                 <div
                   key={song.id}
-                  onClick={() => handleSelectSong(song)}
+                  onClick={() => handleSelectSongFromPlaylist(song)}
                   className={`group flex items-center gap-3 px-4 py-2.5 border-b border-[#2A2D35]/50 cursor-pointer transition-colors ${
                     isActive
                       ? "bg-[#16181D] text-[#E4E7EB] border-l-2 border-l-primary relative"
@@ -265,46 +490,160 @@ function SongLibrary() {
                     </svg>
                   )}
                   <div className="flex-1 min-w-0 relative z-10">
-                    <p className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}>
-                      {song.title}
-                    </p>
-                    {song.artist && (
-                      <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>
-                    )}
+                    <p className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}>{song.title}</p>
+                    {song.artist && <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 relative z-10">
-                    <span className="font-mono text-[10px] text-[#6B7280]">
-                      {song.lyrics.length}L
-                    </span>
-                    <button
-                      onClick={(e) => handleDeleteSong(e, song.id)}
-                      disabled={deletingId === song.id}
-                      className="p-1 opacity-0 group-hover:opacity-100 text-[#6B7280] hover:text-red-400 transition-all"
-                      type="button"
-                      title="刪除歌曲"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                  </div>
+                  <span className="font-mono text-[10px] text-[#6B7280] shrink-0">{song.lyrics.length}L</span>
                 </div>
               );
             })
           )}
         </div>
+      </>
+    );
+  }
 
-        {/* 底部統計 */}
-        <div className="px-4 py-2 border-t border-[#2A2D35] bg-[#16181D] text-[11px] font-mono text-[#6B7280] shrink-0">
-          {songs.length} TRACKS
+  // ── 建立播放清單畫面 ──
+  if (showCreate) {
+    return (
+      <>
+        {/* 返回 + 標題 */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2D35] shrink-0">
+          <button
+            onClick={() => { setShowCreate(false); setSelectedSongIds(new Set()); }}
+            className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors p-1"
+            type="button"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <span className="text-[13px] font-semibold text-[#E4E7EB]">新增播放清單</span>
         </div>
+
+        {/* 名稱輸入 */}
+        <div className="px-3 py-2 border-b border-[#2A2D35] shrink-0">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="播放清單名稱..."
+            className="w-full px-3 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
+            autoFocus
+          />
+        </div>
+
+        {/* 選擇歌曲提示 */}
+        <div className="px-3 py-1.5 border-b border-[#2A2D35] shrink-0">
+          <span className="text-[10px] font-mono text-[#6B7280]">
+            選擇歌曲 ({selectedSongIds.size} SELECTED)
+          </span>
+        </div>
+
+        {/* 歌曲多選列表 */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {allSongs.map((song) => {
+            const isSelected = selectedSongIds.has(song.id);
+            return (
+              <div
+                key={song.id}
+                onClick={() => toggleSongSelection(song.id)}
+                className={`flex items-center gap-3 px-4 py-2 border-b border-[#2A2D35]/50 cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-primary/10 text-[#E4E7EB]"
+                    : "hover:bg-[#16181D]/50 text-[#6B7280] hover:text-[#E4E7EB]"
+                }`}
+              >
+                <div className={`w-4 h-4 border flex items-center justify-center shrink-0 ${
+                  isSelected ? "bg-primary border-primary" : "border-[#2A2D35]"
+                }`}>
+                  {isSelected && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#090A0C" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-[13px]">{song.title}</p>
+                  {song.artist && <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 建立按鈕 */}
+        <div className="p-3 border-t border-[#2A2D35] shrink-0">
+          <button
+            onClick={handleCreate}
+            disabled={creating || !newName.trim() || selectedSongIds.size === 0}
+            className="w-full py-2 bg-primary text-[#090A0C] font-mono text-[12px] tracking-wider disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+            type="button"
+          >
+            {creating ? "CREATING..." : "CREATE PLAYLIST"}
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // ── 播放清單列表主畫面 ──
+  return (
+    <>
+      {/* 標題列 */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2A2D35] shrink-0">
+        <span className="text-[11px] font-mono text-[#6B7280]">{playlists.length} LISTS</span>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
+          type="button"
+          title="新增播放清單"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
       </div>
 
-      <AddSongModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSongAdded={() => loadSongs(search)}
-      />
+      {/* 播放清單列表 */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {isLoading ? (
+          <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">LOADING...</div>
+        ) : playlists.length === 0 ? (
+          <div className="p-6 text-center space-y-3">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-[#2A2D35]">
+              <path d="M3 6h18" /><path d="M3 12h18" /><path d="M3 18h18" />
+            </svg>
+            <p className="font-mono text-[12px] text-[#6B7280]">NO PLAYLISTS</p>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="text-[11px] font-mono text-primary hover:text-primary/80 transition-colors"
+              type="button"
+            >
+              + CREATE FIRST
+            </button>
+          </div>
+        ) : (
+          playlists.map((pl) => (
+            <div
+              key={pl.id}
+              onClick={() => handleSelectPlaylist(pl)}
+              className="group flex items-center gap-3 px-4 py-3 border-b border-[#2A2D35]/50 cursor-pointer transition-colors hover:bg-[#16181D]/50 text-[#6B7280] hover:text-[#E4E7EB]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <path d="M3 6h18" /><path d="M3 12h18" /><path d="M3 18h18" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-[13px]">{pl.name}</p>
+                <p className="text-[10px] font-mono text-[#6B7280]">{pl.songIds.length} tracks</p>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          ))
+        )}
+      </div>
     </>
   );
 }
