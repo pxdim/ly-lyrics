@@ -72,3 +72,61 @@ export async function fetchSongById(id: string): Promise<ClientSong> {
 
   return response.json();
 }
+
+/**
+ * 建立新歌曲
+ */
+export async function createSong(data: {
+  title: string;
+  artist?: string;
+  lyrics: string[];
+  language?: string;
+}): Promise<ClientSong> {
+  const response = await fetch("/api/songs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "建立歌曲失敗" }));
+    throw new Error(error.message ?? `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * 更新歌曲
+ */
+export async function updateSong(
+  id: string,
+  data: Partial<{ title: string; artist: string; lyrics: string[]; language: string }>
+): Promise<ClientSong> {
+  const response = await fetch(`/api/songs/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "更新歌曲失敗" }));
+    throw new Error(error.message ?? `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * 刪除歌曲
+ */
+export async function deleteSong(id: string): Promise<void> {
+  const response = await fetch(`/api/songs/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "刪除歌曲失敗" }));
+    throw new Error(error.message ?? `HTTP ${response.status}`);
+  }
+}
