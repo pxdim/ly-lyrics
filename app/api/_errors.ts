@@ -60,7 +60,7 @@ export const ErrorResponses = {
    * 403 Forbidden
    */
   forbidden: (message = "無權限執行此操作") =>
-    createErrorResponse("AUTH_UNAUTHORIZED", message, 403),
+    createErrorResponse("AUTH_FORBIDDEN", message, 403),
 
   /**
    * 429 Rate Limited
@@ -127,6 +127,19 @@ export function withErrorHandler<T = NextResponse>(
     try {
       return await handler();
     } catch (error) {
+      // 放行 Next.js 內部控制流（redirect / notFound）
+      // Next.js 15 使用 error.digest 標記特殊控制流錯誤
+      if (
+        error &&
+        typeof error === "object" &&
+        "digest" in error &&
+        typeof (error as { digest: unknown }).digest === "string" &&
+        ((error as { digest: string }).digest.startsWith("NEXT_REDIRECT") ||
+         (error as { digest: string }).digest.startsWith("NEXT_NOT_FOUND"))
+      ) {
+        throw error;
+      }
+
       console.error("API Error:", error);
 
       // Handle AppError instances

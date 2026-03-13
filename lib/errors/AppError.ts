@@ -339,24 +339,23 @@ export function getUserMessage(error: unknown): string {
  * Log error to console in development
  */
 export function logError(error: unknown, context?: ErrorContext): void {
-  if (process.env.NODE_ENV === "development") {
-    if (isAppError(error)) {
-      console.error(`[${error.code}] ${error.name}:`, {
-        message: error.userMessage,
-        technical: error.technicalMessage,
-        severity: error.severity,
-        context: error.context || context,
-      });
-    } else if (error instanceof Error) {
-      console.error(`[Error]:`, {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        context,
-      });
-    } else {
-      console.error(`[Unknown Error]:`, { error, context });
-    }
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (isAppError(error)) {
+    console.error(`[${error.code}] ${error.name}:`, {
+      message: error.userMessage,
+      severity: error.severity,
+      // 開發環境才輸出完整技術細節
+      ...(isDev && { technical: error.technicalMessage, context: error.context || context }),
+    });
+  } else if (error instanceof Error) {
+    console.error(`[Error]:`, {
+      name: error.name,
+      message: error.message,
+      ...(isDev && { stack: error.stack, context }),
+    });
+  } else {
+    console.error(`[Unknown Error]:`, isDev ? { error, context } : {});
   }
 }
 

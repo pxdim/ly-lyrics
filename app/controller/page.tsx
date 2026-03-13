@@ -1087,23 +1087,29 @@ function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between py-2 cursor-pointer group border-b border-[#2A2D35]/30">
+    <div
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
+      onClick={() => onChange(!checked)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChange(!checked); } }}
+      className="flex items-center justify-between py-2 cursor-pointer group border-b border-[#2A2D35]/30"
+    >
       <span className="text-[11px] font-mono text-[#6B7280] group-hover:text-[#E4E7EB] transition-colors">
         {label}
       </span>
-      <button
-        onClick={() => onChange(!checked)}
+      <div
         className={`w-8 h-4 transition-colors flex items-center border ${
           checked ? "bg-primary/20 border-primary/40" : "bg-[#090A0C] border-[#2A2D35]"
         }`}
-        type="button"
       >
         <div
           className={`w-3 h-3 transition-all ${
             checked ? "translate-x-[18px] bg-primary" : "translate-x-[1px] bg-[#6B7280]"
           }`}
         />
-      </button>
-    </label>
+      </div>
+    </div>
   );
 }
