@@ -9,6 +9,12 @@ on:
     paths:
       - 'backend/**'
       - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - 'package.json'
+      - 'vitest.config.ts'
+      - 'eslint.config.mjs'
+      - 'tsconfig.json'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
@@ -47,7 +53,7 @@ jobs:
           go test ./... -short -coverprofile=coverage.out -covermode=atomic
           go tool cover -func=coverage.out | tail -1
 
-  # Next.js 前端檢查：型別檢查、構建
+  # Next.js 前端檢查：型別檢查、單元測試、Lint、構建
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
@@ -67,6 +73,12 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npx vitest run
+
+      - name: Run lint
+        run: npm run lint
 
       - name: Build frontend
         run: npm run build
