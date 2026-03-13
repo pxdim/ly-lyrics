@@ -63,8 +63,9 @@ next-env.d.ts
 skills/
 skills-lock.json
 
-# Superpowers plans (local workflow docs)
+# Superpowers plans and brainstorm sessions (local workflow)
 docs/superpowers/
+.superpowers/
 
 # Git worktrees
 .worktrees/
