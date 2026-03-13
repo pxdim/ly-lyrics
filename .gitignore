@@ -45,10 +45,11 @@ next-env.d.ts
 *.swo
 *~
 
-# Testing
+# Testing / Playwright
 /playwright-report/
 /test-results/
 /playwright/.cache/
+.playwright-mcp/
 
 # Railway
 .railway/

@@ -22,12 +22,10 @@ export const paginationSchema = z.object({
 /**
  * Search params
  */
-export const searchParamsSchema = z
-  .object({
-    search: z.string().trim().max(200).optional(),
-    userId: z.string().uuid().optional(),
-  })
-  .passthrough();
+export const searchParamsSchema = z.object({
+  search: z.string().trim().max(200).optional(),
+  userId: z.string().uuid().optional(),
+});
 
 /**
  * Song ID params
@@ -264,8 +262,8 @@ export function toSongListParams(
   return {
     limit: data.limit,
     offset: data.offset,
-    search: (data as any).search ?? undefined,
-    userId: (data as any).userId ?? undefined,
+    search: data.search ?? undefined,
+    userId: data.userId ?? undefined,
   };
 }
 
