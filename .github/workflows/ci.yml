@@ -37,9 +37,15 @@ jobs:
         working-directory: backend
         run: go vet ./...
 
-      - name: Run tests
+      - name: Run all tests
         working-directory: backend
-        run: go test ./... -v -short
+        run: go test ./... -v -short -count=1
+
+      - name: Check test coverage
+        working-directory: backend
+        run: |
+          go test ./... -short -coverprofile=coverage.out -covermode=atomic
+          go tool cover -func=coverage.out | tail -1
 
   # Next.js 前端檢查：型別檢查、構建
   frontend:
