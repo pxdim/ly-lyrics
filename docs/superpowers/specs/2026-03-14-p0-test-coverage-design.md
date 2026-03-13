@@ -21,7 +21,7 @@
 
 E2E (Playwright)          ← 3 specs, ~15 cases, 真實全棧
 ─────────────────────────
-Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
+Unit (Vitest)             ← 2 模組, ~62 cases, 全 mock
 ─────────────────────────
 已有 Unit (Vitest)        ← LRC parser 36 + session-code 6
 已有 Unit (Go test)       ← auth, handler, service, redis, ws
@@ -33,8 +33,8 @@ Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
 
 | 檔案 | 測試對象 | 預估 cases |
 |------|---------|-----------|
-| `lib/store/index.test.ts` | Zustand store actions + selectors | ~25 |
-| `lib/websocket/native-client.test.ts` | NativeWSClient 事件、重連、session | ~20 |
+| `lib/store/index.test.ts` | Zustand store actions + selectors + event handlers | ~40 |
+| `lib/websocket/native-client.test.ts` | NativeWSClient 事件、重連、session | ~22 |
 
 ### E2E 基礎設施
 
@@ -57,8 +57,8 @@ Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
 
 | 檔案 | 修改 |
 |------|------|
-| `playwright.config.ts` | 加入 webServer（Go backend + Next.js）、envFile 指向 .env.test |
-| `package.json` | 新增 `test:unit`, `test:e2e:setup`, `test:e2e:teardown` scripts |
+| `playwright.config.ts` | **新建**（目前不存在），設定 webServer（Go backend + Next.js）、envFile 指向 .env.test |
+| `package.json` | 新增 `test:e2e:setup`, `test:e2e:teardown` scripts（現有 `test` script 保持為 `vitest`） |
 
 ---
 
@@ -66,19 +66,20 @@ Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
 
 ### 1. Zustand Store 測試 (`lib/store/index.test.ts`)
 
-**Mock 策略**：vi.mock `lib/websocket/native-client.ts`，替換 `initNativeWSClient` / `getNativeWSClient` 回傳 mock 物件。
+**Mock 策略**：vi.mock `lib/websocket/native-client.ts`，替換 `initNativeWSClient` 回傳 mock 物件（store 只使用 `initNativeWSClient`，不使用 `getNativeWSClient`）。
 
-**每次測試前**：`store.setState(initialState)` 重設狀態，避免測試間污染。
+**每次測試前**：`store.setState(initialState)` 重設狀態，避免測試間污染。persist middleware 的 rehydration 在測試中透過 setState 覆蓋，無需額外 mock。
 
 **測試分組：**
 
-#### 歌詞導航 (~6 cases)
+#### 歌詞導航 (~7 cases)
 - `nextLine`：currentIndex 從 0 → 1
 - `nextLine`：到最後一行時不超出（邊界守護）
-- `nextLine`：lyrics 為空時不動作
+- `nextLine`：lyrics 為空時 — **已知 bug**：`Math.min(1, -1)` 會產生 -1，測試應先紅燈暴露此問題，再修 production code 加入 early return guard
 - `prevLine`：currentIndex 從 2 → 1
 - `prevLine`：在第 0 行時不低於 0
 - `jumpToLine`：直接跳到指定行
+- `jumpToLine`：lyrics 為空時不應設為負數（同上 bug pattern）
 
 #### 歌曲操作 (~4 cases)
 - `setCurrentSong`：設定歌曲，currentIndex 重設為 0
@@ -88,10 +89,21 @@ Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
 
 #### 連線狀態 (~5 cases)
 - `connect`：呼叫 WS client connect()
-- `disconnect`：connectionState 變為 'disconnected'，清除 sessionId
+- `disconnect`：connectionState 變為 'disconnected'，清除 sessionId、role、controllerCount、displayCount，呼叫 ws.removeAllListeners() + ws.disconnect()
 - 收到 `_connected` 事件：connectionState → 'connected'
 - 收到 `_reconnecting` 事件：connectionState → 'reconnecting'，reconnectAttempt 遞增
 - 收到 `_reconnect_exhausted` 事件：connectionState → 'disconnected'
+
+#### connect() 業務事件處理 (~8 cases)
+Store 的 `connect()` 註冊了 8 個 server 事件 handler，需驗證 store 狀態正確更新：
+- `session_state`：完整同步 currentSong、lyrics、currentIndex、isPlaying、settings、counts
+- `line_changed`：更新 currentIndex
+- `song_changed`：更新 currentSong、lyrics、重設 currentIndex 為 0
+- `settings_updated`：merge displaySettings
+- `playing_changed`：更新 isPlaying
+- `client_joined`：更新 controllerCount / displayCount
+- `client_left`：更新 controllerCount / displayCount
+- `error`：設定 error 狀態
 
 #### Session 操作 (~3 cases)
 - `joinSession`：sessionId 和 role 正確設定
@@ -105,6 +117,11 @@ Unit (Vitest)             ← 2 模組, ~45 cases, 全 mock
 #### 顯示設定 (~2 cases)
 - `updateDisplaySettings({ fontSize: 24 })`：部分 merge
 - `resetDisplaySettings`：重設回預設值
+
+#### 其他 actions (~4 cases)
+- `retryConnection`：呼叫 ws.resetAndReconnect()，設定 reconnecting 狀態
+- `setLoading(true/false)`：設定 isLoading
+- `setError("msg")` / `clearError()`：設定/清除 error
 
 #### Selectors (~4 cases)
 - `selectVisibleLyrics`：根據 displayLines 截取正確 startIndex/endIndex
@@ -142,12 +159,14 @@ class MockWebSocket {
 - `isConnected()`：連線後回傳 true、斷線後回傳 false
 - 重複 `connect()` 不建立第二條連線
 
-#### 事件發送 (~5 cases)
+#### 事件發送 (~7 cases)
 - `changeLine(3)`：send 收到 `{"type":"change_line","payload":{"lineIndex":3}}`
 - `nextLine()`：send 收到 `{"type":"next_line"}`
+- `prevLine()`：send 收到 `{"type":"prev_line"}`
 - `setSong("abc")`：send 收到 `{"type":"set_song","payload":{"songId":"abc"}}`
 - `setPlaying(true)`：正確 payload
 - `updateSettings({ fontSize: 24 })`：正確 payload
+- `joinSession` / `leaveSession`：send 收到正確 join/leave 訊息格式
 
 #### 事件接收 (~4 cases)
 - Server 推送 `line_changed`：on("line_changed") callback 收到正確 payload
@@ -221,18 +240,22 @@ NEXT_PUBLIC_GO_WS_URL=ws://localhost:8080/ws
 5. 錯誤密碼登入 → 401
 
 #### songs.spec.ts (~5 cases)
-1. 建立歌曲（POST /api/songs）→ 201
-2. 列表查詢（GET /api/songs）→ 包含剛建的歌
+**注意**：Songs 端點使用 OptionalAuth middleware，未認證時使用 demo user。E2E 測試應先透過 auth helper 取得 token，以認證身份測試 CRUD，確保測試的是完整的認證 + CRUD 流程。
+1. 建立歌曲（POST /api/songs, 帶 token）→ 201
+2. 列表查詢（GET /api/songs, 帶 token）→ 包含剛建的歌
 3. 取得單首（GET /api/songs/:id）→ 歌詞正確
-4. 更新歌名（PUT /api/songs/:id）→ 確認更新
-5. 刪除歌曲（DELETE /api/songs/:id）→ 再 GET 回 404
+4. 更新歌名（PUT /api/songs/:id, 帶 token）→ 確認更新
+5. 刪除歌曲（DELETE /api/songs/:id, 帶 token）→ 再 GET 回 404
 
 #### websocket-sync.spec.ts (~5 cases)
+**多瀏覽器上下文策略**：使用 Playwright `browser.newContext()` 建立兩個獨立 context（Controller + Display），各開一個 page。透過 `page.evaluate()` 讀取 DOM 狀態驗證同步結果。WebSocket 事件等待使用 `page.waitForFunction()` 輪詢 DOM 變化，而非直接監聽 WS 事件。
 1. Controller 開頁面 → 產生 session code → WebSocket 連線
 2. Display 輸入 code → 加入同 session → 連線成功
 3. Controller 切歌 → Display 收到 song_changed
 4. Controller 切行 → Display 歌詞高亮更新
 5. Controller 播放/暫停 → Display 同步狀態
+
+**清理策略**：每個 test 結束後關閉兩個 context，WebSocket 自動斷線觸發 server 端 session cleanup。
 
 ---
 
@@ -261,7 +284,7 @@ NEXT_PUBLIC_GO_WS_URL=ws://localhost:8080/ws
 
 ## 成功標準
 
-- [ ] Vitest：~45 個新 test cases 全部通過
+- [ ] Vitest：~62 個新 test cases 全部通過
 - [ ] Playwright E2E：~15 個 test cases 全部通過
 - [ ] `npm run test:unit` 零失敗
 - [ ] `npm run test:e2e` 零失敗（需先 `test:e2e:setup`）
