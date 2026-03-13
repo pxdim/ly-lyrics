@@ -3,6 +3,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -13,13 +14,27 @@ import (
 	"github.com/raymondchen/ly-backend/internal/service"
 )
 
-// Song 歌曲 HTTP handler
-type Song struct {
-	svc *service.SongService
+// SongServicer 定義 Song handler 所需的歌曲服務介面，便於測試時替換為 mock
+type SongServicer interface {
+	List(ctx context.Context, params dto.SongListParams) (*dto.SongListResponse, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*dto.SongResponse, error)
+	Create(ctx context.Context, req dto.CreateSongRequest, userID uuid.UUID) (*dto.SongResponse, error)
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdateSongRequest) (*dto.SongResponse, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-// NewSong 建立 Song handler
+// Song 歌曲 HTTP handler
+type Song struct {
+	svc SongServicer
+}
+
+// NewSong 建立 Song handler（使用具體的 *service.SongService）
 func NewSong(svc *service.SongService) *Song {
+	return &Song{svc: svc}
+}
+
+// NewSongWithService 建立 Song handler，接受 SongServicer 介面（便於測試注入 mock）
+func NewSongWithService(svc SongServicer) *Song {
 	return &Song{svc: svc}
 }
 

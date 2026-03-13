@@ -8,13 +8,23 @@ import (
 	"time"
 )
 
-// Health 健康檢查 handler
-type Health struct {
-	db *sql.DB
+// DBPinger 定義 Health handler 所需的資料庫 Ping 介面，便於測試時替換為 mock
+type DBPinger interface {
+	PingContext(ctx context.Context) error
 }
 
-// NewHealth 建立 Health handler
+// Health 健康檢查 handler
+type Health struct {
+	db DBPinger
+}
+
+// NewHealth 建立 Health handler（使用具體的 *sql.DB）
 func NewHealth(db *sql.DB) *Health {
+	return &Health{db: db}
+}
+
+// NewHealthWithPinger 建立 Health handler，接受 DBPinger 介面（便於測試注入 mock）
+func NewHealthWithPinger(db DBPinger) *Health {
 	return &Health{db: db}
 }
 

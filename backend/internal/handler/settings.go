@@ -3,21 +3,35 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
 
-// Settings 設定 HTTP handler
-type Settings struct {
-	svc *service.SettingsService
+// SettingsServicer 定義 Settings handler 所需的設定服務介面，便於測試時替換為 mock
+type SettingsServicer interface {
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*dto.SettingsResponse, error)
+	Update(ctx context.Context, userID uuid.UUID, req dto.UpdateSettingsRequest) (*dto.SettingsResponse, error)
+	Reset(ctx context.Context, userID uuid.UUID) (*dto.SettingsResponse, error)
 }
 
-// NewSettings 建立 Settings handler
+// Settings 設定 HTTP handler
+type Settings struct {
+	svc SettingsServicer
+}
+
+// NewSettings 建立 Settings handler（使用具體的 *service.SettingsService）
 func NewSettings(svc *service.SettingsService) *Settings {
+	return &Settings{svc: svc}
+}
+
+// NewSettingsWithService 建立 Settings handler，接受 SettingsServicer 介面（便於測試注入 mock）
+func NewSettingsWithService(svc SettingsServicer) *Settings {
 	return &Settings{svc: svc}
 }
 

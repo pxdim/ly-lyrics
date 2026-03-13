@@ -16,11 +16,16 @@ import (
 
 // LRC 歌詞檔案匯入匯出 HTTP handler
 type LRC struct {
-	songSvc *service.SongService
+	songSvc SongServicer
 }
 
-// NewLRC 建立 LRC handler
+// NewLRC 建立 LRC handler（使用具體的 *service.SongService）
 func NewLRC(songSvc *service.SongService) *LRC {
+	return &LRC{songSvc: songSvc}
+}
+
+// NewLRCWithService 建立 LRC handler，接受 SongServicer 介面（便於測試注入 mock）
+func NewLRCWithService(songSvc SongServicer) *LRC {
 	return &LRC{songSvc: songSvc}
 }
 
