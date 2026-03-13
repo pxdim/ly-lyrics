@@ -3,6 +3,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -10,17 +11,30 @@ import (
 	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
+	"github.com/raymondchen/ly-backend/internal/ent"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
 
+// UserServicer 定義 AuthHandler 所需的使用者服務介面，便於測試時替換為 mock
+type UserServicer interface {
+	VerifyCredentials(ctx context.Context, email, password string) (*ent.User, error)
+	CreateUser(ctx context.Context, email, password string, name *string) (*ent.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*ent.User, error)
+}
+
 // AuthHandler 認證相關 HTTP handlers
 type AuthHandler struct {
-	userService *service.UserService
+	userService UserServicer
 	jwtManager  *auth.JWTManager
 }
 
-// NewAuthHandler 建立 AuthHandler 實例
+// NewAuthHandler 建立 AuthHandler 實例（使用具體的 *service.UserService）
 func NewAuthHandler(userService *service.UserService, jwtManager *auth.JWTManager) *AuthHandler {
+	return &AuthHandler{userService: userService, jwtManager: jwtManager}
+}
+
+// NewAuthHandlerWithService 建立 AuthHandler 實例，接受 UserServicer 介面（便於測試注入 mock）
+func NewAuthHandlerWithService(userService UserServicer, jwtManager *auth.JWTManager) *AuthHandler {
 	return &AuthHandler{userService: userService, jwtManager: jwtManager}
 }
 
