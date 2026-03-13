@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link2, Check } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
@@ -52,6 +52,83 @@ function DisplayPage() {
   const leaveSession = useLyricsStore((state) => state.leaveSession);
   const currentSong = useLyricsStore((state) => state.currentSong);
   const connectionState = useLyricsStore((state) => state.connectionState);
+
+  // 全螢幕模式
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const FULLSCREEN_IDLE_TIMEOUT = 3000;
+
+  // iOS Safari 不支援 Fullscreen API → 隱藏全螢幕按鈕
+  const supportsFullscreen = typeof document !== "undefined" &&
+    (!!document.documentElement.requestFullscreen ||
+     !!(document.documentElement as HTMLElement & { webkitRequestFullscreen?: unknown }).webkitRequestFullscreen);
+
+  // 全螢幕切換（含 Safari 相容）
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    }
+  }, []);
+
+  // 監聽 fullscreenchange 同步 React 狀態
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    document.addEventListener("webkitfullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      document.removeEventListener("webkitfullscreenchange", handler);
+    };
+  }, []);
+
+  // F 鍵快捷鍵
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "f" || e.key === "F") {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [toggleFullscreen]);
+
+  // 全螢幕自動隱藏控制列
+  useEffect(() => {
+    if (!isFullscreen) {
+      setShowControls(true);
+      return;
+    }
+
+    // 進入全螢幕時先顯示，然後啟動隱藏計時
+    setShowControls(true);
+    const startHideTimer = () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = setTimeout(() => setShowControls(false), FULLSCREEN_IDLE_TIMEOUT);
+    };
+    startHideTimer();
+
+    const handleMouseMove = () => {
+      setShowControls(true);
+      startHideTimer();
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isFullscreen]);
 
   // 連線並加入 session — 當輸入完 6 碼同步碼後觸發（含 URL ?code= 自動連線）
   useEffect(() => {
@@ -179,9 +256,17 @@ function DisplayPage() {
         <LyricsDisplay />
       </div>
 
-      {/* Floating Controls */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <LyricsControl compact={true} position="floating" />
+      {/* Floating Controls — 全螢幕時自動隱藏 */}
+      <div
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
+        style={{ opacity: showControls ? 1 : 0, pointerEvents: showControls ? "auto" : "none" }}
+      >
+        <LyricsControl
+          compact={true}
+          position="floating"
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={supportsFullscreen ? toggleFullscreen : undefined}
+        />
       </div>
 
       {/* Song Info Overlay (top left, fades out) */}
@@ -196,8 +281,11 @@ function DisplayPage() {
         </div>
       )}
 
-      {/* Connection Status Indicator (top right) */}
-      <div className="fixed top-6 right-6 z-40">
+      {/* Connection Status Indicator (top right) — 全螢幕時自動隱藏 */}
+      <div
+        className="fixed top-6 right-6 z-40 transition-opacity duration-300"
+        style={{ opacity: showControls ? 1 : 0, pointerEvents: showControls ? "auto" : "none" }}
+      >
         <ConnectionIndicator />
       </div>
     </div>

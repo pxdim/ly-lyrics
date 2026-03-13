@@ -21,7 +21,7 @@ export interface LyricsControlProps {
   /** Whether the display is currently in fullscreen */
   isFullscreen?: boolean;
   /** Callback to toggle fullscreen mode */
-  onToggleFullscreen?: () => void;
+  onToggleFullscreen?: (() => void) | undefined;
 }
 
 export const LyricsControl: FC<LyricsControlProps> = ({
