@@ -3,22 +3,35 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
 
-// Playlist 播放清單 HTTP handler
-type Playlist struct {
-	svc *service.PlaylistService
+// PlaylistServicer 定義 Playlist handler 所需的播放清單服務介面，便於測試時替換為 mock
+type PlaylistServicer interface {
+	List(ctx context.Context, params dto.PlaylistListParams) (*dto.PlaylistListResponse, error)
+	Create(ctx context.Context, req dto.CreatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error)
 }
 
-// NewPlaylist 建立 Playlist handler
+// Playlist 播放清單 HTTP handler
+type Playlist struct {
+	svc PlaylistServicer
+}
+
+// NewPlaylist 建立 Playlist handler（使用具體的 *service.PlaylistService）
 func NewPlaylist(svc *service.PlaylistService) *Playlist {
+	return &Playlist{svc: svc}
+}
+
+// NewPlaylistWithService 建立 Playlist handler，接受 PlaylistServicer 介面（便於測試注入 mock）
+func NewPlaylistWithService(svc PlaylistServicer) *Playlist {
 	return &Playlist{svc: svc}
 }
 

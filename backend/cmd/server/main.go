@@ -26,6 +26,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 設定結構化日誌
+	var logLevel slog.Level
+	if cfg.Environment == "production" {
+		logLevel = slog.LevelInfo
+	} else {
+		logLevel = slog.LevelDebug
+	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	})))
+
 	slog.Info("LY Backend starting",
 		"port", cfg.Port,
 		"environment", cfg.Environment,

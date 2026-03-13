@@ -14,6 +14,7 @@ import (
 	"github.com/raymondchen/ly-backend/internal/config"
 	"github.com/raymondchen/ly-backend/internal/ent"
 	"github.com/raymondchen/ly-backend/internal/handler"
+	"github.com/raymondchen/ly-backend/internal/middleware"
 	lyredis "github.com/raymondchen/ly-backend/internal/redis"
 	"github.com/raymondchen/ly-backend/internal/service"
 	"github.com/raymondchen/ly-backend/internal/ws"
@@ -30,6 +31,7 @@ type Server struct {
 	userService *service.UserService
 	hub         *ws.Hub
 	wsHandler   *handler.WSHandler
+	authLimiter *middleware.RateLimiter
 }
 
 // New 建立新的 Server 實例
@@ -54,6 +56,9 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 	s.jwtManager = auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 	s.userService = service.NewUserService(db)
 
+	// 初始化 Auth 速率限制器（每分鐘 10 次）
+	s.authLimiter = middleware.NewRateLimiter(10, 60)
+
 	// Redis 連線（WebSocket 必需）
 	if cfg.RedisURL != "" {
 		redisClient, err := lyredis.New(cfg.RedisURL)
@@ -66,7 +71,7 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 			songSvc := service.NewSongService(db)
 			eventHandler := ws.NewEventHandler(hub, redisClient, songSvc)
 			s.hub = hub
-			s.wsHandler = handler.NewWSHandler(hub, eventHandler)
+			s.wsHandler = handler.NewWSHandler(hub, eventHandler, cfg.CORSOrigins)
 			slog.Info("WebSocket Hub 已啟動")
 		}
 	}
@@ -85,5 +90,8 @@ func (s *Server) Start() error {
 
 // Shutdown 優雅關閉 server
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.authLimiter != nil {
+		s.authLimiter.Stop()
+	}
 	return s.http.Shutdown(ctx)
 }

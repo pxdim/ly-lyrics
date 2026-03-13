@@ -11,20 +11,27 @@ import (
 
 // WSHandler WebSocket HTTP upgrade handler
 type WSHandler struct {
-	hub     *ws.Hub
-	handler *ws.EventHandler
+	hub         *ws.Hub
+	handler     *ws.EventHandler
+	corsOrigins string
 }
 
 // NewWSHandler 建立 WSHandler 實例
-func NewWSHandler(hub *ws.Hub, handler *ws.EventHandler) *WSHandler {
-	return &WSHandler{hub: hub, handler: handler}
+func NewWSHandler(hub *ws.Hub, handler *ws.EventHandler, corsOrigins string) *WSHandler {
+	return &WSHandler{hub: hub, handler: handler, corsOrigins: corsOrigins}
 }
 
 // ServeWS 處理 WebSocket upgrade 請求
 func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		InsecureSkipVerify: true, // 允許所有來源（遷移期間）
-	})
+	opts := &websocket.AcceptOptions{}
+
+	// 僅在開發模式（CORS_ORIGINS="*"）才跳過 origin 驗證
+	if h.corsOrigins == "*" {
+		opts.InsecureSkipVerify = true
+	}
+	// 生產模式讓 coder/websocket 自動驗證 origin（預設行為）
+
+	conn, err := websocket.Accept(w, r, opts)
 	if err != nil {
 		slog.Error("WebSocket accept 失敗", "error", err)
 		return

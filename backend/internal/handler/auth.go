@@ -3,7 +3,7 @@
 package handler
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -11,30 +11,37 @@ import (
 	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
+	"github.com/raymondchen/ly-backend/internal/ent"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
 
+// UserServicer 定義 AuthHandler 所需的使用者服務介面，便於測試時替換為 mock
+type UserServicer interface {
+	VerifyCredentials(ctx context.Context, email, password string) (*ent.User, error)
+	CreateUser(ctx context.Context, email, password string, name *string) (*ent.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*ent.User, error)
+}
+
 // AuthHandler 認證相關 HTTP handlers
 type AuthHandler struct {
-	userService *service.UserService
+	userService UserServicer
 	jwtManager  *auth.JWTManager
 }
 
-// NewAuthHandler 建立 AuthHandler 實例
+// NewAuthHandler 建立 AuthHandler 實例（使用具體的 *service.UserService）
 func NewAuthHandler(userService *service.UserService, jwtManager *auth.JWTManager) *AuthHandler {
+	return &AuthHandler{userService: userService, jwtManager: jwtManager}
+}
+
+// NewAuthHandlerWithService 建立 AuthHandler 實例，接受 UserServicer 介面（便於測試注入 mock）
+func NewAuthHandlerWithService(userService UserServicer, jwtManager *auth.JWTManager) *AuthHandler {
 	return &AuthHandler{userService: userService, jwtManager: jwtManager}
 }
 
 // Login POST /api/auth/login — 使用者登入
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
-		return
-	}
-
-	if req.Email == "" || req.Password == "" {
-		writeError(w, "AUTH_MISSING_CREDENTIALS", "Email and password are required", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -78,13 +85,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // Register POST /api/auth/register — 使用者註冊
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
-		return
-	}
-
-	if req.Email == "" || req.Password == "" {
-		writeError(w, "AUTH_MISSING_CREDENTIALS", "Email and password are required", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -158,8 +159,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 // Refresh POST /api/auth/refresh — 更新 access token
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 

@@ -47,10 +47,11 @@ func TestHashPassword(t *testing.T) {
 
 	t.Run("73 字元（太長，應失敗）", func(t *testing.T) {
 		t.Parallel()
+		// 73 個 ASCII 字元 = 73 bytes，超過 bcrypt 72-byte 限制
 		password := strings.Repeat("a", 73)
 		_, err := HashPassword(password)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "8-72")
+		assert.Contains(t, err.Error(), "72")
 	})
 
 	t.Run("Unicode 中文密碼（8 個中文字 = 8 runes）", func(t *testing.T) {
@@ -183,6 +184,40 @@ func TestBcryptCost(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 10, cost, "bcrypt cost 應為 10")
 	})
+}
+
+func TestHashPassword_ByteLengthLimit(t *testing.T) {
+	// 25 個中文字 = 25 runes，75 bytes → 超過 bcrypt 72-byte 限制
+	longCJK := strings.Repeat("密", 25) // 75 bytes
+	_, err := HashPassword(longCJK)
+	assert.Error(t, err, "應拒絕超過 72 bytes 的密碼")
+	assert.Contains(t, err.Error(), "72")
+
+	// 24 個中文字 = 24 runes，72 bytes → 剛好在邊界
+	validCJK := strings.Repeat("密", 24) // 72 bytes
+	hash, err := HashPassword(validCJK)
+	assert.NoError(t, err, "應接受剛好 72 bytes 的密碼")
+	assert.NotEmpty(t, hash)
+
+	// 確認雜湊可以正確比對
+	err = VerifyPassword(validCJK, hash)
+	assert.NoError(t, err)
+}
+
+func TestHashPassword_MixedByteLength(t *testing.T) {
+	// 8 個 ASCII + 22 個中文 = 8 + 66 = 74 bytes → 超過限制
+	mixed := "abcdefgh" + strings.Repeat("字", 22)
+	_, err := HashPassword(mixed)
+	assert.Error(t, err, "混合內容超過 72 bytes 應被拒絕")
+
+	// 8 個 ASCII + 21 個中文 = 8 + 63 = 71 bytes → 在限制內
+	validMixed := "abcdefgh" + strings.Repeat("字", 21)
+	hash, err := HashPassword(validMixed)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
+
+	err = VerifyPassword(validMixed, hash)
+	assert.NoError(t, err)
 }
 
 // TestHashPasswordTableDriven 使用表格驅動測試密碼長度邊界

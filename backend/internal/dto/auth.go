@@ -41,7 +41,7 @@ type UserResponse struct {
 
 // RefreshRequest 更新 token 請求
 type RefreshRequest struct {
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
 
 // MeResponse 當前使用者資訊回應

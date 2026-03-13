@@ -5,7 +5,7 @@
  * 透過環境變數 NEXT_PUBLIC_USE_NATIVE_WS=true 切換。
  */
 
-import type { ClientRole, DisplaySettings, ServerToClientEvents } from "./client";
+import type { ClientRole, DisplaySettings, ServerToClientEvents } from "./types";
 
 // ============================================================================
 // Types
@@ -243,4 +243,22 @@ export function initNativeWSClient(url?: string): NativeWSClient {
 
 export function getNativeWSClient(): NativeWSClient | null {
   return nativeWSClientInstance;
+}
+
+// ============================================================================
+// 相容性輔助函式（取代舊 Socket.IO client 的對外介面）
+// ============================================================================
+
+/**
+ * 建立原生 WebSocket client（使用 Go backend）
+ */
+export function createWSClient(url?: string): NativeWSClient {
+  return initNativeWSClient(url);
+}
+
+/**
+ * 取得當前的 WebSocket client
+ */
+export function getActiveWSClient(): NativeWSClient | null {
+  return getNativeWSClient();
 }

@@ -60,6 +60,7 @@ func structuredLogger(next http.Handler) http.Handler {
 				"duration_ms", time.Since(start).Milliseconds(),
 				"bytes", ww.BytesWritten(),
 				"remote_addr", r.RemoteAddr,
+				"request_id", middleware.GetReqID(r.Context()),
 			)
 		}()
 

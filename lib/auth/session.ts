@@ -1,25 +1,15 @@
 /**
  * Session Helpers
  *
- * Helper functions for working with NextAuth sessions in server components
- * and API routes.
+ * 伺服器元件與 API 路由的認證輔助函式。
+ * 使用 Go 後端 JWT token 進行認證驗證。
  *
  * @module lib/auth/session
  */
 
-import { getServerSession } from "next-auth";
-import type { AuthOptions, Session } from "next-auth";
-import { authConfig } from "./config";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { AppError } from "@/lib/errors/AppError";
-
-// NextAuth v4 authOptions（供 getServerSession 使用）
-const nextAuthSecret: string = process.env["NEXTAUTH_SECRET"] || "fallback-secret-change-in-production";
-
-const authOptions: AuthOptions = {
-  ...authConfig,
-  secret: nextAuthSecret,
-} as unknown as AuthOptions;
 
 // ============================================================================
 // Types
@@ -35,85 +25,78 @@ export interface AuthUser {
 // Session Helpers
 // ============================================================================
 
+const GO_BACKEND_URL = process.env["GO_BACKEND_URL"] || "http://localhost:8080";
+
 /**
- * Get the current session from the server
- * @returns The session or null if not authenticated
+ * 從 cookie 中取得 access token
  */
-export async function getSession(): Promise<Session | null> {
-  return await getServerSession(authOptions);
+async function getAccessToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("access_token")?.value ?? null;
 }
 
 /**
- * Get the current authenticated user
- * @returns The authenticated user or null
+ * 取得當前已認證的使用者
+ * @returns 已認證使用者或 null
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const session = await getSession();
+  const token = await getAccessToken();
+  if (!token) return null;
 
-  if (!session?.user) {
+  try {
+    const res = await fetch(`${GO_BACKEND_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return {
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.name ?? null,
+    };
+  } catch {
     return null;
   }
-
-  return {
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name,
-  };
 }
 
 /**
- * Require authentication - redirects to sign in if not authenticated
- * @returns The authenticated user
- * @throws Redirects to /auth/signin if not authenticated
+ * 要求認證 — 未認證則重導至登入頁
  */
 export async function requireAuth(): Promise<AuthUser> {
   const user = await getCurrentUser();
-
   if (!user) {
     redirect("/auth/signin");
   }
-
   return user;
 }
 
 /**
- * Get user ID for database queries
- * Falls back to demo user ID if not authenticated (for demo mode)
- * @returns The user ID
+ * 取得使用者 ID（未認證時回傳 demo user ID）
  */
 export async function getUserId(): Promise<string> {
   const user = await getCurrentUser();
-
-  if (user) {
-    return user.id;
-  }
-
+  if (user) return user.id;
   // Demo 使用者由 Go 後端管理
   return "00000000-0000-0000-0000-000000000001";
 }
 
 /**
- * Check if the current user is the demo user
- * @returns true if the current user is the demo user
+ * 檢查是否為 demo 使用者
  */
 export async function isDemoUser(): Promise<boolean> {
   const user = await getCurrentUser();
-
-  if (!user) {
-    return false;
-  }
-
+  if (!user) return false;
   return user.id === "00000000-0000-0000-0000-000000000001";
 }
 
 /**
- * Require a specific user or admin
- * @param allowedIds Array of allowed user IDs
- * @throws AppError if user is not authorized
+ * 要求特定使用者
  */
 export async function requireUser(allowedIds: string[]): Promise<AuthUser> {
   const user = await requireAuth();
-
   if (!allowedIds.includes(user.id)) {
     throw new AppError(
       "AUTH_FORBIDDEN",
@@ -122,17 +105,14 @@ export async function requireUser(allowedIds: string[]): Promise<AuthUser> {
       "error"
     );
   }
-
   return user;
 }
 
 /**
- * Middleware helper to check authentication in API routes
- * @returns The authenticated user or throws an error
+ * API 路由認證檢查
  */
 export async function apiAuth(): Promise<AuthUser> {
   const user = await getCurrentUser();
-
   if (!user) {
     throw new AppError(
       "AUTH_UNAUTHORIZED",
@@ -141,6 +121,5 @@ export async function apiAuth(): Promise<AuthUser> {
       "error"
     );
   }
-
   return user;
 }

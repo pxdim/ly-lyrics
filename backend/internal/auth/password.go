@@ -13,10 +13,14 @@ import (
 const bcryptCost = 10
 
 // HashPassword 將明文密碼轉換為 bcrypt 雜湊值
+// bcrypt 硬限制為 72 bytes，此處同時檢查 rune 下限與 byte 上限
 func HashPassword(password string) (string, error) {
 	runeLen := utf8.RuneCountInString(password)
-	if runeLen < 8 || runeLen > 72 {
+	if runeLen < 8 {
 		return "", fmt.Errorf("密碼長度必須為 8-72 個字元")
+	}
+	if len(password) > 72 {
+		return "", fmt.Errorf("密碼長度不可超過 72 bytes（中文字每字佔 3 bytes）")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {
