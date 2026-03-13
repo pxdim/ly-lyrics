@@ -152,6 +152,7 @@ export const useLyricsStore = create<LyricsStore>()(
 
         setCurrentIndex: (index) => {
           const { lyrics } = get();
+          if (lyrics.length === 0) return;
           const clampedIndex = Math.max(0, Math.min(index, lyrics.length - 1));
           set({ currentIndex: clampedIndex });
         },
@@ -161,6 +162,7 @@ export const useLyricsStore = create<LyricsStore>()(
         // ========================================
         nextLine: () => {
           const { currentIndex, lyrics } = get();
+          if (lyrics.length === 0) return;
           const nextIndex = Math.min(currentIndex + 1, lyrics.length - 1);
           set({ currentIndex: nextIndex });
 
@@ -185,6 +187,7 @@ export const useLyricsStore = create<LyricsStore>()(
 
         jumpToLine: (index) => {
           const { lyrics } = get();
+          if (lyrics.length === 0) return;
           const clampedIndex = Math.max(0, Math.min(index, lyrics.length - 1));
           set({ currentIndex: clampedIndex });
 
