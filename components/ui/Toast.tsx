@@ -85,7 +85,7 @@ interface ToastItemProps {
 }
 
 const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
-  const { displaySettings } = useLyricsStore();
+  const displaySettings = useLyricsStore((state) => state.displaySettings);
 
   useEffect(() => {
     if (toast.duration === 0) {

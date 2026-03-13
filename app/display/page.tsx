@@ -17,23 +17,26 @@ import { LyricsControl } from "@/components/lyrics/LyricsControl";
 export default function DisplayPage() {
   const [connectionCode, setConnectionCode] = useState("");
   const [isConnected, setIsConnected] = useState(false);
-  const { connect, disconnect, currentSong } = useLyricsStore();
+  const connect = useLyricsStore((state) => state.connect);
+  const disconnect = useLyricsStore((state) => state.disconnect);
+  const currentSong = useLyricsStore((state) => state.currentSong);
 
-  // Handle connection
+  // Handle connection — connect is a stable Zustand action, exclude from deps
   useEffect(() => {
     if (connectionCode.length === 6) {
       // Simulate connection - in production, this would validate via WebSocket
       setIsConnected(true);
       connect();
     }
-  }, [connectionCode, connect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionCode]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, [disconnect]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Connection Screen
   if (!isConnected) {
