@@ -64,3 +64,6 @@ skills-lock.json
 
 # Superpowers plans (local workflow docs)
 docs/superpowers/
+
+# Git worktrees
+.worktrees/
