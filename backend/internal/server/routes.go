@@ -52,6 +52,10 @@ func (s *Server) setupRoutes() {
 		r.Route("/api/playlists", func(r chi.Router) {
 			r.Get("/", playlistHandler.List)
 			r.Post("/", playlistHandler.Create)
+			r.Route("/{id}", func(r chi.Router) {
+				r.Put("/", playlistHandler.Update)
+				r.Delete("/", playlistHandler.Delete)
+			})
 		})
 
 		settingsSvc := service.NewSettingsService(s.db)

@@ -27,6 +27,13 @@ type mockPlaylistService struct {
 	// Create 的預設回傳值
 	createResp *dto.PlaylistResponse
 	createErr  error
+
+	// Update 的預設回傳值
+	updateResp *dto.PlaylistResponse
+	updateErr  error
+
+	// Delete 的預設回傳值
+	deleteErr error
 }
 
 func (m *mockPlaylistService) List(_ context.Context, _ dto.PlaylistListParams) (*dto.PlaylistListResponse, error) {
@@ -35,6 +42,14 @@ func (m *mockPlaylistService) List(_ context.Context, _ dto.PlaylistListParams) 
 
 func (m *mockPlaylistService) Create(_ context.Context, _ dto.CreatePlaylistRequest, _ uuid.UUID) (*dto.PlaylistResponse, error) {
 	return m.createResp, m.createErr
+}
+
+func (m *mockPlaylistService) Update(_ context.Context, _ uuid.UUID, _ dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error) {
+	return m.updateResp, m.updateErr
+}
+
+func (m *mockPlaylistService) Delete(_ context.Context, _ uuid.UUID) error {
+	return m.deleteErr
 }
 
 // ────────────────────────────────────────────────────────────

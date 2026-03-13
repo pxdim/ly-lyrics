@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
@@ -18,6 +19,8 @@ import (
 type PlaylistServicer interface {
 	List(ctx context.Context, params dto.PlaylistListParams) (*dto.PlaylistListResponse, error)
 	Create(ctx context.Context, req dto.CreatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error)
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // Playlist 播放清單 HTTP handler
@@ -104,4 +107,57 @@ func (h *Playlist) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, playlistResp)
+}
+
+// Update PUT /api/playlists/{id} — 更新播放清單
+func (h *Playlist) Update(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, "PLAYLIST_INVALID_FORMAT", "Invalid playlist ID format", http.StatusBadRequest)
+		return
+	}
+
+	var req dto.UpdatePlaylistRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, "PLAYLIST_INVALID_FORMAT", "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// 至少要有一個欄位更新
+	if req.Name == nil && req.SongIDs == nil {
+		writeError(w, "PLAYLIST_INVALID_FORMAT", "At least one field (name or songIds) must be provided", http.StatusBadRequest)
+		return
+	}
+
+	playlistResp, err := h.svc.Update(r.Context(), id, req)
+	if err != nil {
+		writeError(w, "SYS_INTERNAL_ERROR", "Failed to update playlist", http.StatusInternalServerError)
+		return
+	}
+	if playlistResp == nil {
+		writeError(w, "PLAYLIST_NOT_FOUND", "Playlist not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, playlistResp)
+}
+
+// Delete DELETE /api/playlists/{id} — 刪除播放清單
+func (h *Playlist) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, "PLAYLIST_INVALID_FORMAT", "Invalid playlist ID format", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		if err.Error() == "playlist not found" {
+			writeError(w, "PLAYLIST_NOT_FOUND", "Playlist not found", http.StatusNotFound)
+			return
+		}
+		writeError(w, "SYS_INTERNAL_ERROR", "Failed to delete playlist", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]bool{"success": true})
 }

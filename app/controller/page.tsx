@@ -12,7 +12,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
-import { fetchPlaylists, createPlaylist, type ClientPlaylist } from "@/lib/api/playlists";
+import { fetchPlaylists, createPlaylist, updatePlaylist, deletePlaylist, type ClientPlaylist } from "@/lib/api/playlists";
 import { AddSongModal } from "@/components/controller/AddSongModal";
 
 // ============================================================================
@@ -427,6 +427,33 @@ function PlaylistListPanel() {
   // 返回播放清單列表
   const handleBack = () => {
     setSelectedPlaylist(null);
+    setEditingName(null);
+  };
+
+  // 重命名
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const handleRename = async () => {
+    if (!selectedPlaylist || editingName === null || !editingName.trim()) return;
+    try {
+      const updated = await updatePlaylist(selectedPlaylist.id, { name: editingName.trim() });
+      setSelectedPlaylist(updated);
+      setEditingName(null);
+      await loadPlaylists();
+    } catch (err) {
+      console.error("重命名播放清單失敗:", err);
+    }
+  };
+
+  // 刪除
+  const handleDeletePlaylist = async () => {
+    if (!selectedPlaylist || !confirm("確定要刪除此播放清單嗎？")) return;
+    try {
+      await deletePlaylist(selectedPlaylist.id);
+      setSelectedPlaylist(null);
+      await loadPlaylists();
+    } catch (err) {
+      console.error("刪除播放清單失敗:", err);
+    }
   };
 
   // ── 播放清單歌曲詳情畫面 ──
@@ -437,7 +464,7 @@ function PlaylistListPanel() {
 
     return (
       <>
-        {/* 返回 + 標題 */}
+        {/* 返回 + 標題 + 操作 */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2A2D35] shrink-0">
           <button
             onClick={handleBack}
@@ -450,9 +477,40 @@ function PlaylistListPanel() {
             </svg>
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-[#E4E7EB] truncate">{selectedPlaylist.name}</p>
+            {editingName !== null ? (
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") setEditingName(null);
+                }}
+                className="w-full px-1 py-0.5 bg-[#090A0C] border border-primary/50 text-[13px] text-[#E4E7EB] focus:outline-none font-body rounded-none"
+                autoFocus
+              />
+            ) : (
+              <p
+                className="text-[13px] font-semibold text-[#E4E7EB] truncate cursor-pointer hover:text-primary transition-colors"
+                onClick={() => setEditingName(selectedPlaylist.name)}
+                title="點擊重命名"
+              >
+                {selectedPlaylist.name}
+              </p>
+            )}
             <p className="text-[10px] font-mono text-[#6B7280]">{playlistSongs.length} TRACKS</p>
           </div>
+          <button
+            onClick={handleDeletePlaylist}
+            className="text-[#6B7280] hover:text-red-400 transition-colors p-1 shrink-0"
+            type="button"
+            title="刪除播放清單"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
         </div>
 
         {/* 歌曲列表 */}

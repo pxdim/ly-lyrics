@@ -77,9 +77,28 @@ export async function createPlaylist(data: {
 }
 
 /**
+ * 更新播放清單（名稱及/或歌曲列表）
+ */
+export async function updatePlaylist(
+  id: string,
+  data: { name?: string; songIds?: string[] }
+): Promise<ClientPlaylist> {
+  const response = await fetch(`/api/playlists/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "更新播放清單失敗" }));
+    throw new Error(error.message ?? `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * 刪除播放清單
- * 注意：Go 後端目前尚未實作 DELETE /api/playlists/:id
- * 預留此函式供未來使用
  */
 export async function deletePlaylist(id: string): Promise<void> {
   const response = await fetch(`/api/playlists/${encodeURIComponent(id)}`, {

@@ -122,6 +122,104 @@ func (s *PlaylistService) Create(ctx context.Context, req dto.CreatePlaylistRequ
 	return &resp, nil
 }
 
+// Update 更新播放清單（名稱及/或歌曲列表）
+func (s *PlaylistService) Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error) {
+	// 確認播放清單存在
+	p, err := s.client.Playlist.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("getting playlist: %w", err)
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("starting transaction: %w", err)
+	}
+
+	// 更新名稱（如有提供）
+	update := tx.Playlist.UpdateOneID(id)
+	if req.Name != nil {
+		update = update.SetName(*req.Name)
+	}
+	p, err = update.Save(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, fmt.Errorf("updating playlist: %w", err)
+	}
+
+	// 更新歌曲列表（如有提供）：先刪舊、再建新
+	if req.SongIDs != nil {
+		_, err = tx.PlaylistSong.Delete().
+			Where(playlistsong.PlaylistID(id)).
+			Exec(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("removing old songs: %w", err)
+		}
+
+		for i, songID := range req.SongIDs {
+			_, err = tx.PlaylistSong.Create().
+				SetPlaylistID(id).
+				SetSongID(songID).
+				SetOrderIndex(i).
+				Save(ctx)
+			if err != nil {
+				_ = tx.Rollback()
+				return nil, fmt.Errorf("adding song to playlist: %w", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("committing transaction: %w", err)
+	}
+
+	// 查詢最新的歌曲列表
+	songIDs, err := s.getSongIDs(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("getting song IDs: %w", err)
+	}
+	resp := entPlaylistToDTO(p, songIDs)
+	return &resp, nil
+}
+
+// Delete 刪除播放清單及其歌曲關聯
+func (s *PlaylistService) Delete(ctx context.Context, id uuid.UUID) error {
+	// 確認播放清單存在
+	exists, err := s.client.Playlist.Query().Where(playlist.ID(id)).Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("checking playlist: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("playlist not found")
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
+
+	// 先刪除關聯表的歌曲記錄
+	_, err = tx.PlaylistSong.Delete().
+		Where(playlistsong.PlaylistID(id)).
+		Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting playlist songs: %w", err)
+	}
+
+	// 刪除播放清單本體
+	err = tx.Playlist.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("deleting playlist: %w", err)
+	}
+
+	return tx.Commit()
+}
+
 // getSongIDs 取得播放清單中的歌曲 ID 列表（依 order_index 排序）
 func (s *PlaylistService) getSongIDs(ctx context.Context, playlistID uuid.UUID) ([]uuid.UUID, error) {
 	playlistSongs, err := s.client.PlaylistSong.Query().
