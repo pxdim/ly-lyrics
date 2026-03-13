@@ -8,7 +8,7 @@ const API_BASE = "http://localhost:8080";
 interface SeedSongInput {
   title: string;
   artist?: string;
-  lyrics: string;
+  lyrics: string[];
   language?: string;
 }
 

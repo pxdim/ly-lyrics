@@ -84,7 +84,7 @@ export async function refreshToken(token: string): Promise<AuthTokens> {
   const res = await fetch(`${API_BASE}/api/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: token }),
+    body: JSON.stringify({ refreshToken: token }),
   });
 
   if (!res.ok) {
@@ -119,7 +119,8 @@ export async function getMe(accessToken: string): Promise<UserInfo> {
     );
   }
 
-  return res.json();
+  const data = await res.json();
+  return data.user;
 }
 
 /**

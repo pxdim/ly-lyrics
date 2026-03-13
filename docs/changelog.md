@@ -2,6 +2,29 @@
 
 ## 版本歷史
 
+### v0.6.1 - 2026-03-14
+
+**P0 品質鞏固 — 測試覆蓋補齊**
+
+#### 新增
+- **Vitest 單元測試大幅擴充**
+  - Zustand Store 測試 40 cases（歌詞導航、歌曲操作、連線狀態、業務事件、Session、播放控制、顯示設定、Selectors）
+  - NativeWSClient 測試 28 cases（連線管理、事件發送/接收、內部事件、重連邏輯、Session 恢復、事件監聽器管理）
+  - 前端測試總計 110 cases（新增 68 + 既有 42）
+- **Playwright E2E 基礎設施**
+  - `docker-compose.test.yml`（PostgreSQL 16 port 5433 + Redis 7 port 6380）
+  - `playwright.config.ts`（Go backend + Next.js webServer 設定）
+  - `e2e/helpers/auth.ts`、`e2e/helpers/api.ts`（認證/歌曲 API helper）
+- **Playwright E2E 測試 Specs**
+  - Auth 流程 5 cases（註冊、登入、refresh token、/auth/me、錯誤密碼）
+  - Songs CRUD 5 cases（建立、列表、取得、更新、刪除）
+  - WebSocket 同步 5 cases（Controller/Display 載入、操作同步、斷線恢復）
+
+#### 修復
+- Store `nextLine()`/`jumpToLine()`/`setCurrentIndex()` 空歌詞 bug — lyrics 為空時 `Math.min(1, -1)` 產生 -1 索引，新增 early return guard
+
+---
+
 ### v0.6.0 - 2026-03-13
 
 **Display UX 強化 — QR Code、斷線重連、全螢幕**
