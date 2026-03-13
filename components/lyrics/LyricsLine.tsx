@@ -49,6 +49,10 @@ export const LyricsLine: FC<LyricsLineProps> = ({
         textShadow: isActive
           ? `0 0 20px ${highlightColor}40, 0 0 40px ${highlightColor}30`
           : "none",
+        // 超長歌詞行溢出處理：避免無空格長字串撐破容器
+        overflowWrap: "break-word",
+        wordBreak: "break-word",
+        maxWidth: "100%",
       }}
       data-index={index}
       data-active={isActive}
