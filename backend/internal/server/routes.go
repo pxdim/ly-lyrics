@@ -13,11 +13,14 @@ func (s *Server) setupRoutes() {
 	// 健康檢查
 	s.router.Get("/api/go-health", h.Check)
 
-	// Auth 路由（公開）
+	// Auth 路由（公開，套用速率限制）
 	authHandler := handler.NewAuthHandler(s.userService, s.jwtManager)
-	s.router.Post("/api/auth/login", authHandler.Login)
-	s.router.Post("/api/auth/register", authHandler.Register)
-	s.router.Post("/api/auth/refresh", authHandler.Refresh)
+	s.router.Group(func(r chi.Router) {
+		r.Use(s.authLimiter.Middleware)
+		r.Post("/api/auth/login", authHandler.Login)
+		r.Post("/api/auth/register", authHandler.Register)
+		r.Post("/api/auth/refresh", authHandler.Refresh)
+	})
 
 	// Auth 路由（需認證）
 	s.router.Group(func(r chi.Router) {
