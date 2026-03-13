@@ -131,6 +131,14 @@ export const useLyricsStore = create<LyricsStore>()(
             currentIndex: 0,
             lyrics: song?.lyrics ?? [],
           });
+
+          // Controller 選歌時透過 WebSocket 通知後端，後端會廣播 song_changed 給所有 Display
+          const ws = initNativeWSClient();
+          if (get().role === "controller" && ws.isConnected()) {
+            if (song) {
+              ws.setSong(song.id);
+            }
+          }
         },
 
         setLyrics: (lyrics) => {
@@ -219,6 +227,14 @@ export const useLyricsStore = create<LyricsStore>()(
                   lyrics: state.currentSong.lyrics,
                 });
               }
+            });
+
+            ws.on("song_changed", ({ song }) => {
+              set({
+                currentSong: song,
+                currentIndex: 0,
+                lyrics: song?.lyrics ?? [],
+              });
             });
 
             ws.on("settings_updated", ({ settings }) => {
