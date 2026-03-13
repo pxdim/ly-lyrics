@@ -3,7 +3,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -28,13 +27,7 @@ func NewAuthHandler(userService *service.UserService, jwtManager *auth.JWTManage
 // Login POST /api/auth/login — 使用者登入
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
-		return
-	}
-
-	if req.Email == "" || req.Password == "" {
-		writeError(w, "AUTH_MISSING_CREDENTIALS", "Email and password are required", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -78,13 +71,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // Register POST /api/auth/register — 使用者註冊
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
-		return
-	}
-
-	if req.Email == "" || req.Password == "" {
-		writeError(w, "AUTH_MISSING_CREDENTIALS", "Email and password are required", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -158,8 +145,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 // Refresh POST /api/auth/refresh — 更新 access token
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "VALIDATION_ERROR", "無效的請求格式", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 

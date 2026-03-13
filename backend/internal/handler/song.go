@@ -3,7 +3,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -68,14 +67,7 @@ func (h *Song) List(w http.ResponseWriter, r *http.Request) {
 // Create POST /api/songs — 建立歌曲
 func (h *Song) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateSongRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "SONG_INVALID_FORMAT", "Invalid JSON format", http.StatusBadRequest)
-		return
-	}
-
-	// 驗證必填欄位
-	if req.Title == "" || len(req.Lyrics) == 0 {
-		writeError(w, "SONG_INVALID_FORMAT", "Title and lyrics are required", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -124,8 +116,7 @@ func (h *Song) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req dto.UpdateSongRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, "SONG_INVALID_FORMAT", "Invalid JSON format", http.StatusBadRequest)
+	if !decodeAndValidate(w, r, &req) {
 		return
 	}
 
