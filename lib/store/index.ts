@@ -224,7 +224,7 @@ export const useLyricsStore = create<LyricsStore>()(
               if (state.currentSong) {
                 set({
                   currentSong: state.currentSong,
-                  lyrics: state.currentSong.lyrics,
+                  lyrics: state.currentSong.lyrics ?? [],
                 });
               }
             });
@@ -385,8 +385,9 @@ export const selectVisibleLyrics = (state: LyricsState) => {
   const { lyrics, currentIndex, displaySettings } = state;
   const { displayLines } = displaySettings;
 
-  const halfLines = Math.floor(displayLines / 2);
-  const startIndex = Math.max(0, currentIndex - halfLines);
+  // 前瞻偏移：少行數時當前句置頂，多行數時保留少量上文
+  const prevLines = Math.floor(displayLines / 3);
+  const startIndex = Math.max(0, currentIndex - prevLines);
   const endIndex = Math.min(lyrics.length, startIndex + displayLines);
 
   return {

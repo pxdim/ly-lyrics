@@ -39,8 +39,10 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
       return { visibleLyrics: [], startIndex: 0, highlightIndex: -1 };
     }
 
-    const halfLines = Math.floor(displayLines / 2);
-    let startIdx = Math.max(0, currentIndex - halfLines);
+    // 前瞻偏移：少行數時當前句置頂，多行數時保留少量上文
+    // prevLines = floor(displayLines / 3)：2行→0, 3行→1, 4行→1, 6行→2
+    const prevLines = Math.floor(displayLines / 3);
+    let startIdx = Math.max(0, currentIndex - prevLines);
     const endIdx = Math.min(lyrics.length, startIdx + displayLines);
 
     // Adjust start if we're near the end
