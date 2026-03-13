@@ -1,0 +1,25 @@
+services:
+  test-postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ly_test
+      POSTGRES_USER: ly_test
+      POSTGRES_PASSWORD: ly_test_pass
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ly_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 5

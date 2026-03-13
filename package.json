@@ -10,6 +10,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:setup": "docker compose -f docker-compose.test.yml up -d --wait",
+    "test:e2e:teardown": "docker compose -f docker-compose.test.yml down -v",
     "prepare": "husky install || true",
     "postinstall": "husky install || true"
   },
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.27",
+    "dotenv": "^17.3.1",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.1.0",
     "husky": "^8.0.3",
