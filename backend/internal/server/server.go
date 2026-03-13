@@ -46,11 +46,15 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 		db:     db,
 		sqlDB:  sqlDB,
 		http: &http.Server{
-			Addr:         fmt.Sprintf(":%d", cfg.Port),
-			Handler:      r,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 15 * time.Second,
-			IdleTimeout:  60 * time.Second,
+			Addr:    fmt.Sprintf(":%d", cfg.Port),
+			Handler: r,
+			// 使用 ReadHeaderTimeout 而非 ReadTimeout：
+			// ReadTimeout 會在底層 net.Conn 設定 deadline，影響 WebSocket 長連線。
+			// ReadHeaderTimeout 只限制 HTTP header 讀取階段，不影響後續 body stream。
+			ReadHeaderTimeout: 15 * time.Second,
+			// 不設定 WriteTimeout：WebSocket 是長連線，WriteTimeout 會導致連線被強制關閉。
+			// 各 handler 可透過 context.WithTimeout 自行控制寫入逾時。
+			IdleTimeout: 60 * time.Second,
 			// 禁用 HTTP/2，確保 reverse proxy（Railway edge）使用 HTTP/1.1 與後端通訊，
 			// 保留 WebSocket upgrade 所需的 Connection 和 Upgrade hop-by-hop headers
 			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
