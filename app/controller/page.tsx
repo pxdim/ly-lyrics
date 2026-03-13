@@ -25,17 +25,16 @@ export default function ControllerPage() {
   const disconnect = useLyricsStore((state) => state.disconnect);
   const joinSession = useLyricsStore((state) => state.joinSession);
   const leaveSession = useLyricsStore((state) => state.leaveSession);
-  // 生成房間碼（僅在首次 mount 時產生，不隨 re-render 變動）
-  const sessionCodeRef = useRef<string | null>(null);
-  if (sessionCodeRef.current === null) {
-    sessionCodeRef.current = generateSessionCode();
-  }
+  // 房間碼在 useEffect 中生成（client-only），避免 SSR/client 隨機值不同導致 hydration mismatch
+  const [sessionCode, setSessionCode] = useState("");
 
   useEffect(() => {
+    const code = generateSessionCode();
+    setSessionCode(code);
     connect();
     // 以 controller 角色加入 session（NativeWSClient 會儲存 session 資訊，
     // 若 WS 尚未連線，onopen 時會自動重新 join）
-    joinSession(sessionCodeRef.current!, "controller");
+    joinSession(code, "controller");
     return () => {
       leaveSession();
       disconnect();
@@ -44,7 +43,7 @@ export default function ControllerPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
-      <StatusBar sessionCode={sessionCodeRef.current!} />
+      <StatusBar sessionCode={sessionCode} />
       <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
         {/* 左欄：歌曲庫 + 播放清單 */}
         <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">

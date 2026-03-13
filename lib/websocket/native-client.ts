@@ -128,7 +128,8 @@ export class NativeWSClient {
 
   private send(type: string, payload?: unknown): void {
     if (this.ws?.readyState !== WebSocket.OPEN) {
-      console.warn("[NativeWS] Not connected, message dropped:", type);
+      // 連線建立中的訊息會在 onopen 時透過 auto-rejoin 機制重送，非錯誤
+      console.debug("[NativeWS] Not connected, message queued for auto-rejoin:", type);
       return;
     }
     const msg: WSMessage = { type };
