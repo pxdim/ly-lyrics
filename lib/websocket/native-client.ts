@@ -22,6 +22,8 @@ type EventCallback = (...args: never[]) => void;
 type InternalEvents = {
   _connected: () => void;
   _disconnected: () => void;
+  _reconnecting: (data: { attempt: number; maxAttempts: number }) => void;
+  _reconnect_exhausted: () => void;
 };
 
 type AllEvents = ServerToClientEvents & InternalEvents;
@@ -120,6 +122,24 @@ export class NativeWSClient {
 
   getSessionId(): string | null {
     return this.currentSessionId;
+  }
+
+  /**
+   * 手動重試連線：清理現有連線、重置重試計數、重新連線。
+   * 用於「重試」按鈕，在重連耗盡後讓使用者手動觸發。
+   */
+  resetAndReconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.reconnectAttempts = 0;
+    this.shouldReconnect = true;
+    this.connect();
   }
 
   // ============================================================================
@@ -234,6 +254,7 @@ export class NativeWSClient {
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.warn("[NativeWS] Max reconnect attempts reached");
+      this.emit("_reconnect_exhausted", undefined);
       return;
     }
 
@@ -245,8 +266,12 @@ export class NativeWSClient {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectAttempts++;
       console.log(
-        `[NativeWS] Reconnecting (attempt ${this.reconnectAttempts})...`
+        `[NativeWS] Reconnecting (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       );
+      this.emit("_reconnecting", {
+        attempt: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts,
+      });
       this.connect();
     }, delay);
   }
