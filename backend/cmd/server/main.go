@@ -50,6 +50,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 
+	// 連線池配置（避免耗盡 Railway PostgreSQL 連線數）
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+
 	// 從 sql.DB 建立 Ent client
 	drv := entsql.OpenDB("postgres", sqlDB)
 	client := ent.NewClient(ent.Driver(drv))

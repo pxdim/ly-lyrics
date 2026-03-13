@@ -260,6 +260,11 @@ func (h *EventHandler) handleNextLine(ctx context.Context, client *Client) {
 		return
 	}
 
+	// 上界檢查：確保 lineIndex 不超出歌詞總行數
+	if state.CurrentSong != nil && state.CurrentLineIndex >= len(state.CurrentSong.Lyrics)-1 {
+		return
+	}
+
 	state.CurrentLineIndex++
 	_ = h.redisClient.SetSession(ctx, state)
 

@@ -100,10 +100,9 @@ app/
 ├── layout.tsx                  # 根佈局（字體：Orbitron, Exo 2, JetBrains Mono）
 ├── globals.css                 # 全域樣式 + Dark Tech 主題
 ├── controller/
-│   ├── page.tsx                # Broadcast Console 控制台（可拖曳面板）
-│   └── layout.tsx              # Controller 佈局
+│   └── page.tsx                # Broadcast Console 控制台（可拖曳面板 + QR Code 分享）
 └── display/
-    ├── page.tsx                # 全螢幕歌詞顯示
+    ├── page.tsx                # 全螢幕歌詞顯示（斷線重連 UI + 全螢幕模式）
     └── layout.tsx              # Display 佈局
 ```
 
@@ -112,16 +111,18 @@ app/
 ```
 components/
 ├── controller/
-│   └── AddSongModal.tsx        # 新增歌曲對話框
+│   ├── AddSongModal.tsx        # 新增歌曲對話框
+│   └── QRCodePanel.tsx         # QR Code 分享面板（RWD 三級：桌面側欄/平板 Popover/手機 Modal）
+├── display/
+│   ├── ConnectionStatusBar.tsx # 斷線重連狀態橫幅（頂部提示 + 倒數）
+│   └── ConnectionIndicator.tsx # 連線狀態指示燈（綠/黃/紅三態）
 ├── lyrics/
-│   ├── LyricsDisplay.tsx       # 主顯示元件（可見行計算 + 自動滾動）
+│   ├── LyricsDisplay.tsx       # 主顯示元件（可見行計算 + look-ahead bias 自動滾動）
 │   ├── LyricsLine.tsx          # 單行歌詞（霓虹光效 + scale 動畫）
-│   ├── LyricsControl.tsx       # 播放控制按鈕
-│   └── SongSelector.tsx        # 歌曲選擇器
-├── settings/
-│   └── SettingsPanel.tsx       # 顯示設定面板
+│   └── LyricsControl.tsx       # 播放控制按鈕 + 全螢幕切換
 ├── ui/
-│   └── Toast.tsx               # Toast 通知
+│   ├── Toast.tsx               # Toast 通知
+│   └── ErrorBoundary.tsx       # React Error Boundary
 └── StoreHydration.tsx          # Zustand hydration
 ```
 
@@ -129,12 +130,15 @@ components/
 
 ```
 lib/
-├── api/songs.ts                # Song API 封裝（fetch → Go 後端 via rewrites）
+├── api/
+│   ├── songs.ts                # Song API 封裝（fetch → Go 後端 via rewrites）
+│   └── playlists.ts            # Playlist API 封裝（CRUD）
 ├── auth/session.ts             # JWT 管理（cookie: access_token）
 ├── websocket/
-│   ├── native-client.ts        # 原生 WebSocket Client（265 行）
+│   ├── native-client.ts        # 原生 WebSocket Client（重連、rejoin、事件）
+│   ├── session-code.ts         # Session 同步碼產生（6 碼大寫英數）
 │   └── types.ts                # WS 事件型別
-├── store/index.ts              # Zustand Store（LyricsState + LyricsActions）
+├── store/index.ts              # Zustand Store（含 connectionState 三態 + persist）
 ├── schemas/index.ts            # Zod 驗證 schema
 ├── lrc/parser.ts               # LRC 前端解析器
 └── errors/AppError.ts          # AppError 型別定義
@@ -251,7 +255,7 @@ Zustand Store (lib/store/index.ts)
 │   ├── currentSong: Song | null
 │   ├── displaySettings: DisplaySettings
 │   ├── isPlaying: boolean
-│   ├── connectionStatus: string
+│   ├── connectionState: 'connected' | 'reconnecting' | 'disconnected'
 │   └── sessionId: string | null
 │
 ├── Actions

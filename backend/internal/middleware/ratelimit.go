@@ -4,6 +4,7 @@ package middleware
 import (
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -84,6 +85,23 @@ func (rl *RateLimiter) allow(ip string) bool {
 }
 
 func extractIP(r *http.Request) string {
+	// 反向代理場景（Railway, Nginx, Caddy 等）：優先取 X-Forwarded-For 第一個 IP
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// X-Forwarded-For 格式: "client, proxy1, proxy2"
+		for i := 0; i < len(xff); i++ {
+			if xff[i] == ',' {
+				return strings.TrimSpace(xff[:i])
+			}
+		}
+		return strings.TrimSpace(xff)
+	}
+
+	// X-Real-IP 備援（部分反向代理使用）
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+
+	// 直連場景：從 RemoteAddr 提取 IP
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return r.RemoteAddr

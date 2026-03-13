@@ -3,12 +3,12 @@
 ## 整體進度
 
 ```
-總體進度: ████████████░░░░░░░░░░ 60%
+總體進度: ██████████████████░░░░ 85%
 
-Phase 1 (MVP):       ████████████░░░░░░░░░░ 80%
-Phase 2 (Resolume):  ███░░░░░░░░░░░░░░░░░░░ 20%
-Phase 3 (AI):        ██░░░░░░░░░░░░░░░░░░░░ 15%
-Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░░░░  0%
+Phase 1 (MVP):       ████████████████████░ 95%
+Phase 2 (Resolume):  ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 3 (AI):        ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
 ---
@@ -21,7 +21,7 @@ Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░�
 |------|------|--------|
 | 專案文檔 | 🟢 完成 | 100% |
 | 需求確認 | 🟢 完成 | 100% |
-| 架構設計 | 🟡 進行中 | 80% |
+| 架構設計 | 🟢 完成 | 100% |
 
 ### 前端開發
 
@@ -29,28 +29,39 @@ Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░�
 |------|------|--------|
 | 專案建置 | 🟢 完成 | 100% |
 | 基礎佈局 | 🟢 完成 | 100% |
-| 歌詞顯示組件 | ⚪ 未開始 | 0% |
-| 控制面板組件 | ⚪ 未開始 | 0% |
-| 歌詞管理介面 | ⚪ 未開始 | 0% |
-| 播放列表介面 | ⚪ 未開始 | 0% |
-| 響應式設計 | 🟡 準備中 | 50% |
+| 歌詞顯示組件 (LyricsDisplay, LyricsLine, LyricsControl) | 🟢 完成 | 100% |
+| Controller 控制台 (Broadcast Console + 可拖曳面板) | 🟢 完成 | 100% |
+| Display 顯示端 (全螢幕、霓虹光效、自動滾動) | 🟢 完成 | 100% |
+| 歌曲管理介面 (新增、搜尋、刪除) | 🟢 完成 | 100% |
+| 播放列表介面 (CRUD + 歌曲選擇 + 重命名) | 🟢 完成 | 100% |
+| QR Code 分享 (RWD 三級：桌面側欄/平板 Popover/手機 Modal) | 🟢 完成 | 100% |
+| 斷線重連 UI (ConnectionStatusBar + ConnectionIndicator) | 🟢 完成 | 100% |
+| 全螢幕模式 (F 鍵快捷鍵 + 自動隱藏控制列 + Safari 相容) | 🟢 完成 | 100% |
+| Zustand Store (含 persist + WebSocket 整合) | 🟢 完成 | 100% |
+| 原生 WebSocket Client (重連、rejoin、事件) | 🟢 完成 | 100% |
+| 響應式設計 | 🟡 進行中 | 70% |
+| 前端單元測試 | 🔴 未開始 | 0% |
 
-### 後端開發
+### 後端開發（Go）
 
 | 模組 | 狀態 | 完成度 |
 |------|------|--------|
-| API 路由 | 🟢 完成 | 100% |
-| 資料庫操作 | 🟢 完成 | 100% |
-| WebSocket 伺服器 | 🟢 完成 | 100% |
-| 認證授權 | 🟡 準備中 | 50% |
+| REST API (Songs/Playlists/Settings/Auth/LRC/Health) | 🟢 完成 | 100% |
+| Ent ORM Schema (6 張表) | 🟢 完成 | 100% |
+| WebSocket Hub (session 分組、事件廣播) | 🟢 完成 | 100% |
+| JWT 認證 (access 24h + refresh 30d) | 🟢 完成 | 100% |
+| Redis Session 持久化 (1hr TTL) | 🟢 完成 | 100% |
+| 速率限制 (auth: 10 req/min) | 🟢 完成 | 100% |
+| 結構化日誌 (slog JSON) | 🟢 完成 | 100% |
+| 後端測試 (handler, ws, middleware, validator, service/lrc) | 🟡 部分 | 60% |
 
 ### 整合功能
 
 | 模組 | 狀態 | 完成度 |
 |------|------|--------|
-| NDI 輸出 | 🟡 準備中 | 30% |
+| NDI 輸出 | ⚪ 未開始 | 0% |
 | Spout 輸出 | ⚪ 未開始 | 0% |
-| Gemini API 整合 | 🟡 準備中 | 20% |
+| Gemini API 整合 | ⚪ 未開始 | 0% |
 | 音訊處理 | ⚪ 未開始 | 0% |
 | 歌詞比對 | ⚪ 未開始 | 0% |
 
@@ -58,95 +69,19 @@ Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░�
 
 | 模組 | 狀態 | 完成度 |
 |------|------|--------|
-| API 驗證測試 | 🟢 完成 | 100% |
-| 單元測試 | ⚪ 未開始 | 0% |
-| 整合測試 | 🟡 準備中 | 20% |
+| Go 後端測試 | 🟡 部分 | 60% |
+| 前端單元測試 | ⚪ 未開始 | 0% |
 | E2E 測試 | ⚪ 未開始 | 0% |
 
 ### DevOps
 
 | 模組 | 狀態 | 完成度 |
 |------|------|--------|
-| CI/CD 工作流 | 🟢 完成 | 100% |
+| CI/CD (GitHub Actions) | 🟢 完成 | 100% |
 | GitHub Repository | 🟢 完成 | 100% |
-| Railway 部署 | 🟡 準備中 | 80% |
+| Railway 部署 (Go + Next.js + PG + Redis) | 🟢 完成 | 100% |
+| Docker 多階段建置 | 🟢 完成 | 100% |
 | Husky Hooks | 🟢 完成 | 100% |
-
----
-
-## 任務列表
-
-### 已完成 (Done) ✅
-
-**專案建置:**
-- [x] 專案啟動
-- [x] 技術棧選擇 (Next.js 15, TypeScript, Tailwind 3.4, Supabase)
-- [x] 專案文檔建立 (20+ 個文檔)
-- [x] Railway 專案建立
-- [x] Supabase 專案建立
-- [x] GitHub Repository 建立
-- [x] GitHub Actions CI/CD 工作流
-- [x] Husky Git Hooks 設定
-
-**後端開發:**
-- [x] API Routes 完整實作 (GET/POST/PUT/DELETE)
-- [x] 資料庫 Service 層 (songService.ts)
-- [x] Supabase 連線整合
-- [x] WebSocket 伺服器架構 (server.ts)
-- [x] API 驗證測試全部通過
-
-**前端基礎:**
-- [x] Next.js App Router 架構
-- [x] Tailwind CSS 設定
-- [x] 基礎 Layout 組件
-- [x] 頁面路由 (/, /controller, /display)
-
-### 待辦 (Todo) 📋
-
-**P0 - 核心前端組件 (本週):**
-- [ ] LyricsDisplay 組件 - 歌詞顯示與高亮
-- [ ] LyricsControl 組件 - 上一句/下一句控制
-- [ ] SongSelector 組件 - 歌曲選擇下拉選單
-- [ ] SettingsPanel 組件 - 設定面板
-- [ ] Zustand Store 整合
-
-**P1 - WebSocket 實測:**
-- [ ] WebSocket 實際連線測試
-- [ ] 控制端/顯示端同步驗證
-- [ ] 多裝置連線測試
-
-**P2 - 進階功能:**
-- [ ] LRC 時間戳匯入
-- [ ] 錯誤處理優化
-- [ ] API 速率限制
-- [ ] 單元測試撰寫
-
-### 進行中 (In Progress) 🔄
-
-- [x] 專案文檔結構建立
-- [x] 需求初步收集
-- [ ] Multi-Agent 計劃審查與調整
-- [ ] UI/UX Design System Token 定義
-
----
-
-## 當前狀態
-
-**最後更新:** 2026-03-12
-
-**當前階段:** Phase 1 前端組件開發
-
-**重點工作:**
-1. 實作核心 UI 組件 (LyricsDisplay, LyricsControl)
-2. WebSocket 實際連線測試
-3. Zustand Store 狀態整合
-
-**目前遇到的問題:**
-- 無
-
-**需要協助:**
-- UI/UX 設計 Token 定義
-- 測試案例規劃
 
 ---
 
@@ -154,50 +89,51 @@ Phase 4 (Adv):       ░░░░░░░░░░░░░░░░░░░�
 
 | 類別 | 技術 | 版本 | 狀態 |
 |------|------|------|------|
-| Framework | Next.js | 15.0.3 | ✅ |
-| Language | TypeScript | 5.7 | ✅ |
+| Frontend Framework | Next.js | 15.1.0 | ✅ |
+| UI Framework | React | 19.0.0 | ✅ |
+| Language (FE) | TypeScript | 5.7.0 | ✅ |
 | Styling | Tailwind CSS | 3.4.19 | ✅ |
-| Database | Supabase | - | ✅ |
-| State | Zustand | 5.0.11 | 🟡 |
-| WebSocket | Socket.IO | 4.8.3 | ✅ |
-| Testing | Vitest | 3.0.5 | 🟡 |
-| E2E | Playwright | 1.49.1 | 🟡 |
+| State | Zustand | 5.0.11 | ✅ |
+| Validation | Zod | 4.3 | ✅ |
+| Panels | react-resizable-panels | 4.7.2 | ✅ |
+| QR Code | qrcode.react | 4.2.0 | ✅ |
+| Backend Language | Go | 1.26.1 | ✅ |
+| ORM | Ent | 0.14.5 | ✅ |
+| HTTP Router | chi | 5.2.5 | ✅ |
+| DB Driver | pgx | 5.8.0 | ✅ |
+| Redis | go-redis | 9.18.0 | ✅ |
+| WebSocket | coder/websocket | 1.8.14 | ✅ |
+| JWT | golang-jwt | 5.3.1 | ✅ |
 
-**變更記錄:**
+**歷史變更：**
+- ~~Supabase~~ → 自架 PostgreSQL + Go 後端 (2026-03-12)
+- ~~Socket.IO~~ → 原生 WebSocket (2026-03-12)
 - ~~tRPC~~ → REST API (2026-03-12)
+- ~~NextAuth~~ → JWT 認證 (2026-03-12)
 - Tailwind 4.0+ → 3.4.19 (相容性降級)
 
 ---
 
-## 進度圖例
+## 已知問題與技術債
 
-| 圖示 | 說明 |
-|------|------|
-| 🟢 | 已完成 |
-| 🟡 | 進行中 |
-| 🔴 | 延遲/有問題 |
-| 🔵 | 需要討論 |
-| ⚪ | 未開始 |
+### 待修復
+- [ ] Go WebSocket `handleNextLine` 缺少 lineIndex 上界檢查
+- [ ] Go DB 連線池未配置 (MaxOpenConns/MaxIdleConns)
+- [ ] Go Rate Limiter 使用 RemoteAddr 而非 X-Forwarded-For（反向代理場景）
 
----
-
-## 進度計算公式
-
-```
-模組進度 = (已完成任務數 / 總任務數) × 100%
-
-整體進度 = (各模組進度總和 / 模組數量)
-```
+### 待補齊測試
+- [ ] Go service/song, service/playlist, service/settings 無測試
+- [ ] Go redis/ 無測試
+- [ ] 前端 vitest 零測試
 
 ---
 
 ## 相關文檔
 
-- [里程碑](milestones.md)
-- [時程安排](schedule.md)
-- [工作日誌](work-log.md)
+- [變更記錄](changelog.md)
+- [系統架構](spec/architecture.md)
+- [Roadmap](ROADMAP.md)
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-11
+**最後更新:** 2026-03-13

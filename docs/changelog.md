@@ -2,6 +2,60 @@
 
 ## 版本歷史
 
+### v0.6.0 - 2026-03-13
+
+**Display UX 強化 — QR Code、斷線重連、全螢幕**
+
+#### 新增
+- QR Code 分享功能（Controller 頁面）
+  - `QRCodePanel` 元件：RWD 三級自適應佈局（桌面側欄 / 平板 Popover / 手機 Modal）
+  - 掃碼即連：QR Code 編碼 Display URL 含 `?code=` 參數
+  - 一鍵複製連結功能
+  - `qrcode.react` v4.2.0 依賴
+- 斷線重連 UI（Display 頁面）
+  - `ConnectionStatusBar`：頂部橫幅提示斷線/重連狀態，重連中顯示倒數
+  - `ConnectionIndicator`：右上角連線狀態指示燈（綠/黃/紅三色）
+  - WebSocket 新增 `_reconnecting` / `_reconnect_exhausted` 內部事件
+- 全螢幕模式（Display 頁面）
+  - `F` 鍵快捷鍵切換全螢幕
+  - 全螢幕時控制列與狀態指示器 3 秒無操作自動隱藏，滑鼠移動時重新顯示
+  - Safari `webkitRequestFullscreen` / `webkitfullscreenchange` 相容
+  - `LyricsControl` 新增全螢幕切換按鈕（`Maximize2` / `Minimize2` 圖示）
+  - iOS Safari 不支援 Fullscreen API 時自動隱藏按鈕
+- Session 房間碼持久化（`sessionStorage`），重新整理後自動回填
+
+#### 改善
+- Zustand Store `isConnected: boolean` 重構為 `connectionState: 'connected' | 'reconnecting' | 'disconnected'` 三態
+- WebSocket Client 新增 `resetAndReconnect()` 方法
+- Tailwind config 新增 `fadeOut` keyframe 動畫
+
+---
+
+### v0.5.1 - 2026-03-13
+
+**播放列表完善 & Bug 修復**
+
+#### 新增
+- 播放列表完整 CRUD 功能
+  - 後端 `PUT /api/playlists/:id`、`DELETE /api/playlists/:id` 端點
+  - 前端 `lib/api/playlists.ts` API 封裝
+  - Controller 頁面播放列表管理 UI（新增、重命名、刪除、歌曲選擇）
+- Display 歌詞 look-ahead bias 算法（自動將當前行顯示在可視區上方三分之一）
+- Session 同步碼機制（`lib/websocket/session-code.ts`：6 碼大寫英數）
+
+#### 修復
+- WebSocket 重連迴圈問題（HTTP server timeout 導致）
+- React hydration error #418（Controller 頁面）
+- Controller → Display 歌曲選擇 WebSocket 同步失敗
+- 12 個前後端高嚴重度 Bug 一次性修復
+- 前端殘留高嚴重度問題修復
+
+#### 改善
+- 清理 dead code、強化 TypeScript strict mode
+- Go 後端 config 測試補齊
+
+---
+
 ### v0.5.0 - 2026-03-13
 
 **Controller 頁面重設計**
