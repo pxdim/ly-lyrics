@@ -25,11 +25,18 @@ func NewWSHandler(hub *ws.Hub, handler *ws.EventHandler, corsOrigins string) *WS
 func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	opts := &websocket.AcceptOptions{}
 
-	// 僅在開發模式（CORS_ORIGINS="*"）才跳過 origin 驗證
 	if h.corsOrigins == "*" {
+		// 開發模式：跳過 origin 驗證
 		opts.InsecureSkipVerify = true
+	} else {
+		// 生產模式：允許前端域名的 WebSocket 連線
+		// OriginPatterns 支援 glob 模式
+		opts.OriginPatterns = []string{
+			"lys.pxdim.com",
+			"*.up.railway.app",
+			"localhost:*",
+		}
 	}
-	// 生產模式讓 coder/websocket 自動驗證 origin（預設行為）
 
 	conn, err := websocket.Accept(w, r, opts)
 	if err != nil {
