@@ -42,8 +42,9 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({
   defaultCollapsed = false,
   position = "right",
 }) => {
-  const { displaySettings, updateDisplaySettings, resetDisplaySettings } =
-    useLyricsStore();
+  const displaySettings = useLyricsStore((state) => state.displaySettings);
+  const updateDisplaySettings = useLyricsStore((state) => state.updateDisplaySettings);
+  const resetDisplaySettings = useLyricsStore((state) => state.resetDisplaySettings);
 
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 

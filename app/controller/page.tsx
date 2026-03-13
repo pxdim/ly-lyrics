@@ -17,16 +17,18 @@ import { LyricsControl } from "@/components/lyrics/LyricsControl";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 
 export default function ControllerPage() {
-  const { currentSong, connect, disconnect } = useLyricsStore();
+  const currentSong = useLyricsStore((state) => state.currentSong);
+  const connect = useLyricsStore((state) => state.connect);
+  const disconnect = useLyricsStore((state) => state.disconnect);
 
-  // Initialize WebSocket connection on mount
+  // Initialize WebSocket connection on mount/unmount only
   useEffect(() => {
     connect();
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative min-h-screen bg-void text-text-primary">

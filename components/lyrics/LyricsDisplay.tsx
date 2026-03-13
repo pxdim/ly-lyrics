@@ -21,11 +21,9 @@ export interface LyricsDisplayProps {
 }
 
 export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
-  const {
-    lyrics: storeLyrics,
-    currentIndex: storeIndex,
-    displaySettings,
-  } = useLyricsStore();
+  const storeLyrics = useLyricsStore((state) => state.lyrics);
+  const storeIndex = useLyricsStore((state) => state.currentIndex);
+  const displaySettings = useLyricsStore((state) => state.displaySettings);
 
   // Use props if provided, otherwise use store values
   const lyrics = props.lyrics ?? storeLyrics;

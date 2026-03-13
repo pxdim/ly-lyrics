@@ -26,7 +26,9 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   position = "bottom",
 }) => {
   const { currentIndex, totalLines, canGoNext, canGoPrev } = useLyricsStore(selectNavigationState);
-  const { nextLine, prevLine, jumpToLine } = useLyricsStore();
+  const nextLine = useLyricsStore((state) => state.nextLine);
+  const prevLine = useLyricsStore((state) => state.prevLine);
+  const jumpToLine = useLyricsStore((state) => state.jumpToLine);
 
   const handlePrev = () => {
     if (canGoPrev) {

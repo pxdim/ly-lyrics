@@ -33,7 +33,9 @@ export const SongSelector: FC<SongSelectorProps> = ({
   showArtist = true,
   maxResults = 50,
 }) => {
-  const { currentSong, setCurrentSong, setError } = useLyricsStore();
+  const currentSong = useLyricsStore((state) => state.currentSong);
+  const setCurrentSong = useLyricsStore((state) => state.setCurrentSong);
+  const setError = useLyricsStore((state) => state.setError);
 
   const [songs, setSongs] = useState<ClientSong[]>([]);
   const [isLoading, setIsLoading] = useState(false);
