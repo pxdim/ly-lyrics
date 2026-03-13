@@ -30,6 +30,7 @@ class MockWebSocket {
 
   constructor(url: string) {
     this.url = url;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     mockWsInstance = this;
   }
 }
@@ -183,7 +184,9 @@ describe("NativeWSClient", () => {
 
     it("joinSession 在 userId 未定義時不包含 userId 欄位", () => {
       client.joinSession("session-1", "display");
-      const sentData = JSON.parse(mockWsInstance.send.mock.calls[0]![0] as string);
+      const rawCall = mockWsInstance.send.mock.calls[0];
+      expect(rawCall).toBeDefined();
+      const sentData = JSON.parse(rawCall![0] as string);
       expect(sentData["payload"]).toEqual({
         sessionId: "session-1",
         role: "display",
