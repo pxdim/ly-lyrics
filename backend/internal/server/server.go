@@ -71,7 +71,7 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 			songSvc := service.NewSongService(db)
 			eventHandler := ws.NewEventHandler(hub, redisClient, songSvc)
 			s.hub = hub
-			s.wsHandler = handler.NewWSHandler(hub, eventHandler)
+			s.wsHandler = handler.NewWSHandler(hub, eventHandler, cfg.CORSOrigins)
 			slog.Info("WebSocket Hub 已啟動")
 		}
 	}
