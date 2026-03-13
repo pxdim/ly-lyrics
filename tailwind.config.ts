@@ -128,6 +128,7 @@ const config: Config = {
         'glow': 'glow 2s ease-in-out infinite alternate',
         'fade-in': 'fadeIn 200ms ease-out',
         'slide-in': 'slideIn 300ms ease-out',
+        'fade-out': 'fadeOut 300ms ease-in forwards',
       },
 
       keyframes: {
@@ -146,6 +147,10 @@ const config: Config = {
         slideIn: {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
       },
 
