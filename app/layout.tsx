@@ -5,6 +5,7 @@ import "./globals.css";
 // Error Handling Components
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ToastProvider } from "@/components/ui/Toast";
+import { StoreHydration } from "@/components/StoreHydration";
 
 // Dark Tech Theme Fonts
 const orbitron = Orbitron({
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body
         className={`${orbitron.variable} ${exo2.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
       >
+        <StoreHydration />
         <ErrorBoundary>
           <ToastProvider>
             <ClientErrorWrapper>{children}</ClientErrorWrapper>

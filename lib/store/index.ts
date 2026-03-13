@@ -331,6 +331,10 @@ export const useLyricsStore = create<LyricsStore>()(
           role: state.role,
           userId: state.userId,
         }),
+        // Required for Next.js App Router: prevents persist from calling set()
+        // during SSR (server-side rendering), which causes React error #185.
+        // Rehydration is done manually in StoreHydration component.
+        skipHydration: true,
       }
     ),
     { name: "LyricsStore", enabled: process.env["NODE_ENV"] === "development" }
