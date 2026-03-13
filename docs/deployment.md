@@ -2,356 +2,212 @@
 
 ## 部署概覽
 
-LY 系統部署在 **Railway**，使用 **Supabase** 作為資料庫服務。
+LY 系統部署在 **Railway**，採用前後端分離架構：
+- **Go 後端**：REST API + WebSocket + Ent ORM
+- **Next.js 前端**：純前端靜態 + SSR
+- **PostgreSQL**：Railway 內建
+- **Redis**：Railway 內建（WebSocket session 持久化）
 
 ---
 
 ## 部署架構
 
 ```
-                    ┌─────────────────┐
-                    │  Cloudflare     │
-                    │     CDN         │
-                    └────────┬────────┘
-                             │
-                             ▼
-    ┌────────────────────────────────────────────┐
-    │            Railway App                      │
-    │  ┌──────────────────────────────────────┐  │
-    │  │         Next.js Application           │  │
-    │  │  (Frontend + API + WebSocket)         │  │
-    │  └──────────────────────────────────────┘  │
-    └────────┬───────────────────────────────────┘
-             │
-     ┌───────┴────────┬────────────────┐
-     ▼                ▼                ▼
-┌─────────┐    ┌─────────────┐   ┌──────────┐
-│Supabase │    │ Google Gemini │   │ Redis    │
-│ (DB)    │    │  (AI)       │   │ (Cache)  │
-└─────────┘    └─────────────┘   └──────────┘
+                         ┌─────────────────────────┐
+                         │      Railway Platform     │
+                         │                           │
+  使用者 ──── HTTPS ────►│  ┌───────────────────┐   │
+                         │  │  Next.js 前端      │   │
+                         │  │  (node:22-alpine)  │   │
+                         │  │  Port: 8080        │   │
+                         │  └─────────┬─────────┘   │
+                         │            │              │
+                         │    /api/* rewrites        │
+                         │    /ws 直連               │
+                         │            │              │
+                         │  ┌─────────▼─────────┐   │
+  使用者 ── WSS ────────►│  │  Go 後端           │   │
+                         │  │  (alpine:3.21)     │   │
+                         │  │  Port: 8080        │   │
+                         │  └───┬───────────┬───┘   │
+                         │      │           │        │
+                         │      ▼           ▼        │
+                         │  ┌────────┐ ┌────────┐   │
+                         │  │Postgres│ │ Redis  │   │
+                         │  │  SQL   │ │        │   │
+                         │  └────────┘ └────────┘   │
+                         └─────────────────────────┘
 ```
 
 ---
 
-## 環境設定
+## Railway Services
 
-### 環境變數
-
-| 變數名稱 | 說明 | 範例 |
-|---------|------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase API URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名金鑰 | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 服務金鑰 | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `GOOGLE_API_KEY` | Google Gemini API 金鑰 | `AIzaxxx...` |
-| `RAILWAY_PUBLIC_URL` | Railway 公開 URL | `https://xxx.railway.app` |
-| `RAILWAY_PRIVATE_URL` | Railway 私有 URL | `https://xxx.railway.internal` |
-| `DATABASE_URL` | 資料庫連線字串 (Railway 自動設定) | `postgresql://...` |
-| `REDIS_URL` | Redis 連線字串 (可選) | `redis://...` |
+| Service | 說明 | Docker | Port |
+|---------|------|--------|------|
+| `ly-go-backend` | Go API + WebSocket | `backend/Dockerfile` | 8080 |
+| `ly-frontend` | Next.js 前端 | `./Dockerfile` | 8080 |
+| PostgreSQL | 資料庫（Railway 內建） | — | 5432 |
+| Redis | Session 快取（Railway 內建） | — | 6379 |
 
 ---
 
-## Railway 部署
+## 環境變數
 
-### 1. 建立專案
+### Go 後端 (`ly-go-backend`)
+
+| 變數 | 說明 | 必要 | 範例 |
+|------|------|------|------|
+| `DATABASE_URL` | PostgreSQL 連線字串 | ✅ | `postgresql://user:pass@host:5432/db` |
+| `REDIS_URL` | Redis 連線字串 | 選填 | `redis://default:pass@host:6379` |
+| `JWT_SECRET` | JWT 簽名密鑰 | ✅ | 隨機字串 |
+| `JWT_EXPIRY_HOURS` | Access Token 有效期（小時） | 選填 | `24` |
+| `PORT` | 伺服器監聽端口 | 選填 | `8080` |
+| `ENVIRONMENT` | 環境模式 | 選填 | `production` |
+| `CORS_ORIGINS` | 允許的 CORS 來源（逗號分隔） | 選填 | `https://lys.pxdim.com` |
+
+### Next.js 前端 (`ly-frontend`)
+
+| 變數 | 說明 | 必要 | 範例 |
+|------|------|------|------|
+| `GO_BACKEND_URL` | Go 後端內部 URL（rewrites 用） | ✅ | `http://ly-go-backend.railway.internal:8080` |
+| `NEXT_PUBLIC_GO_WS_URL` | Go WebSocket 公開 URL | 選填 | `wss://ly-go-backend-production.up.railway.app/ws` |
+| `NEXT_PUBLIC_USE_NATIVE_WS` | 啟用原生 WebSocket | 選填 | `true` |
+| `NODE_ENV` | Node 環境 | 選填 | `production` |
+
+**注意：** `NEXT_PUBLIC_GO_WS_URL` 在 build time 不可用時，`next.config.ts` 會自動推導為 `wss://ly-go-backend-production.up.railway.app/ws`。
+
+---
+
+## Docker 建置
+
+### Go 後端 (`backend/Dockerfile`)
+
+```dockerfile
+# 多階段建置：golang:1.26-alpine → alpine:3.21
+# 產出：~15MB 靜態二進位檔
+# 健康檢查：GET /api/go-health（每 30 秒）
+```
 
 ```bash
-# 安裝 Railway CLI
-npm install -g @railway/cli
-
-# 登入
-railway login
-
-# 初始化專案
-railway init
+# 本地建置測試
+cd backend
+docker build -t ly-go-backend .
+docker run -p 8080:8080 \
+  -e DATABASE_URL=postgresql://... \
+  -e JWT_SECRET=dev-secret \
+  ly-go-backend
 ```
 
-### 2. 設定專案
+### Next.js 前端 (`Dockerfile`)
 
-在 Railway Dashboard 中：
-
-1. **建立新專案**
-   - 名稱: `ly-lyrics-display`
-   - 來源: 連接 GitHub Repository
-
-2. **設定環境變數**
-   - 在 Variables 頁面添加所有環境變數
-
-3. **設定 Supabase**
-   - URL: `https://ylwtfaczffuzyaijhhqu.supabase.co`
-   - 在 Supabase Dashboard 設定 Railway 為允許的來源
-
-### 3. Railway 設定檔
-
-```toml
-# railway.toml
-[build]
-  builder = "NIXPACKS"
-
-[deploy]
-  healthcheckPath = "/api/health"
-  healthcheckTimeout = 300
-  restartPolicyType = "ON_FAILURE"
-  gracePeriodSeconds = 30
-
-[[services]]
-  name = "web"
-  source = "."
-  healthcheck_path = "/api/health"
-
-  [[services.ports]]
-    port = 3000
-    public = true
-
-  [[services.env]]
-    KEY = "NODE_ENV"
-    VALUE = "production"
+```dockerfile
+# 多階段建置：node:22-alpine（deps → build → runner）
+# 非 root 使用者執行（nextjs:nodejs）
 ```
-
-### 4. 部署指令
 
 ```bash
-# 部署到 Railway
-railway up
-
-# 查看日誌
-railway logs
-
-# 開啟網站
-railway open
+# 本地建置測試
+docker build -t ly-frontend \
+  --build-arg GO_BACKEND_URL=http://localhost:8080 .
+docker run -p 3000:8080 ly-frontend
 ```
 
 ---
 
-## Supabase 設定
+## 部署步驟
 
-### 1. 建立專案
+### Railway 首次部署
 
-已在 Supabase 建立專案：
-- URL: `https://ylwtfaczffuzyaijhhqu.supabase.co`
-- Auth Callback: `https://ylwtfaczffuzyaijhhqu.supabase.co/auth/v1/callback`
+1. **建立 Railway 專案**（透過 Dashboard 或 CLI）
+2. **新增 PostgreSQL**（Railway 內建，自動提供 `DATABASE_URL`）
+3. **新增 Redis**（Railway 內建，自動提供 `REDIS_URL`）
+4. **部署 Go 後端**
+   - 設定 Root Directory: `backend/`
+   - 設定環境變數：`DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGINS`
+5. **部署 Next.js 前端**
+   - 設定 Root Directory: `/`（專案根目錄）
+   - 設定環境變數：`GO_BACKEND_URL`（指向 Go service internal URL）
 
-### 2. 執行資料庫遷移
+### 持續部署
+
+Railway 自動偵測 GitHub push → 觸發建置 → 部署。
 
 ```bash
-# 使用 Supabase CLI
-supabase migration up
-
-# 或在 Supabase SQL Editor 執行
-# 執行 spec/database.md 中的所有 SQL
-```
-
-### 3. 設定 RLS (Row Level Security)
-
-```sql
--- 啟用 RLS
-ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE playlists ENABLE ROW LEVEL SECURITY;
-
--- 用戶只能存取自己的資料
-CREATE POLICY "Users can view own songs"
-  ON songs FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own songs"
-  ON songs FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own songs"
-  ON songs FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own songs"
-  ON songs FOR DELETE
-  USING (auth.uid() = user_id);
-```
-
----
-
-## Google Gemini API 設定
-
-### 1. 取得 API Key
-
-1. 前往 [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. 建立 API Key
-3. 複製 Key 到 Railway 環境變數
-
-### 2. 整合設定
-
-```typescript
-// lib/gemini.ts
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-
-export async function transcribeAudio(audioData: Buffer) {
-  // 實作音訊辨識
-}
-```
-
----
-
-## Cloudflare CDN (可選)
-
-### 1. 設定自訂網域
-
-1. 在 Cloudflare 新增網域
-2. 設定 CNAME 指向 Railway URL
-3. 啟用 SSL/TLS
-
-### 2. 快取規則
-
-```
-# 靜態資源快取
-*.js, *.css, *.png, *.jpg, *.svg, *.woff2
-快取時間: 1 年
-
-# API 不快取
-/api/*
-不快取
+# 手動部署（如需要）
+git push origin main    # 觸發自動部署
 ```
 
 ---
 
 ## 健康檢查
 
-### Health Check 端點
+| 端點 | 說明 |
+|------|------|
+| `GET /api/go-health` | Go 後端健康檢查（含 DB ping） |
 
-```typescript
-// app/api/health/route.ts
-import { NextResponse } from 'next/server'
-
-export async function GET() {
-  const checks = {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: await checkDatabase(),
-      gemini: await checkGemini(),
-      websocket: 'operational',
-    }
-  }
-
-  return NextResponse.json(checks)
-}
+Go Dockerfile 內建 healthcheck：
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s \
+  CMD wget -qO- http://localhost:8080/api/go-health || exit 1
 ```
 
 ---
 
-## 監控與日誌
+## 監控
 
-### Railway 內建監控
-
+### Railway 內建
 - **Metrics**: CPU、記憶體、網路使用
 - **Logs**: 即時日誌串流
-- **Alerts**: 設定警報通知
+- **Alerts**: 部署失敗通知
 
-### 外部監控 (可選)
-
-| 服務 | 用途 |
-|------|------|
-| Sentry | 錯誤追蹤 |
-| LogRocket | 使用者錄影 |
-| PostHog | 分析 |
+### Go 後端日誌
+- 使用 `log/slog` 結構化日誌（JSON 格式）
+- 所有 HTTP 請求自動記錄（method, path, status, duration）
 
 ---
 
-## CI/CD 流程
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Deploy to Railway
-        uses: railwayapp/cli@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          command: "up --verbose"
-
-      - name: Run E2E tests
-        run: pnpm test:e2e
-```
-
----
-
-## 備份與災難恢復
-
-### 資料庫備份
-
-- **自動備份**: Supabase 每日自動備份
-- **手動備份**: 重大更新前手動匯出
-
-### 恢復程序
+## 本地開發完整流程
 
 ```bash
-# 從備份恢復
-supabase db restore --file backup.sql
+# 1. 啟動 PostgreSQL（Docker 或本機）
+docker run -d --name ly-postgres \
+  -e POSTGRES_DB=ly -e POSTGRES_PASSWORD=dev \
+  -p 5432:5432 postgres:15-alpine
+
+# 2. 啟動 Redis（可選）
+docker run -d --name ly-redis -p 6379:6379 redis:7-alpine
+
+# 3. 啟動 Go 後端
+cd backend
+DATABASE_URL=postgresql://postgres:dev@localhost:5432/ly \
+JWT_SECRET=dev-secret \
+ENVIRONMENT=development \
+go run ./cmd/server
+
+# 4. 啟動 Next.js 前端（另一個終端）
+cd ..  # 回到專案根目錄
+npm run dev
 ```
 
----
-
-## 效能優化
-
-### 1. Railway 自動擴展
-
-```toml
-# railway.toml
-[deploy]
-  autoRollback = true
-
-[[services]]
-  minReplicas = 1
-  maxReplicas = 10
-```
-
-### 2. CDN 快取
-
-靜態資源透過 Cloudflare CDN 快取
-
----
-
-## 安全檢查清單
-
-### 部署前
-
-- [ ] 所有環境變數已設定
-- [ ] API Key 已妥善保管
-- [ ] RLS 已啟用
-- [ ] HTTPS 已啟用
-- [ ] 健康檢查端點正常
-- [ ] 日誌記錄已啟用
+開啟瀏覽器：
+- 首頁: http://localhost:3000
+- Controller: http://localhost:3000/controller
+- Display: http://localhost:3000/display
 
 ---
 
 ## 相關文檔
 
 - [系統架構](spec/architecture.md)
-- [資料庫設計](spec/database.md)
-- [安全檢查清單](security.md)
+- [開發規範](development.md)
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-12
-
----
-
-## Railway 專案資訊
-
-- **Project ID:** `0b6e0369-b0c3-400e-a2d4-a2c6c3062887`
-- **Token:** `5fbc4ee7-578c-4d47-80ee-579db203ea26`
-- **Dashboard:** https://railway.app/project/0b6e0369-b0c3-400e-a2d4-a2c6c3062887
+**文件版本:** 2.0
+**最後更新:** 2026-03-13
 
 **變更記錄:**
+- v2.0 (2026-03-13): 全面改寫 — 對齊 Go 後端 + Railway 雙 service 部署，移除 Supabase/Gemini/Cloudflare
 - v1.1 (2026-03-12): 更新 Railway 專案資訊
+- v1.0 (2026-03-12): 初始版本

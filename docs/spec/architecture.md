@@ -2,45 +2,54 @@
 
 ## 架構概覽
 
-LY 歌詞顯示系統採用 **Serverless + Real-time** 架構，使用 Next.js 15 作為全端框架。
+LY 歌詞顯示系統採用**前後端分離架構**：Next.js 作為純前端，Go 作為後端處理所有 API 與 WebSocket。
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Client Layer                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │   Desktop    │  │   Tablet     │  │   Mobile     │    │
-│  │   Browser    │  │   Browser    │  │   Browser    │    │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
-│         │                 │                 │             │
-└─────────┼─────────────────┼─────────────────┼─────────────┘
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Desktop    │  │   Tablet     │  │   Mobile     │      │
+│  │   Browser    │  │   Browser    │  │   Browser    │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+└─────────┼─────────────────┼─────────────────┼───────────────┘
           │                 │                 │
           ▼                 ▼                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   WebSocket Layer                           │
-│              (Socket.io / Native WS)                        │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │         Real-time Sync ( latency < 100ms )          │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+│                   Next.js 前端 (:3000)                      │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │ Controller  │  │   Display    │  │   Home Page  │       │
+│  │   Page      │  │   Page       │  │              │       │
+│  └──────┬──────┘  └──────┬───────┘  └──────────────┘       │
+│         │                │                                  │
+│  ┌──────┴────────────────┴─────────┐                        │
+│  │  Zustand Store + WS Client      │                        │
+│  └──────┬──────────────────┬───────┘                        │
+└─────────┼──────────────────┼────────────────────────────────┘
+          │ /api/* (proxy)   │ /ws (直連)
+          ▼                  ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                        │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │              Next.js 15 App Router                  │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
-│  │  │   React     │  │  API Routes │  │  WebSocket  │ │   │
-│  │  │  Components │  │  (REST)     │  │   Handler    │ │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘ │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-          │                    │                    │
-          ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│    Supabase     │  │  Google Gemini  │  │   Railway       │
-│  (PostgreSQL)   │  │   (AI)          │  │  (Deployment)   │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+│                    Go 後端 (:8080)                           │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  chi Router + Middleware (CORS, Logging, Auth)       │    │
+│  ├─────────────┬──────────────┬──────────────┐         │    │
+│  │  REST API   │  WebSocket   │  Health      │         │    │
+│  │  Handlers   │  Hub         │  Check       │         │    │
+│  ├─────────────┴──────────────┴──────────────┤         │    │
+│  │              Service Layer                 │         │    │
+│  │  (Song, Playlist, Settings, User, LRC)    │         │    │
+│  ├────────────────────────────────────────────┤         │    │
+│  │              Ent ORM + pgx                 │         │    │
+│  └────────────────────────────────────────────┘         │    │
+└──────────┬──────────────────────┬───────────────────────┘
+           │                      │
+           ▼                      ▼
+┌─────────────────┐      ┌─────────────────┐
+│   PostgreSQL    │      │     Redis       │
+│   (資料持久化)  │      │  (WS Session)   │
+└─────────────────┘      └─────────────────┘
 ```
+
+---
 
 ## 技術棧
 
@@ -48,545 +57,261 @@ LY 歌詞顯示系統採用 **Serverless + Real-time** 架構，使用 Next.js 1
 
 | 技術 | 版本 | 用途 |
 |------|------|------|
-| Next.js | 15.0.3 | 全端框架 |
+| Next.js | 15 | React 框架（純前端模式，API 透過 rewrites 代理） |
 | React | 19 | UI 框架 |
 | TypeScript | 5.7 | 型別安全 |
 | Tailwind CSS | 3.4.19 | 樣式系統 |
-| Zustand | 5.0.11 | 狀態管理 |
-| Framer Motion | Latest | 動畫效果 |
+| Zustand | 5.0.11 | 全域狀態管理（含 persist） |
+| Zod | 4.3 | 請求/回應驗證 |
+| react-resizable-panels | 4.7.2 | Controller 面板拖曳調整 |
 
-### 後端
+### 後端（Go）
 
 | 技術 | 版本 | 用途 |
 |------|------|------|
-| Next.js API Routes | 15 | REST API 端點 |
-| Socket.IO | 4.8.3 | WebSocket 即時通訊 |
-| Zod | Latest | 資料驗證 |
+| Go | 1.26 | 伺服器語言 |
+| entgo.io/ent | 0.14.5 | 型別安全 ORM + 程式碼產生 |
+| go-chi/chi/v5 | 5.2.5 | HTTP 路由器 + middleware |
+| go-chi/cors | 1.2.2 | CORS 處理 |
+| jackc/pgx/v5 | 5.8.0 | PostgreSQL 驅動（連線池） |
+| redis/go-redis/v9 | 9.18.0 | Redis 客戶端 |
+| coder/websocket | 1.8.14 | 原生 WebSocket |
+| golang-jwt/jwt/v5 | 5.3.1 | JWT 生成/驗證 |
+| golang.org/x/crypto | — | bcrypt 密碼雜湊 |
+| caarlos0/env/v11 | 11.4.0 | 環境變數解析 |
+| go-playground/validator/v10 | — | 請求驗證 |
 
-### 資料庫與儲存
-
-| 技術 | 用途 |
-|------|------|
-| Supabase (PostgreSQL) | 主資料庫 |
-| Supabase Auth | 用戶認證 |
-| Supabase Storage | 背景圖片/影片 (可選) |
-
-### AI 服務
-
-| 技術 | 用途 |
-|------|------|
-| Google Gemini API | 音訊辨識、歌詞比對 |
-
-### 部署與基礎設施
+### 基礎設施
 
 | 技術 | 用途 |
 |------|------|
-| Railway | 應用託管 |
-| Cloudflare Workers | 邊緣計算 (可選) |
-| Cloudflare CDN | 靜態資源 |
+| Railway | 雲端部署（Go 後端 + Next.js 前端 + PostgreSQL + Redis） |
+| Docker | 多階段建置 |
 
-### 第三方整合
+---
 
-| 技術 | 用途 |
-|------|------|
-| NDI.js | NDI 協議輸出 |
-| Spout | Spout 協議輸出 (Windows) |
+## 前端組件架構
 
-## 系統組件
-
-### 前端組件架構
+### 頁面結構
 
 ```
 app/
-├── (controller)/              # 控制端路由
-│   ├── page.tsx              # 控制面板主頁
-│   ├── layout.tsx            # 控制端佈局
-│   └── songs/                # 歌曲管理
-│       ├── page.tsx          # 歌曲列表
-│       └── [id]/page.tsx     # 歌曲編輯
-│
-├── (display)/                 # 顯示端路由
-│   ├── page.tsx              # 顯示端主頁
-│   ├── layout.tsx            # 顯示端佈局
-│   └── output/               # NDI 輸出頁面
-│       └── page.tsx
-│
-├── api/                       # API 路由
-│   ├── songs/                # 歌曲 REST API
-│   │   ├── route.ts          # GET/POST 所有歌曲
-│   │   └── [id]/route.ts     # GET/PUT/DELETE 單首歌曲
-│   ├── playlists/            # 播放列表 REST API
-│   ├── settings/             # 設定 REST API
-│   ├── ws/                   # WebSocket 資訊 API
-│   └── ai/                   # AI 相關 API
-│       └── listen/route.ts
-│
-└── layout.tsx                 # 根佈局
+├── page.tsx                    # 首頁（導航到 Controller/Display）
+├── layout.tsx                  # 根佈局（字體：Orbitron, Exo 2, JetBrains Mono）
+├── globals.css                 # 全域樣式 + Dark Tech 主題
+├── controller/
+│   ├── page.tsx                # Broadcast Console 控制台（可拖曳面板）
+│   └── layout.tsx              # Controller 佈局
+└── display/
+    ├── page.tsx                # 全螢幕歌詞顯示
+    └── layout.tsx              # Display 佈局
 ```
 
-### 後端服務架構
-
-```
-lib/
-├── db/                        # 資料庫
-│   ├── supabase/             # Supabase 客戶端
-│   │   ├── client.ts         # Browser 客戶端
-│   │   └── server.ts         # Service Role 客戶端
-│   └── services/             # 業務邏輯層
-│       ├── songService.ts    # 歌曲 CRUD 服務
-│       ├── playlistService.ts
-│       └── settingsService.ts
-│
-├── store/                     # 狀態管理 ✅ 已實作
-│   └── index.ts              # Zustand Store (WebSocket 整合)
-│
-├── websocket/                 # WebSocket ✅ 已實作
-│   ├── client.ts             # Socket.IO 客戶端
-│   ├── server.ts             # Socket.IO 伺服器
-│   ├── events.ts             # 事件定義
-│   └── handler.ts            # 事件處理
-│
-├── ai/                        # AI 服務
-│   ├── gemini.ts            # Gemini API 整合
-│   ├── audio-processor.ts    # 音訊處理
-│   └── lyric-matcher.ts      # 歌詞比對演算法
-│
-└── ndi/                       # NDI 輸出
-    ├── ndi.ts                # NDI.js 整合
-    └── spout.ts              # Spout 整合
-```
-
-### 前端組件架構 (已完成)
+### 元件結構
 
 ```
 components/
-├── lyrics/                    # 歌詞顯示組件 ✅
-│   ├── LyricsDisplay.tsx     # 主顯示組件
-│   ├── LyricsLine.tsx        # 單行歌詞
-│   ├── LyricsControl.tsx     # 控制按鈕
-│   └── SongSelector.tsx      # 歌曲選擇
-│
-├── settings/                  # 設定組件 ✅
-│   └── SettingsPanel.tsx     # 顯示設定面板
-│
-└── ui/                        # UI 基礎組件 (待實作)
-    ├── Button.tsx
-    ├── Input.tsx
-    └── ...
+├── controller/
+│   └── AddSongModal.tsx        # 新增歌曲對話框
+├── lyrics/
+│   ├── LyricsDisplay.tsx       # 主顯示元件（可見行計算 + 自動滾動）
+│   ├── LyricsLine.tsx          # 單行歌詞（霓虹光效 + scale 動畫）
+│   ├── LyricsControl.tsx       # 播放控制按鈕
+│   └── SongSelector.tsx        # 歌曲選擇器
+├── settings/
+│   └── SettingsPanel.tsx       # 顯示設定面板
+├── ui/
+│   └── Toast.tsx               # Toast 通知
+└── StoreHydration.tsx          # Zustand hydration
 ```
+
+### 前端核心函式庫
+
+```
+lib/
+├── api/songs.ts                # Song API 封裝（fetch → Go 後端 via rewrites）
+├── auth/session.ts             # JWT 管理（cookie: access_token）
+├── websocket/
+│   ├── native-client.ts        # 原生 WebSocket Client（265 行）
+│   └── types.ts                # WS 事件型別
+├── store/index.ts              # Zustand Store（LyricsState + LyricsActions）
+├── schemas/index.ts            # Zod 驗證 schema
+├── lrc/parser.ts               # LRC 前端解析器
+└── errors/AppError.ts          # AppError 型別定義
+```
+
+---
+
+## 後端架構（Go 三層架構）
+
+```
+backend/internal/
+├── handler/                    # HTTP 層 — 接收 HTTP 請求、回傳 JSON
+│   ├── auth.go                 # 認證端點
+│   ├── song.go                 # 歌曲 CRUD
+│   ├── lrc.go                  # LRC 匯入/匯出
+│   ├── playlist.go             # 播放列表
+│   ├── settings.go             # 使用者設定
+│   ├── health.go               # 健康檢查
+│   ├── ws.go                   # WebSocket upgrade
+│   └── helpers.go              # JSON 回應輔助
+│
+├── service/                    # 業務邏輯層 — 核心邏輯、資料轉換
+│   ├── user.go                 # 使用者管理 + Demo User
+│   ├── song.go                 # 歌曲邏輯（JSON 陣列處理、ILIKE 搜尋）
+│   ├── playlist.go             # 播放列表邏輯
+│   ├── settings.go             # 設定管理（自動建立預設值）
+│   └── lrc.go                  # LRC 解析/序列化（時間戳、元資料）
+│
+├── ent/schema/                 # 資料層 — Ent ORM Schema
+│   ├── user.go                 # 使用者表
+│   ├── song.go                 # 歌曲表
+│   ├── settings.go             # 設定表
+│   ├── playlist.go             # 播放列表表
+│   ├── playlistsong.go         # 播放列表歌曲關聯
+│   └── session.go              # Session 表
+│
+├── auth/                       # 認證模組
+│   ├── jwt.go                  # JWT 產生/驗證（HS256, access 24h, refresh 30d）
+│   ├── password.go             # bcrypt（cost=10, 8-72 bytes）
+│   └── middleware.go           # RequireAuth / OptionalAuth
+│
+├── ws/                         # WebSocket 模組
+│   ├── hub.go                  # 中央 Hub（session 分組、channel 事件迴圈）
+│   ├── client.go               # 單一連線（ReadPump/WritePump, 30s ping, 32KB 限制）
+│   ├── events.go               # 8 個 C2S 事件處理
+│   └── protocol.go             # JSON 訊息信封格式
+│
+├── redis/                      # Redis 模組
+│   ├── client.go               # 連線管理
+│   └── session.go              # Session 持久化（1hr TTL）
+│
+├── dto/                        # 資料傳輸物件
+│   ├── auth.go                 # Login/Register/Auth DTO
+│   ├── song.go                 # Song CRUD DTO
+│   ├── playlist.go             # Playlist DTO
+│   ├── settings.go             # Settings DTO（含嵌套 DisplaySettings）
+│   └── error.go                # 錯誤回應 DTO
+│
+├── middleware/
+│   └── ratelimit.go            # 速率限制（auth: 10 req/min）
+│
+└── config/
+    └── config.go               # 環境變數載入（12-factor app）
+```
+
+---
 
 ## 資料流
 
-### 1. 完整系統數據流向圖
+### 1. API 請求流程
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           用戶層                               │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │  Controller   │  │  Display    │  │  Display  │  │  Display  │   │
-│  │  (Desktop)  │  │  (Mobile)   │  │  (Tablet) │  │  (NDI)    │   │
-│  └─────┬────┘  └─────┬────┘  └─────┬────┘  └─────┬────┘   │
-└────────┼──────────────┼──────────────┼──────────┼─────────┘
-         │              │              │          │
-         │              │              │          │
-         ▼              ▼              ▼          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                       WebSocket Server                            │
-│  ┌───────────────────────────────────────────────────────────┐   │
-│  │              Session Management                               │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │   │
-│  │  │ Session 1 │  │ Session 2 │  │ Session N │              │   │
-│  │  │ (控制端)   │  │ (顯示端)   │  │ (顯示端)   │              │   │
-│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘              │   │
-│  │       │             │             │                        │   │
-│  │       └─────────────┴─────────────┘                        │   │
-│  │                      │                                      │   │
-│  │              ┌──────▼──────┐                                 │   │
-│  │              │ State Store │ (Zustand)                      │   │
-│  │              └──────┬──────┘                                 │   │
-│  └───────────────────────┼──────────────────────────────────────┘   │
-└───────────────────────────┼───────────────────────────────────────┘
-                            │
-        ┌───────────────────┴───────────────┐
-        │                                       │
-        ▼                                       ▼
-┌───────────────────┐              ┌───────────────────┐
-│  Supabase Database │              │  Gemini AI        │
-│  (Songs, Playlists) │              │  (歌詞辨識)      │
-└───────────────────┘              └───────────────────┘
+Browser → Next.js (:3000) → rewrites /api/* → Go Backend (:8080)
+                                                    │
+                                              chi Router
+                                                    │
+                                              Middleware
+                                         (CORS, Auth, Logging)
+                                                    │
+                                              Handler
+                                                    │
+                                              Service
+                                                    │
+                                              Ent ORM
+                                                    │
+                                              PostgreSQL
 ```
 
-### 2. 歌詞同步流程 (WebSocket 即時同步)
+### 2. 歌詞同步流程（WebSocket）
 
 ```mermaid
 sequenceDiagram
     participant C as Controller
-    participant W as WebSocket Server
+    participant H as Go WS Hub
+    participant R as Redis
     participant D1 as Display 1
     participant D2 as Display 2
 
-    Note over C,D2: 使用者點擊「下一句」
-
-    C->>W: emit("next_line", { lineIndex: current + 1 })
-    C->>C: 本地更新 currentLineIndex
-
-    W->>W: 更新 Session 狀態
-    W->>D1: emit("line_changed", { lineIndex, totalLines })
-    W->>D2: emit("line_changed", { lineIndex, totalLines })
-
-    D1->>D1: 更新顯示
-    D2->>D2: 更新顯示
-
-    D1-->>W: ack (messageId)
-    D2-->>W: ack (messageId)
-
-    Note over C,D2: 延遲 < 100ms
+    C->>H: change_line { lineIndex: 5 }
+    H->>R: 更新 session:{id} state
+    H->>D1: line_changed { lineIndex: 5, timestamp }
+    H->>D2: line_changed { lineIndex: 5, timestamp }
+    D1->>D1: Zustand Store 更新 → React re-render
+    D2->>D2: Zustand Store 更新 → React re-render
 ```
 
-### 3. AI 聽歌辨識流程 (完整)
-
-```mermaid
-sequenceDiagram
-    participant C as Controller
-    participant W as WebSocket Server
-    participant D as Display
-    participant API as Backend API
-    participant AI as Gemini API
-
-    Note over C: 用戶啟動 AI 聽歌
-
-    C->>C: 開始錄製音訊 (5 秒片段)
-
-    Note over C: 每 3 秒重複以下流程
-
-    C->>C: 停止錄製，取得 audioBlob
-    C->>API: POST /api/ai/listen<br/ { audioData, lyrics, language }
-
-    API->>API: 1. Rate Limit 檢查
-    API->>API: 2. Base64 解碼
-
-    API->>AI: POST gemini-2.0-flash-exp (音訊 + Prompt)
-    Note over API: 使用專屬 Prompt 提高準確度
-
-    AI-->>API: transcribe_response<br/ { text, confidence }
-
-    API->>API: 3. 歌詞比對 (前端或後端)
-    API->>API: 4. 記錄使用量
-
-    API-->>C: lyrics_position<br/ { lineIndex, confidence, transcript }
-
-    C->>C: 更新 currentLineIndex
-    C->>W: emit("ai_result", { lineIndex, confidence })
-
-    W->>D: emit("line_changed", { lineIndex })
-
-    D->>D: 更新顯示
-
-    Note over C,D: 延遲約 1-2 秒 (錄音+辨識)
-```
-
-### 4. 狀態管理數據流 (Zustand)
+### 3. 狀態管理（Zustand Store）
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                         Zustand Store                           │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                     LyricsState                          │  │
-│  │  ┌─────────────────────────────────────────────────────┐ │  │
-│  │  │ currentSong: Song │ │                          │  │
-│  │  │ currentLineIndex: number │                         │  │
-│  │  │ displaySettings: DisplaySettings │                   │  │  │
-│  │  │ connectionStatus: ConnectionStatus │                │  │
-│  │  │ aiListening: AiListeningState │                    │  │  │
-│  │  └─────────────────────────────────────────────────────┘ │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  Actions (Methods):                                                │
-│  │  setCurrentSong(song)      → 更新當前歌曲                   │  │
-│  │  nextLine()                → 當前行 +1                      │  │
-│  │  prevLine()                → 當前行 -1                      │  │
-│  │  jumpToLine(index)         → 跳到指定行                    │  │
-│  │  updateSettings(settings)  → 更新顯示設定                  │  │
-│  │  setConnectionStatus()     → 更新連線狀態                │  │
-│  │  toggleAiListening()      → 切換 AI 聽歌                 │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-    ┌─────────┐        ┌─────────┐        ┌─────────┐
-    │Component│        │Component│        │Component│
-    │         │        │         │        │         │
-    │ (subscribe)│        │(subscribe)│        │(subscribe)│
-    └────┬────┘        └────┬────┘        └────┬────┘
-         │                   │                   │
-         ▼                   ▼                   ▼
-    Re-render on state change
+Zustand Store (lib/store/index.ts)
+├── State
+│   ├── lyrics: string[]
+│   ├── currentIndex: number
+│   ├── currentSong: Song | null
+│   ├── displaySettings: DisplaySettings
+│   ├── isPlaying: boolean
+│   ├── connectionStatus: string
+│   └── sessionId: string | null
+│
+├── Actions
+│   ├── setCurrentSong(song)          # 設定歌曲 → WS broadcast
+│   ├── nextLine() / prevLine()       # 換行 → WS broadcast
+│   ├── jumpToLine(index)             # 跳行 → WS broadcast
+│   ├── updateDisplaySettings(s)      # 更新設定 → WS broadcast
+│   ├── connect() / disconnect()      # WS 連線管理
+│   └── joinSession(id, role)         # 加入 session
+│
+└── Persist (localStorage)
+    └── displaySettings
 ```
 
-### 5. NDI 輸出流程
-
-```mermaid
-sequenceDiagram
-    participant C as Controller
-    participant D as Display Page
-    participant N as NDI Layer
-    participant R as Resolume
-
-    Note over C,R: 用戶啟用 NDI 輸出
-
-    C->>D: 切換到 /display/output 頁面
-    D->>D: 設定背景為透明 (background: transparent)
-
-    D->>N: 初始化 NDI 發送器
-    N->>N: 建立名為 "LY-Lyrics" 的 NDI 來源
-
-    D->>D: 渲染歌詞組件
-    Note over D: 使用 CSS transform 確保每幀更新都被捕獲
-
-    D->>N: 捕捉當前畫面 (每幀 60fps)
-    Note over N: NDI 自動捕獲 Canvas/WebGL 內容
-
-    N->>R: 發送 NDI 訊號
-    Note over N,R: 包含 Alpha 通道 (透明背景)
-
-    R->>R: 接收並顯示在合成器中
-
-    Note over C,R: 延遲 < 50ms
-```
-
-### 6. 資料庫同步流程
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant API as API Route
-    participant S as Supabase
-    participant LS as LocalStorage
-
-    Note over C,LS: 離線優先使用本地資料
-
-    C->>LS: 讀取快取的歌曲列表
-    LS-->>C: 回傳快取資料
-
-    C->>API: GET /api/songs
-
-    API->>S: SELECT * FROM songs WHERE user_id = auth.uid()
-    S-->>API: 歌曲資料
-
-    API-->>C: 回傳完整資料
-
-    C->>LS: 更新快取
-    C->>C: 顯示在介面上
-
-    Note over C,S: 修改操作時同步
-
-    C->>API: POST /api/songs (新增)
-
-    API->>S: INSERT INTO songs (...)
-    S-->>API: 新增成功
-
-    API-->>C: 回傳新歌曲
-
-    C->>C: 更新本地狀態
-    C->>C: 透過 WebSocket 廣播給所有顯示端
-```
-
-### 7. 錯誤處理數據流
+### 4. Session 生命週期
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                     錯誤處理層級                                │
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
-│  │  組件層      │    │  業務層     │    │  系統層     │      │
-│  │  (Component) │    │  (Service)   │    │  Global      │      │
-│  │              │    │              │    │              │      │
-│  │  錯誤邊界    │    │  try/catch   │    │  window      │      │
-│  │              │    │              │    │              │      │
-│  │  Fallback UI  │    │  AppError    │    │  監聽器       │      │
-│  └──────────────┘    └──────────────┘    └──────────────┘      │
-│                                                                  │
-│  數據流：                                                         │
-│  1. 組件層錯誤 → 顯示 Fallback UI                             │
-│  2. 業務層錯誤 → 轉換為 AppError，發送到監控                      │
-│  3. 系統層錯誤 → 記錄到日誌，可能需要通知用戶                   │
-│                                                                  │
-└────────────────────────────────────────────────────────────────┘
+1. Controller 開啟 → 連線 WebSocket → join_session(id, "controller")
+2. Display 開啟 → 連線 WebSocket → join_session(id, "display")
+3. Controller 操作 → Hub 廣播到同 session 所有 client
+4. 斷線 → 自動重連（指數退避: 1s, 1.5s, 2.25s, max 5 次）
+5. 重連成功 → 自動重新加入先前 session
+6. 所有 client 離線 → Redis session 1hr 後過期清除
 ```
 
-### 8. Session 生命週期
+---
+
+## 安全設計
+
+### 認證流程
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                    Session 生命週期                               │
-│                                                                  │
-│  創建立階段                                                       │
-│  │                                                                │
-│  ├─ 控制端啟動 → 生成 6 位數 Session ID                            │
-│  │  │                                                            │
-│  ├─ 顯示端連線 → 加入 Session                                    │
-│  │  │                                                            │
-│  └─ 建立 WebSocket 連線                                         │
-│                                                                  │
-│  運作階段                                                         │
-│  │                                                                │
-│  ├─ 控制端發送 next_line → 廣播到所有顯示端                        │
-│  │  │                                                            │
-│  ├─ AI 辨識結果 → 更新所有裝置的歌詞位置                           │
-│  │  │                                                            │
-│  ├─ 設定更新 → 同步到所有顯示端                                   │
-│  │  │                                                            │
-│  └─ 顯示端加入/離線 → 更新連線計數                                   │
-│                                                                  │
-│  清理階段                                                         │
-│  │                                                                │
-│  ├─ 控制端關閉 → 通知所有顯示端                                   │
-│  │  │                                                            │
-│  ├─ 顯示端離線 → 移除連線列表                                     │
-│  │  │                                                            │
-│  └─ 所有裝置離線 → 30 分鐘後清除 Session                           │
-│                                                                  │
-└────────────────────────────────────────────────────────────────┘
+POST /api/auth/login → bcrypt 驗證 → access_token (24h) + refresh_token (30d)
+POST /api/auth/refresh → 驗證 refresh_token → 新 access_token
+
+API 請求 → Authorization: Bearer {access_token}
+         → RequireAuth middleware 驗證 JWT
+         → 或 OptionalAuth（無 token → Demo User ID: 00000000-...0001）
 ```
 
-## 狀態管理
+### WebSocket 安全
 
-### 全域狀態 (Zustand Store) ✅ 已實作
+- CORS 白名單（production: `lys.pxdim.com`, `*.up.railway.app`）
+- 訊息大小限制：32KB
+- 心跳：30 秒 ping/pong
+- Session 隔離（不同 session 間訊息不互通）
 
-```typescript
-// lib/store/index.ts
-interface LyricsState {
-  // 當前歌曲
-  currentSong: Song | null
-
-  // 當前歌詞行索引
-  currentLineIndex: number
-
-  // 顯示設定
-  displaySettings: {
-    lineCount: number        // 顯示行數
-    fontSize: number        // 字體大小
-    theme: 'dark' | 'light' // 主題
-  }
-
-  // 播放列表
-  playlist: Song[]
-
-  // WebSocket 連線狀態
-  connectionStatus: 'connected' | 'disconnected' | 'connecting'
-
-  // 操作
-  setCurrentSong: (song: Song) => void
-  nextLine: () => void
-  prevLine: () => void
-  setLineIndex: (index: number) => void
-  updateSettings: (settings: Partial<DisplaySettings>) => void
-}
-```
-
-## 安全考量
-
-### 認證與授權
-
-```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  Supabase Auth  │
-│  ┌───────────┐  │
-│  │  JWT      │  │
-│  │  Token    │  │
-│  └───────────┘  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  API Middleware │
-│  ┌───────────┐  │
-│  │ Validate  │  │
-│  │ Token     │  │
-│  └───────────┘  │
-└─────────────────┘
-```
-
-### WebSocket 驗證
-
-```typescript
-// WebSocket 連線時驗證 JWT
-socket.on('connection', async (socket) => {
-  const token = socket.handshake.auth.token
-  const user = await verifyToken(token)
-
-  if (!user) {
-    socket.disconnect()
-    return
-  }
-
-  // 加入用戶專屬房間
-  socket.join(`user:${user.id}`)
-})
-```
-
-## 效能優化策略
-
-### 1. 前端優化
-
-| 策略 | 實現 |
-|------|------|
-| Code Splitting | Next.js 動態匯入 |
-| 圖片優化 | Next.js Image + WebP |
-| 字體優化 | next/font 自動優化 |
-| 緩存策略 | React Query 快取 |
-
-### 2. 後端優化
-
-| 策略 | 實現 |
-|------|------|
-| 資料庫連線池 | Supabase 自動管理 |
-| API 回應快取 | Redis (可選) |
-| WebSocket 負載均衡 | Railway 自動擴展 |
-
-### 3. 即時通訊優化
-
-| 策略 | 實現 |
-|------|------|
-| 訊息壓縮 | JSON 最小化 |
-| 心跳檢測 | 30s ping/pong |
-| 自動重連 | 指數退避演算法 |
-
-## 部署架構
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Railway App                            │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │              Next.js Application                    │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
-│  │  │   Frontend  │  │   API       │  │  WebSocket  │ │   │
-│  │  │   Static    │  │  Routes     │  │   Server    │ │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘ │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│    Supabase     │  │  Google Gemini  │  │  Cloudflare     │
-│   (Database)    │  │     (AI)        │  │     CDN         │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-```
+---
 
 ## 技術決策記錄 (ADR)
 
 | ID | 決策 | 理由 | 狀態 |
 |----|------|------|------|
-| ADR-001 | 使用 Next.js 全端框架 | AI 友善、開發效率高 | ✅ 採用 |
-| ADR-002 | 使用 Supabase 資料庫 | Railway 內建整合、免費層足夠 | ✅ 採用 |
-| ADR-003 | 使用 Google Gemini API | 音訊辨識能力強、價格實惠 | ✅ 採用 |
-| ADR-004 | 使用 Socket.IO WebSocket | 低延遲雙向通訊、成熟穩定 | ✅ 採用 |
-| ADR-005 | 使用 REST API + Zod | 相容性最佳、易於測試 | ✅ 採用 |
+| ADR-001 | Next.js 作為前端 | React 生態系成熟、SSR/SSG 支援 | ✅ 採用 |
+| ADR-002 | ~~Supabase~~ → 自架 PostgreSQL | 需要更多控制權、避免供應商鎖定 | ✅ 已遷移 |
+| ADR-003 | ~~Node.js API~~ → Go + Ent ORM | 更好的效能、型別安全、部署體驗 | ✅ 已遷移 |
+| ADR-004 | ~~Socket.IO~~ → 原生 WebSocket (Go) | Go 生態系原生 WS 更成熟 | ✅ 已遷移 |
+| ADR-005 | Zustand 狀態管理 | 輕量、無 boilerplate、selector 效能好 | ✅ 採用 |
+| ADR-006 | chi HTTP Router | 成熟 middleware 生態系、RESTful 清晰 | ✅ 採用 |
+| ADR-007 | Railway 部署 | 內建 PostgreSQL/Redis、Docker 支援 | ✅ 採用 |
 
 ---
 
@@ -598,10 +323,10 @@ socket.on('connection', async (socket) => {
 
 ---
 
-**文件版本:** 1.2
-**最後更新:** 2026-03-12
+**文件版本:** 2.0
+**最後更新:** 2026-03-13
 
 **變更記錄:**
-- v1.2 (2026-03-12): 更新 Store 路徑為 `/lib/store/index.ts`；新增前端組件架構區塊；標記 P0 組件完成狀態
-- v1.1 (2026-03-12): 更新技術棧 - 移除 tRPC，改用 REST API；更新 Tailwind CSS 版本為 3.4.19
+- v2.0 (2026-03-13): 全面改寫 — 反映 Go 後端 + Ent ORM 架構，移除 Supabase/Socket.IO/tRPC 引用
+- v1.2 (2026-03-12): 更新 Store 路徑；新增前端組件架構區塊
 - v1.0 (2026-03-11): 初始版本

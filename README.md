@@ -1,122 +1,219 @@
 # LY - 歌詞顯示系統
 
-> 市場首創的 AI 驅動歌詞顯示系統，支援即時聽歌辨識、多裝置同步、NDI 輸出到 VJ 軟體
+> 專業級即時歌詞顯示系統，支援多裝置同步、Controller/Display 雙模式、WebSocket 即時通訊
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Status: In Planning](https://img.shields.io/badge/Status-Planning%20%F0%9F%93%8B-yellow)](https://github.com)
+[![Status: Active Development](https://img.shields.io/badge/Status-Active%20Development-brightgreen)](https://github.com)
 
-## 🎯 專案目標
+## 專案目標
 
-打造一個專業級的歌詞顯示系統，解決市場現有產品的痛點：
-- ❌ 缺少簡單易用的雙螢幕歌詞同步工具
-- ❌ 現有產品功能過於複雜或價格昂貴
-- ❌ 缺少 AI 聽歌辨識功能
-- ❌ 無法直接輸出到專業 VJ 軟體
+打造一個專業級的歌詞顯示系統，適用於現場演出、教會敬拜、直播活動等場景：
+- Controller 端控制歌詞進度，Display 端全螢幕顯示
+- 多裝置即時同步（延遲 < 100ms）
+- LRC 時間戳匯入/匯出
+- 可自訂顯示設定（字體、配色、行數、動畫）
 
-## ✨ 核心功能
+## 系統架構
+
+```
+┌──────────────────────────────────┐
+│       Next.js 前端 (:3000)       │
+│  Controller Page │ Display Page  │
+│  Zustand Store + WebSocket Client│
+└──────────┬───────────┬───────────┘
+           │ /api/*    │ /ws
+           │ (proxy)   │ (直連)
+           ▼           ▼
+┌──────────────────────────────────┐
+│       Go 後端 (:8080)            │
+│  chi Router + Ent ORM            │
+│  REST API + WebSocket Hub        │
+└──────┬────────────┬──────────────┘
+       │            │
+       ▼            ▼
+┌────────────┐ ┌─────────┐
+│ PostgreSQL │ │  Redis   │
+│  (資料庫)  │ │ (Session)│
+└────────────┘ └─────────┘
+```
+
+## 技術棧
+
+### 前端
+
+| 技術 | 版本 | 用途 |
+|------|------|------|
+| Next.js | 15 | React 全端框架（純前端模式，API 透過 rewrites 代理到 Go） |
+| React | 19 | UI 框架 |
+| TypeScript | 5.7 | 型別安全 |
+| Tailwind CSS | 3.4 | 樣式系統 |
+| Zustand | 5.0 | 狀態管理（含 persist middleware） |
+| Zod | 4.3 | 請求/回應驗證 |
+| react-resizable-panels | 4.7 | Controller 面板拖曳調整 |
+
+### 後端（Go）
+
+| 技術 | 版本 | 用途 |
+|------|------|------|
+| Go | 1.26 | 伺服器語言 |
+| Ent ORM | 0.14 | 型別安全 ORM + 程式碼產生 |
+| chi | 5.2 | HTTP 路由器 |
+| pgx | 5.8 | PostgreSQL 驅動 |
+| go-redis | 9.18 | Redis 客戶端 |
+| coder/websocket | 1.8 | 原生 WebSocket |
+| golang-jwt | 5.3 | JWT 認證 |
+| bcrypt | — | 密碼雜湊 |
+
+### 基礎設施
+
+| 技術 | 用途 |
+|------|------|
+| Railway | 雲端部署（Go 後端 + Next.js 前端 + PostgreSQL + Redis） |
+| Docker | 多階段建置（Go: alpine, Next.js: node:22-alpine） |
+
+## 核心功能
 
 | 功能 | 說明 | 狀態 |
 |------|------|------|
-| **AI 聽歌辨識** | 麥克風即時聽取音樂，自動識別歌詞位置 | 🟡 規劃中 |
-| **NDI/Spout 輸出** | 直接輸出到 Resolume Arena 等VJ軟體 | 🟡 規劃中 |
-| **多裝置同步** | 電腦、平板、手機即時同步歌詞進度 | 🟡 規劃中 |
-| **控制/顯示模式** | 彈性切換控制端與顯示端 | 🟡 規劃中 |
-| **歌詞管理** | 歌曲資料庫、播放列表、LRC 時間戳支援 | 🟡 規劃中 |
-| **視覺效果** | 自訂行數、焦點高亮、自動滾動、主題切換 | 🟡 規劃中 |
+| **歌曲管理** | CRUD 歌曲、搜尋、歌詞管理 | ✅ 完成 |
+| **播放列表** | 建立播放列表、歌曲排序 | ✅ 完成 |
+| **LRC 匯入/匯出** | 標準 LRC 格式時間戳支援 | ✅ 完成 |
+| **多裝置同步** | Controller ↔ Display 即時 WebSocket 同步 | ✅ 完成 |
+| **Controller 控制台** | Broadcast Console 風格、可調面板、歌曲庫、即時預覽 | ✅ 完成 |
+| **Display 顯示端** | 全螢幕歌詞顯示、霓虹光效、自動滾動 | ✅ 完成 |
+| **顯示設定** | 字體大小/顏色、行數、主題、動畫、背景色 | ✅ 完成 |
+| **JWT 認證** | 註冊/登入、Access + Refresh Token | ✅ 完成 |
+| **Demo 模式** | 未登入使用 Demo User 自動存取 | ✅ 完成 |
+| **AI 聽歌辨識** | 麥克風即時聽取，自動識別歌詞位置 | 🟡 規劃中 |
+| **NDI/Spout 輸出** | 輸出到 Resolume Arena 等 VJ 軟體 | 🟡 規劃中 |
 
-## 🛠 技術棧
-
-```
-Frontend:  Next.js 15 (App Router) + TypeScript + Tailwind CSS
-Backend:   Next.js API Routes + tRPC + WebSocket
-Database:  Supabase (PostgreSQL)
-AI:        Google Gemini API
-Deployment: Railway
-CDN:       Cloudflare Workers (可選)
-NDI:       NDI.js / Spout
-```
-
-## 📚 文檔
-
-完整專案文檔請參考 [docs/](docs/) 目錄：
-
-| 文檔 | 說明 |
-|------|------|
-| [專案概述](docs/project-info.md) | 專案介紹、範圍、狀態 |
-| [需求文檔](docs/requirements.md) | 功能/非功能需求 |
-| [用戶故事](docs/user-stories.md) | 用戶故事與驗收標準 |
-| [系統架構](docs/spec/architecture.md) | 技術架構設計 |
-| [API 文檔](docs/spec/api.md) | API 端點規格 |
-| [資料庫設計](docs/spec/database.md) | 資料模型與 Schema |
-| [測試計劃](docs/testing.md) | 測試策略與測試案例 |
-| [部署文檔](docs/deployment.md) | 部署環境與 CI/CD |
-| [開發規範](docs/development.md) | 程式碼標準與 Git 工作流程 |
-| [UI/UX 設計](docs/design.md) | 設計系統 |
-| [使用手冊](docs/user-manual.md) | 快速開始與 FAQ |
-| [里程碑](docs/milestones.md) | 專案階段與交付物 |
-| [時程安排](docs/schedule.md) | 工作時間軸 |
-| [進度追蹤](docs/progress.md) | 當前進度狀態 |
-| [工作日誌](docs/work-log.md) | 時間戳工作記錄 |
-| [變更記錄](docs/changelog.md) | 版本歷史 |
-| [風險管理](docs/risks.md) | 風險識別與緩解 |
-| [授權資訊](docs/licenses.md) | 授權與第三方套件 |
-| [安全檢查清單](docs/security.md) | 安全檢查項目 |
-| [會議記錄](docs/meetings.md) | 會議記錄與行動項目 |
-
-## 🚀 快速開始
+## 快速開始
 
 ### 環境需求
 
-- Node.js 18+
-- pnpm 或 npm
-- Supabase 帳號
-- Railway 帳號
-- Google Gemini API Key
+- Node.js 22+
+- Go 1.26+
+- PostgreSQL 15+
+- Redis 7+（可選，WebSocket session 持久化）
 
-### 安裝
+### 安裝與啟動
 
 ```bash
-# 安裝依賴
-pnpm install
+# 1. 複製專案
+git clone https://github.com/pxdim/ly-lyrics.git
+cd ly-lyrics
 
-# 設定環境變數
+# 2. 設定環境變數
 cp .env.example .env.local
+# 編輯 .env.local 填入 DATABASE_URL 等設定
 
-# 執行開發伺服器
-pnpm dev
+# 3. 安裝前端依賴
+npm install
+
+# 4. 安裝 Go 後端依賴
+cd backend && go mod download && cd ..
+
+# 5. 啟動 Go 後端（port 8080）
+cd backend && go run ./cmd/server &
+
+# 6. 啟動前端開發伺服器（port 3000）
+npm run dev
 ```
 
 ### 環境變數
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# === 前端 ===
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_GO_WS_URL=ws://localhost:8080/ws
+NEXT_PUBLIC_USE_NATIVE_WS=true
 
-# Google Gemini API
-GOOGLE_API_KEY=your_google_api_key
+# === Go 後端 ===
+GO_BACKEND_URL=http://localhost:8080
 
-# Railway (自動設定)
-RAILWAY_PUBLIC_URL=your_railway_url
+# === Go 後端自身的環境變數（在 backend 目錄下設定）===
+# DATABASE_URL=postgresql://user:pass@localhost:5432/ly
+# REDIS_URL=redis://localhost:6379
+# JWT_SECRET=your-secret-key
+# ENVIRONMENT=development
+# CORS_ORIGINS=http://localhost:3000
 ```
 
-## 📅 開發階段
+## 專案結構
 
-| 階段 | 內容 | 預估時間 | 狀態 |
-|------|------|---------|------|
-| Phase 1 | MVP 核心功能 | 2-3 週 | 🟡 規劃中 |
-| Phase 2 | Resolume 整合 | 1-2 週 | ⚪ 未開始 |
-| Phase 3 | AI 聽歌辨識 | 2-3 週 | ⚪ 未開始 |
-| Phase 4 | 進階功能 | 持續 | ⚪ 未開始 |
+```
+ly-lyrics/
+├── app/                          # Next.js App Router
+│   ├── controller/               # Controller 控制台頁面
+│   │   └── page.tsx              # Broadcast Console 風格 UI
+│   ├── display/                  # Display 顯示端頁面
+│   │   └── page.tsx              # 全螢幕歌詞顯示
+│   ├── layout.tsx                # 根佈局（Orbitron + Exo 2 + JetBrains Mono）
+│   ├── page.tsx                  # 首頁（導航到 Controller/Display）
+│   └── globals.css               # 全域樣式
+├── components/                   # React 元件
+│   ├── controller/               # Controller 專用元件
+│   │   └── AddSongModal.tsx      # 新增歌曲對話框
+│   ├── lyrics/                   # 歌詞顯示元件
+│   │   ├── LyricsDisplay.tsx     # 主顯示元件（含可見行計算）
+│   │   ├── LyricsLine.tsx        # 單行歌詞（霓虹光效）
+│   │   ├── LyricsControl.tsx     # 控制按鈕
+│   │   └── SongSelector.tsx      # 歌曲選擇器
+│   ├── settings/                 # 設定面板
+│   └── ui/                       # UI 基礎元件（Toast）
+├── lib/                          # 前端核心函式庫
+│   ├── api/songs.ts              # Song API 呼叫封裝
+│   ├── auth/session.ts           # JWT session 管理
+│   ├── websocket/                # WebSocket 客戶端
+│   │   ├── native-client.ts      # 原生 WS Client（連 Go 後端）
+│   │   └── types.ts              # WS 事件型別定義
+│   ├── store/index.ts            # Zustand Store（全域狀態）
+│   ├── schemas/index.ts          # Zod 驗證 schema
+│   ├── lrc/parser.ts             # LRC 解析器（前端用）
+│   └── errors/AppError.ts        # 錯誤型別定義
+├── backend/                      # Go 後端
+│   ├── cmd/server/main.go        # 程式入口
+│   ├── internal/
+│   │   ├── config/               # 環境變數配置
+│   │   ├── server/               # HTTP server + chi router + middleware
+│   │   ├── handler/              # HTTP handler（song, playlist, settings, auth, lrc, health, ws）
+│   │   ├── service/              # 業務邏輯層（song, playlist, settings, user, lrc）
+│   │   ├── auth/                 # JWT 產生/驗證 + auth middleware
+│   │   ├── ws/                   # WebSocket Hub + Client + Events + Protocol
+│   │   ├── redis/                # Redis 連線 + Session 持久化
+│   │   ├── ent/schema/           # Ent ORM Schema（6 張表）
+│   │   ├── dto/                  # API Request/Response DTO
+│   │   ├── middleware/           # Rate limiter
+│   │   └── validator/            # 請求驗證
+│   ├── migrations/               # Atlas DB migration
+│   ├── Dockerfile                # Go 多階段 Docker 建置
+│   ├── Makefile
+│   ├── go.mod
+│   └── go.sum
+├── docs/                         # 專案文檔
+├── Dockerfile                    # Next.js 前端 Docker 建置
+├── next.config.ts                # Next.js 設定（API rewrites 到 Go）
+├── tailwind.config.ts            # Tailwind 設定
+├── tsconfig.json                 # TypeScript 設定
+└── package.json                  # 前端依賴
+```
 
-## 🤝 參與貢獻
+## 文檔索引
 
-歡迎貢獻！請參考 [開發規範](docs/development.md)。
+| 文檔 | 說明 |
+|------|------|
+| [系統架構](docs/spec/architecture.md) | 技術架構、資料流、組件設計 |
+| [API 文檔](docs/spec/api.md) | REST API + WebSocket 事件規格 |
+| [資料庫設計](docs/spec/database.md) | Ent ORM Schema、ER 圖 |
+| [部署文檔](docs/deployment.md) | Railway 部署、Docker、環境變數 |
+| [開發規範](docs/development.md) | 程式碼標準、Git 工作流程 |
+| [用戶故事](docs/user-stories.md) | 用戶故事與完成狀態 |
+| [變更記錄](docs/changelog.md) | 版本歷史 |
 
-## 📄 授權
+## 授權
 
 MIT License - 詳見 [LICENSE](LICENSE)
 
 ---
 
-**建置狀態:** 🟡 規劃中 | **最後更新:** 2026-03-11
+**最後更新:** 2026-03-13

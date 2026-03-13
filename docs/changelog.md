@@ -2,72 +2,94 @@
 
 ## 版本歷史
 
+### v0.5.0 - 2026-03-13
+
+**Controller 頁面重設計**
+
+#### 新增
+- Controller 頁面重新設計為 Broadcast Console 風格
+  - 可拖曳調整大小的面板（react-resizable-panels v4.7）
+  - 歌曲庫（搜尋、新增、刪除）
+  - 歌詞列表（點擊跳轉、LIVE 標記、空白鍵播放/暫停）
+  - 即時預覽面板（精確複製 Display 顯示效果）
+  - 快捷設定面板（顯示行數、字體大小、主題、動畫）
+- AddSongModal 對話框重新設計匹配 console 主題
+
+#### 改善
+- 移除部分 `lucide-react` 依賴，改用 inline SVG
+- Controller 面板支援鍵盤操作（空白鍵、方向鍵）
+
+---
+
+### v0.4.0 - 2026-03-13
+
+**Go 後端完成遷移**
+
+#### 新增
+- Go 後端完整實作（110+ Go 檔案）
+  - chi Router + Ent ORM + pgx 連線池
+  - REST API: Songs CRUD, Settings, Playlists, Auth, LRC 匯入/匯出
+  - WebSocket Hub: 原生 WebSocket、session 分組廣播
+  - JWT 認證: access token (24h) + refresh token (30d)
+  - Redis session 持久化（1hr TTL）
+  - bcrypt 密碼雜湊（與 Node.js bcrypt 相容）
+  - 速率限制（auth: 10 req/min）
+  - 結構化日誌（slog JSON）
+- Go Dockerfile（多階段 alpine build，~15MB 產出）
+- Demo User 機制（未認證時自動使用）
+
+#### 移除
+- Node.js API routes（`app/api/`）— 僅保留 `_errors.ts` 輔助檔
+- `server.ts` Socket.IO server
+- Server-only Node.js 依賴（pg, ioredis, socket.io, next-auth, bcrypt）
+
+---
+
+### v0.3.0 - 2026-03-12
+
+**Supabase → 自架 PostgreSQL 遷移**
+
+#### 新增
+- Railway PostgreSQL + Redis 服務
+- 自架 PostgreSQL 資料庫 schema（6 張表）
+- Next.js API rewrites 代理到 Go 後端
+- 原生 WebSocket 客戶端（`lib/websocket/native-client.ts`）
+- JWT-based 認證取代 NextAuth/Supabase Auth
+- LRC 檔案匯入/匯出功能
+
+#### 移除
+- Supabase 所有相關依賴與設定
+- `@supabase/ssr`, `@supabase/supabase-js`
+- Supabase Auth、RLS policy
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 環境變數
+
+---
+
+### v0.2.0 - 2026-03-12
+
+**MVP 核心功能實作**
+
+#### 新增
+- 歌詞顯示頁面（Display）— 全螢幕、霓虹光效、自動滾動
+- 控制頁面（Controller）— 歌曲選擇、歌詞控制
+- Zustand 狀態管理（LyricsState + persist middleware）
+- WebSocket 即時同步（Controller ↔ Display）
+- 歌曲 CRUD API
+- 顯示設定（字體、配色、行數、動畫）
+- Dark Tech 設計系統（Orbitron + Exo 2 + JetBrains Mono）
+- Tailwind CSS 自訂主題 + CSS 變數
+
+---
+
 ### v0.1.0 - 2026-03-11
 
 **專案啟動**
 
 #### 新增
-- 專案文檔結構建立
-- 18 個核心文檔建立
+- 專案文檔結構建立（18+ 核心文檔）
 - 技術棧選擇: Next.js 15 + TypeScript + Tailwind CSS
 - 部署目標: Railway
-- 資料庫: Supabase
-- AI 整合: Google Gemini API
-
-#### 規劃
-- Phase 1: MVP 核心功能 (2-3週)
-- Phase 2: Resolume 整合 (1-2週)
-- Phase 3: AI 聽歌辨識 (2-3週)
-- Phase 4: 進階功能 (持續)
-
----
-
-### (未來版本)
-
-#### v0.2.0 - (預計 2026-04-08)
-
-**MVP 發布**
-
-#### 計劃新增
-- 歌詞管理功能
-- 播放列表功能
-- 雙頁同步功能
-- 基礎視覺效果
-- 響應式設計
-
----
-
-#### v0.3.0 - (預計 2026-04-22)
-
-**Resolume 整合**
-
-#### 計劃新增
-- NDI 輸出
-- Spout 輸出
-- 透明背景支援
-
----
-
-#### v0.4.0 - (預計 2026-05-13)
-
-**AI 辨識上線**
-
-#### 計劃新增
-- AI 聽歌辨識
-- 自動歌詞同步
-- 歌詞比對演算法
-
----
-
-#### v1.0.0 - (預計 2026-06-01)
-
-**正式上線**
-
-#### 計劃新增
-- 完整功能
-- 效能優化
-- 安全檢測通過
-- 使用者文檔完整
+- 專案骨架建立
 
 ---
 
@@ -82,47 +104,15 @@
 | `安全` | 安全相關 |
 | `效能` | 效能優化 |
 | `文檔` | 文檔更新 |
-| ` breaking` | 破壞性變更 |
-
----
-
-## 變更記錄範本
-
-```
-### v0.X.X - YYYY-MM-DD
-
-**簡短描述**
-
-#### 新增
-- 功能 A
-- 功能 B
-
-#### 改善
-- 功能 A 的改善
-
-#### 修復
-- 修復問題 A
-- 修復問題 B
-
-#### 移除
-- 移除功能 A
-
-#### 破壞性變更
-- 變更描述
-
-#### 已知問題
-- 問題 A
-- 問題 B
-```
+| `breaking` | 破壞性變更 |
 
 ---
 
 ## 相關文檔
 
-- [里程碑](milestones.md)
-- [時程安排](schedule.md)
+- [系統架構](spec/architecture.md)
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-11
+**文件版本:** 2.0
+**最後更新:** 2026-03-13
