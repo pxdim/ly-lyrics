@@ -12,8 +12,8 @@ import type {
   SessionState,
   DisplaySettings,
   ClientRole,
-} from "../websocket/client";
-import { initWSClient } from "../websocket/client";
+} from "../websocket/types";
+import { initNativeWSClient } from "../websocket/native-client";
 
 // ============================================================================
 // Types
@@ -151,7 +151,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ currentIndex: nextIndex });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.nextLine();
           }
@@ -163,7 +163,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ currentIndex: prevIndex });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.prevLine();
           }
@@ -175,7 +175,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ currentIndex: clampedIndex });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.changeLine(clampedIndex);
           }
@@ -186,7 +186,7 @@ export const useLyricsStore = create<LyricsStore>()(
         // ========================================
         connect: () => {
           try {
-            const ws = initWSClient();
+            const ws = initNativeWSClient();
 
             // Set up event listeners
             ws.on("line_changed", ({ lineIndex }) => {
@@ -238,7 +238,7 @@ export const useLyricsStore = create<LyricsStore>()(
         },
 
         disconnect: () => {
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           ws.disconnect();
           set({
             isConnected: false,
@@ -250,13 +250,13 @@ export const useLyricsStore = create<LyricsStore>()(
         },
 
         joinSession: (sessionId, role, userId) => {
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           ws.joinSession(sessionId, role, userId);
           set({ sessionId, role, userId: userId ?? null });
         },
 
         leaveSession: () => {
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           ws.leaveSession();
           set({ sessionId: null, role: null });
         },
@@ -269,7 +269,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ displaySettings: newSettings });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.updateSettings(settings);
           }
@@ -279,7 +279,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ displaySettings: defaultDisplaySettings });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.updateSettings(defaultDisplaySettings);
           }
@@ -292,7 +292,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ isPlaying: playing });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.setPlaying(playing);
           }
@@ -303,7 +303,7 @@ export const useLyricsStore = create<LyricsStore>()(
           set({ isPlaying: !isPlaying });
 
           // Send to WebSocket if connected as controller
-          const ws = initWSClient();
+          const ws = initNativeWSClient();
           if (get().role === "controller" && ws.isConnected()) {
             ws.setPlaying(!isPlaying);
           }
