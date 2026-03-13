@@ -38,7 +38,11 @@ function DisplayPage() {
   const searchParams = useSearchParams();
   const urlCode = searchParams.get("code")?.toUpperCase().slice(0, 6) ?? "";
 
-  const [connectionCode, setConnectionCode] = useState(urlCode);
+  // 優先 URL 參數，其次 sessionStorage 記住的上次房間碼
+  const initialCode = urlCode || (typeof sessionStorage !== "undefined"
+    ? sessionStorage.getItem("ly_display_code") ?? ""
+    : "");
+  const [connectionCode, setConnectionCode] = useState(initialCode);
   const [isConnected, setIsConnected] = useState(false);
   const connect = useLyricsStore((state) => state.connect);
   const disconnect = useLyricsStore((state) => state.disconnect);
@@ -49,6 +53,8 @@ function DisplayPage() {
   // 連線並加入 session — 當輸入完 6 碼同步碼後觸發（含 URL ?code= 自動連線）
   useEffect(() => {
     if (connectionCode.length === 6) {
+      // 記住此房間碼，下次重新整理時自動回填
+      sessionStorage.setItem("ly_display_code", connectionCode);
       connect();
       // 使用同步碼作為 sessionId，以 display 角色加入
       joinSession(connectionCode, "display");

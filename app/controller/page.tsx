@@ -28,12 +28,33 @@ export default function ControllerPage() {
   // 房間碼在 useEffect 中生成（client-only），避免 SSR/client 隨機值不同導致 hydration mismatch
   const [sessionCode, setSessionCode] = useState("");
 
+  // 房間碼持久化：URL 參數 > sessionStorage > 新生成
+  // 確保 F5 重新整理時房間碼不變，所有接收端不會斷線
   useEffect(() => {
-    const code = generateSessionCode();
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCode = urlParams.get("code")?.toUpperCase().slice(0, 6);
+    const storedCode = sessionStorage.getItem("ly_controller_code");
+
+    let code: string;
+    if (urlCode && urlCode.length === 6) {
+      code = urlCode;
+    } else if (storedCode && storedCode.length === 6) {
+      code = storedCode;
+    } else {
+      code = generateSessionCode();
+    }
+
     setSessionCode(code);
+    sessionStorage.setItem("ly_controller_code", code);
+
+    // 將房間碼寫入 URL（不觸發導航），方便分享和 F5 恢復
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("code") !== code) {
+      url.searchParams.set("code", code);
+      window.history.replaceState({}, "", url.toString());
+    }
+
     connect();
-    // 以 controller 角色加入 session（NativeWSClient 會儲存 session 資訊，
-    // 若 WS 尚未連線，onopen 時會自動重新 join）
     joinSession(code, "controller");
     return () => {
       leaveSession();
@@ -41,9 +62,26 @@ export default function ControllerPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 重新產生房間碼（手動觸發，用於需要切換房間的場景）
+  const regenerateSessionCode = useCallback(() => {
+    leaveSession();
+    disconnect();
+
+    const newCode = generateSessionCode();
+    setSessionCode(newCode);
+    sessionStorage.setItem("ly_controller_code", newCode);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("code", newCode);
+    window.history.replaceState({}, "", url.toString());
+
+    connect();
+    joinSession(newCode, "controller");
+  }, [connect, disconnect, joinSession, leaveSession]);
+
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
-      <StatusBar sessionCode={sessionCode} />
+      <StatusBar sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />
       <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
         {/* 左欄：歌曲庫 + 播放清單 */}
         <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
@@ -86,7 +124,7 @@ export default function ControllerPage() {
 // 頂部狀態列
 // ============================================================================
 
-function StatusBar({ sessionCode }: { sessionCode: string }) {
+function StatusBar({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
   const isConnected = useLyricsStore((state) => state.isConnected);
   const controllerCount = useLyricsStore((state) => state.controllerCount);
   const displayCount = useLyricsStore((state) => state.displayCount);
@@ -157,6 +195,20 @@ function StatusBar({ sessionCode }: { sessionCode: string }) {
               )}
             </svg>
             {copied === "link" ? "已複製" : "複製連結"}
+          </button>
+
+          {/* 重新產生房間碼 */}
+          <button
+            type="button"
+            onClick={onRegenerate}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#090A0C] border border-[#2A2D35] rounded-md hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-[11px] font-mono text-[#6B7280] hover:text-amber-400 cursor-pointer"
+            title="重新產生房間碼（所有接收端需重新連線）"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0115.36-6.36L21 8" />
+              <path d="M3 22v-6h6" /><path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
+            </svg>
+            新房間
           </button>
         </div>
 
@@ -971,8 +1023,9 @@ function LivePreview() {
   const visibleLines = useMemo(() => {
     if (lyrics.length === 0) return [];
     const { displayLines } = displaySettings;
-    const halfLines = Math.floor(displayLines / 2);
-    let startIdx = Math.max(0, currentIndex - halfLines);
+    // 前瞻偏移：與 LyricsDisplay 同步
+    const prevLines = Math.floor(displayLines / 3);
+    let startIdx = Math.max(0, currentIndex - prevLines);
     const endIdx = Math.min(lyrics.length, startIdx + displayLines);
     if (endIdx - startIdx < displayLines) {
       startIdx = Math.max(0, endIdx - displayLines);
