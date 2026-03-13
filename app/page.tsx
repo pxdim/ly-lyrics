@@ -8,23 +8,27 @@ import { Mic, Smartphone, Video } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-void text-text-primary relative overflow-hidden">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-void text-text-primary relative overflow-hidden">
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-50" />
       <div className="absolute inset-0 bg-scanlines opacity-30 pointer-events-none" />
 
-      <div className="max-w-5xl w-full text-center space-y-12 relative z-10">
+      {/* 主內容區間距響應式 */}
+      <div className="max-w-5xl w-full text-center space-y-8 sm:space-y-10 md:space-y-12 relative z-10">
         {/* Logo/Title */}
         <div className="space-y-6">
-          <h1 className="text-8xl font-heading font-bold tracking-wider">
+          {/* 標題響應式：手機 text-4xl → sm text-6xl → md text-8xl */}
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-heading font-bold tracking-wider">
             <span className="inline-block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-glow">
               LY
             </span>
           </h1>
-          <p className="text-2xl font-body text-text-muted tracking-wide">
+          {/* 副標題響應式：手機 text-lg → sm text-xl → md text-2xl */}
+          <p className="text-lg sm:text-xl md:text-2xl font-body text-text-muted tracking-wide">
             歌詞顯示系統
           </p>
-          <div className="w-32 h-1 mx-auto bg-gradient-to-r from-primary to-accent rounded-full shadow-glow-md" />
+          {/* Logo 裝飾線響應式：手機縮短 */}
+          <div className="w-20 sm:w-28 md:w-32 h-1 mx-auto bg-gradient-to-r from-primary to-accent rounded-full shadow-glow-md" />
         </div>
 
         {/* Tagline */}
@@ -110,7 +114,7 @@ function FeatureCard({ icon, title, description, color }: FeatureCardProps) {
   };
 
   return (
-    <div className={`group p-8 bg-elevated border border-border-dim rounded-2xl transition-all duration-300 hover:-translate-y-1 ${colorStyles[color]}`}>
+    <div className={`group p-5 md:p-8 bg-elevated border border-border-dim rounded-2xl transition-all duration-300 hover:-translate-y-1 ${colorStyles[color]}`}>
       <div className={`inline-flex p-3 rounded-xl bg-void border border-border-dim mb-4 ${iconColors[color]}`}>
         {icon}
       </div>

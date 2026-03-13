@@ -7,7 +7,7 @@
 
 "use client";
 
-import { type FC } from "react";
+import { type FC, useState, useEffect } from "react";
 import { ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 
@@ -31,6 +31,16 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
 }) => {
+  // 偵測手機視窗寬度，用於調整 inline style 的響應式尺寸
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const lyrics = useLyricsStore((state) => state.lyrics);
   const nextLine = useLyricsStore((state) => state.nextLine);
@@ -82,8 +92,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   const baseStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: "1rem",
-    padding: "1rem 1.5rem",
+    gap: isMobile ? "0.5rem" : "1rem",
+    padding: isMobile ? "0.625rem 1rem" : "1rem 1.5rem",
     backgroundColor: "rgba(3, 3, 4, 0.9)",
     backdropFilter: "blur(12px)",
     borderRadius: "9999px",
@@ -97,8 +107,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "2.75rem",
-    height: "2.75rem",
+    width: isMobile ? "2.25rem" : "2.75rem",
+    height: isMobile ? "2.25rem" : "2.75rem",
     borderRadius: "9999px",
     border: "1px solid " + "rgba(0, 217, 255, 0.3)",
     backgroundColor: "rgba(0, 217, 255, 0.1)",
@@ -117,12 +127,12 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   };
 
   const selectStyle: React.CSSProperties = {
-    padding: "0.625rem 2.5rem 0.625rem 1rem",
+    padding: isMobile ? "0.5rem 2rem 0.5rem 0.75rem" : "0.625rem 2.5rem 0.625rem 1rem",
     borderRadius: "0.5rem",
     border: "1px solid " + "rgba(0, 217, 255, 0.3)",
     backgroundColor: "rgba(3, 3, 4, 0.8)",
     color: "#FFFFFF",
-    fontSize: "0.875rem",
+    fontSize: isMobile ? "0.75rem" : "0.875rem",
     fontFamily: "'Exo 2', sans-serif",
     cursor: "pointer",
     appearance: "none",
@@ -130,7 +140,7 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     backgroundRepeat: "no-repeat",
     backgroundPosition: "right 0.625rem center",
     backgroundSize: "1rem",
-    minWidth: "140px",
+    minWidth: isMobile ? "100px" : "140px",
     transition: "all 200ms ease-out",
   };
 

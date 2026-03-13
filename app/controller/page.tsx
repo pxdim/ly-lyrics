@@ -1,8 +1,11 @@
 /**
  * 演出控制台 — Broadcast Console 風格
  *
- * 可拖曳調整大小的三欄面板：歌曲庫 | Cue Grid 歌詞 | 預覽 + 設定
- * 右欄垂直分割：上方即時預覽 | 下方快速設定
+ * 三級 RWD 佈局：
+ * - 桌面 (≥1280px)：react-resizable-panels 三欄（歌曲庫 | Cue Grid | 預覽+設定）+ QR 側欄
+ * - 平板 (768-1279px)：雙欄堆疊（左歌曲庫 40% | 右 CueGrid 60%）
+ * - 手機 (<768px)：底部 Tab Bar + 全螢幕分頁（歌曲/歌詞/設定/QR）
+ *
  * 所有演出流程相關功能集中在同一頁面。
  */
 
@@ -18,6 +21,42 @@ import { QRCodePanel } from "@/components/controller/QRCodePanel";
 import { generateSessionCode } from "@/lib/websocket/session-code";
 
 // ============================================================================
+// RWD 偵測 Hooks
+// ============================================================================
+
+/** 偵測手機視窗（<768px） */
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mql.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  return isMobile;
+}
+
+/** 偵測平板視窗（768px - 1279px） */
+function useIsTablet(): boolean {
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px) and (max-width: 1279px)");
+    setIsTablet(mql.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsTablet(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  return isTablet;
+}
+
+// ============================================================================
 // 主頁面
 // ============================================================================
 
@@ -28,6 +67,9 @@ export default function ControllerPage() {
   const leaveSession = useLyricsStore((state) => state.leaveSession);
   // 房間碼在 useEffect 中生成（client-only），避免 SSR/client 隨機值不同導致 hydration mismatch
   const [sessionCode, setSessionCode] = useState("");
+
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   // 房間碼持久化：URL 參數 > sessionStorage > 新生成
   // 確保 F5 重新整理時房間碼不變，所有接收端不會斷線
@@ -80,9 +122,267 @@ export default function ControllerPage() {
     joinSession(newCode, "controller");
   }, [connect, disconnect, joinSession, leaveSession]);
 
+  // 依裝置類型渲染不同佈局
+  if (isMobile) {
+    return <MobileController sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />;
+  }
+
+  if (isTablet) {
+    return <TabletController sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />;
+  }
+
+  return <DesktopController sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />;
+}
+
+// ============================================================================
+// 手機版佈局 (<768px) — 底部 Tab Bar + 全螢幕分頁
+// ============================================================================
+
+/** 手機版分頁類型 */
+type MobileTab = "songs" | "lyrics" | "settings" | "qr";
+
+function MobileController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  const [activeTab, setActiveTab] = useState<MobileTab>("songs");
+  const isConnected = useLyricsStore((state) => state.connectionState === "connected");
+
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
-      <StatusBar sessionCode={sessionCode} onRegenerate={regenerateSessionCode} />
+      {/* 精簡版狀態列：只顯示房間碼 + 連線狀態指示燈 */}
+      <MobileStatusBar sessionCode={sessionCode} isConnected={isConnected} />
+
+      {/* 分頁內容區域（全高可捲動） */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {activeTab === "songs" && (
+          <div className="h-full flex flex-col">
+            <LibraryPanel />
+          </div>
+        )}
+        {activeTab === "lyrics" && (
+          <div className="h-full">
+            <CueGrid />
+          </div>
+        )}
+        {activeTab === "settings" && (
+          <div className="h-full">
+            <QuickSettings />
+          </div>
+        )}
+        {activeTab === "qr" && (
+          <MobileQRTab sessionCode={sessionCode} onRegenerate={onRegenerate} />
+        )}
+      </div>
+
+      {/* 底部 Tab Bar */}
+      <MobileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+    </div>
+  );
+}
+
+/** 手機版精簡狀態列（高度 44px） */
+function MobileStatusBar({ sessionCode, isConnected }: { sessionCode: string; isConnected: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = useCallback(async () => {
+    await navigator.clipboard.writeText(sessionCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [sessionCode]);
+
+  return (
+    <header className="flex items-center justify-between border-b border-[#2A2D35] bg-[#16181D] px-4 shrink-0 h-11">
+      {/* 左：標題 + 房間碼 */}
+      <div className="flex items-center gap-3">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary shrink-0">
+          <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+        </svg>
+        <button
+          type="button"
+          onClick={copyCode}
+          className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-md active:bg-primary/20 transition-all"
+          title="點擊複製房間碼"
+        >
+          <span className="text-[10px] font-mono text-primary/70 uppercase tracking-wider">Room</span>
+          <span className="text-[13px] font-mono font-bold text-primary tracking-[0.15em]">
+            {sessionCode}
+          </span>
+          {copied && (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-primary">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* 右：連線狀態指示燈 */}
+      <div className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`} />
+        <span className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}>
+          {isConnected ? "ON" : "OFF"}
+        </span>
+      </div>
+    </header>
+  );
+}
+
+/** 手機版 QR 分頁：QR Code 全螢幕居中 + 複製連結 */
+function MobileQRTab({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = useCallback(async () => {
+    const link = `${window.location.origin}/display?code=${sessionCode}`;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [sessionCode]);
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-6 p-6">
+      <QRCodePanel sessionCode={sessionCode} size={200} />
+
+      {/* 複製顯示端連結 */}
+      <button
+        type="button"
+        onClick={copyLink}
+        className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-[12px] font-mono text-primary active:bg-primary/20 transition-all"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {copied ? (
+            <path d="M20 6L9 17l-5-5" />
+          ) : (
+            <>
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+            </>
+          )}
+        </svg>
+        {copied ? "已複製連結" : "複製顯示端連結"}
+      </button>
+
+      {/* 重新產生房間碼 */}
+      <button
+        type="button"
+        onClick={onRegenerate}
+        className="flex items-center gap-2 px-4 py-2 bg-[#090A0C] border border-[#2A2D35] rounded-lg text-[12px] font-mono text-[#6B7280] active:bg-amber-500/5 active:border-amber-500/40 active:text-amber-400 transition-all"
+        title="重新產生房間碼（所有接收端需重新連線）"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0115.36-6.36L21 8" />
+          <path d="M3 22v-6h6" /><path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
+        </svg>
+        新房間
+      </button>
+    </div>
+  );
+}
+
+/** 手機版底部 Tab Bar（fixed bottom, h-14, 四等分） */
+function MobileTabBar({ activeTab, onTabChange }: { activeTab: MobileTab; onTabChange: (tab: MobileTab) => void }) {
+  const tabs: { key: MobileTab; label: string; icon: React.ReactNode }[] = [
+    {
+      key: "songs",
+      label: "歌曲",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+        </svg>
+      ),
+    },
+    {
+      key: "lyrics",
+      label: "歌詞",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      ),
+    },
+    {
+      key: "settings",
+      label: "設定",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+        </svg>
+      ),
+    },
+    {
+      key: "qr",
+      label: "QR",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="3" height="3" />
+          <path d="M21 14h-3v3" /><path d="M21 21h-3v-3" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <nav className="flex items-stretch border-t border-[#2A2D35] bg-[#16181D] shrink-0 h-14">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.key;
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onTabChange(tab.key)}
+            className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] transition-colors ${
+              isActive
+                ? "text-[#00D9FF]"
+                : "text-[#6B7280] active:text-[#E4E7EB]"
+            }`}
+          >
+            {tab.icon}
+            <span className={`text-[10px] font-mono ${isActive ? "text-[#00D9FF]" : ""}`}>
+              {tab.label}
+            </span>
+            {/* 啟用分頁的上方指示線 */}
+            {isActive && (
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#00D9FF]" />
+            )}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+// ============================================================================
+// 平板版佈局 (768px - 1279px) — 雙欄堆疊
+// ============================================================================
+
+function TabletController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  return (
+    <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
+      <StatusBar sessionCode={sessionCode} onRegenerate={onRegenerate} />
+      <div className="flex flex-1 min-h-0">
+        {/* 左欄 40%：歌曲庫 */}
+        <div className="w-2/5 min-h-0 flex flex-col">
+          <LibraryPanel />
+        </div>
+        {/* 右欄 60%：CueGrid + Transport */}
+        <div className="w-3/5 min-h-0 flex flex-col border-l border-[#2A2D35]">
+          <CueGrid />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// 桌面版佈局 (>=1280px) — react-resizable-panels 三欄 + QR 側欄
+// ============================================================================
+
+function DesktopController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  return (
+    <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
+      <StatusBar sessionCode={sessionCode} onRegenerate={onRegenerate} />
       <div className="flex flex-1 min-h-0">
         <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
           {/* 左欄：歌曲庫 + 播放清單 */}
@@ -119,8 +419,8 @@ export default function ControllerPage() {
           </Panel>
         </Group>
 
-        {/* 桌面 QR 側欄（≥1280px 才顯示） */}
-        <aside className="hidden xl:flex w-[200px] border-l border-[#2A2D35] bg-[#16181D] flex-col items-center justify-center shrink-0">
+        {/* 桌面 QR 側欄 */}
+        <aside className="flex w-[200px] border-l border-[#2A2D35] bg-[#16181D] flex-col items-center justify-center shrink-0">
           <QRCodePanel sessionCode={sessionCode} size={130} />
         </aside>
       </div>

@@ -160,11 +160,11 @@ function DisplayPage() {
         <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-scanlines opacity-20 pointer-events-none" />
 
-        <div className="text-center space-y-12 max-w-md relative z-10 p-8">
+        <div className="text-center space-y-6 sm:space-y-8 md:space-y-12 max-w-sm sm:max-w-md relative z-10 p-4 sm:p-6 md:p-8">
           {/* Logo */}
           <div className="space-y-4">
-            <div className="inline-flex items-center justify-center w-32 h-32 bg-elevated border-2 border-primary/30 rounded-3xl shadow-glow-lg">
-              <h1 className="text-6xl font-heading font-bold text-primary tracking-wider">
+            <div className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 bg-elevated border-2 border-primary/30 rounded-3xl shadow-glow-lg">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-bold text-primary tracking-wider">
                 LY
               </h1>
             </div>
@@ -189,7 +189,7 @@ function DisplayPage() {
                   setConnectionCode(value);
                 }}
                 placeholder="______"
-                className="w-full px-6 py-5 text-4xl font-mono text-center bg-elevated text-primary rounded-2xl border-2 border-primary/30 focus:outline-none focus:border-primary focus:shadow-glow-md transition-all tracking-[0.5em] placeholder:text-primary/20"
+                className="w-full px-6 py-5 text-2xl sm:text-3xl md:text-4xl font-mono text-center bg-elevated text-primary rounded-2xl border-2 border-primary/30 focus:outline-none focus:border-primary focus:shadow-glow-md transition-all tracking-[0.5em] placeholder:text-primary/20"
                 maxLength={6}
                 autoFocus
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}

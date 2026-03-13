@@ -28,6 +28,16 @@
 - Zustand Store `isConnected: boolean` 重構為 `connectionState: 'connected' | 'reconnecting' | 'disconnected'` 三態
 - WebSocket Client 新增 `resetAndReconnect()` 方法
 - Tailwind config 新增 `fadeOut` keyframe 動畫
+- **RWD 三級響應式佈局** — 全站支援 Desktop(≥1280px) / Tablet(768-1279px) / Mobile(<768px)
+  - Controller 手機版：底部 Tab Bar 四分頁（歌曲/歌詞/設定/QR），取代桌面三欄
+  - Controller 平板版：雙欄佈局（40% 歌曲庫 + 60% CueGrid）
+  - Home/Display/AddSongModal/LyricsControl/LyricsDisplay 響應式字體與間距
+- **前端測試基礎建設** — Vitest 4.0 + jsdom 環境
+  - LRC Parser 單元測試 36 cases（parseTimeTag, parseLRC, serializeLRC, 往返一致性等）
+  - Session Code 生成器測試 6 cases（格式驗證、排除混淆字元、唯一性）
+- **Go 後端測試補齊** — 新增 4 模組 1077 行測試
+  - `service/song_test.go`、`service/playlist_test.go`、`service/settings_test.go`
+  - `redis/session_test.go`（miniredis 整合測試）
 
 ---
 

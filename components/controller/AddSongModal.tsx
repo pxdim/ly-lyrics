@@ -6,7 +6,7 @@
 
 "use client";
 
-import { type FC, useState, useRef, useEffect } from "react";
+import { type FC, useState, useRef, useEffect, useCallback } from "react";
 import { createSong } from "@/lib/api/songs";
 
 interface AddSongModalProps {
@@ -22,6 +22,18 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+
+  // 偵測手機螢幕寬度，用於響應式調整
+  const [isMobile, setIsMobile] = useState(false);
+  const handleMediaChange = useCallback((e: MediaQueryListEvent | MediaQueryList) => {
+    setIsMobile(e.matches);
+  }, []);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    handleMediaChange(mql);
+    mql.addEventListener("change", handleMediaChange);
+    return () => mql.removeEventListener("change", handleMediaChange);
+  }, [handleMediaChange]);
 
   // 開啟時聚焦到歌名輸入框
   useEffect(() => {
@@ -92,8 +104,8 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       {/* 背景遮罩 */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-      {/* 對話框 */}
-      <div className="relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] overflow-hidden">
+      {/* 對話框：手機上限制最大高度並允許滾動 */}
+      <div className={`relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] overflow-hidden ${isMobile ? "max-h-[90vh] overflow-y-auto" : ""}`}>
         {/* 標題列 */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#2A2D35] bg-[#090A0C]">
           <div className="flex items-center gap-2">
@@ -155,7 +167,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
               value={lyricsText}
               onChange={(e) => setLyricsText(e.target.value)}
               placeholder={"第一行歌詞\n第二行歌詞\n第三行歌詞\n..."}
-              rows={10}
+              rows={isMobile ? 6 : 10}
               className={`${inputClass} resize-y`}
             />
           </div>

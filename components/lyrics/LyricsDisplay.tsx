@@ -7,7 +7,7 @@
 
 "use client";
 
-import { type FC, useEffect, useRef, useMemo } from "react";
+import { type FC, useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { LyricsLine } from "./LyricsLine";
 
@@ -32,6 +32,18 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 偵測手機螢幕寬度，用於響應式 padding 調整
+  const [isMobile, setIsMobile] = useState(false);
+  const handleMediaChange = useCallback((e: MediaQueryListEvent | MediaQueryList) => {
+    setIsMobile(e.matches);
+  }, []);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    handleMediaChange(mql);
+    mql.addEventListener("change", handleMediaChange);
+    return () => mql.removeEventListener("change", handleMediaChange);
+  }, [handleMediaChange]);
 
   // Calculate visible lyrics range
   const { visibleLyrics, startIndex, highlightIndex } = useMemo(() => {
@@ -81,7 +93,7 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "2rem",
+    padding: isMobile ? "1rem" : "2rem",
     transition: displaySettings.enableAnimation
       ? `background-color ${displaySettings.scrollDuration}ms ease`
       : "none",
@@ -96,7 +108,7 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
     gap: `${displaySettings.fontSize * 0.5}px`,
     overflowY: "auto",
     maxHeight: "80vh",
-    padding: "2rem 0",
+    padding: isMobile ? "1rem 0" : "2rem 0",
     scrollBehavior: displaySettings.enableAnimation ? "smooth" : "auto",
   };
 
