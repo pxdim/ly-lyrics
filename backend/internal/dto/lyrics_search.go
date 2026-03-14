@@ -47,5 +47,6 @@ type LyricsDetailResponse struct {
 	Source       string `json:"source"`
 	SyncedLyrics string `json:"syncedLyrics,omitempty"`
 	PlainLyrics  string `json:"plainLyrics,omitempty"`
+	SourceURL    string `json:"sourceUrl,omitempty"`
 	IsSimplified bool   `json:"isSimplified"`
 }

@@ -21,6 +21,7 @@ type LyricsResult struct {
 	Duration        *int     `json:"duration,omitempty"`
 	Ratio           *float64 `json:"ratio,omitempty"`
 	CoverURL        *string  `json:"coverUrl,omitempty"`
+	SourceURL       string   `json:"sourceUrl,omitempty"`
 	IsSimplified    bool     `json:"isSimplified"`
 	IsAiGenerated   bool     `json:"isAiGenerated"`
 }

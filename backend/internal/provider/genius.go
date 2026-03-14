@@ -149,6 +149,7 @@ func (g *Genius) GetLyrics(ctx context.Context, id string) (*LyricsResult, error
 		Artist:     song.ArtistNames,
 		Source:     "genius",
 		Confidence: "medium",
+		SourceURL:  song.URL,
 	}
 	if song.Album != nil {
 		result.Album = song.Album.Name

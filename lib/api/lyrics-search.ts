@@ -44,6 +44,7 @@ export interface LyricsDetailResponse {
   source: string;
   syncedLyrics?: string;
   plainLyrics?: string;
+  sourceUrl?: string;
   isSimplified: boolean;
 }
 

@@ -108,6 +108,10 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
     }
   }, [onSongAdded, onClose]);
 
+  const handleReSearch = useCallback((title: string, artist: string) => {
+    handleSearch({ query: title, searchType: "title", artist });
+  }, [handleSearch]);
+
   return (
     <div className="space-y-4">
       <LyricsSearchInput onSearch={handleSearch} isLoading={isSearching} />
@@ -130,6 +134,7 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
         lyrics={previewLyrics}
         isLoading={isLoadingLyrics}
         onImport={handleImport}
+        onReSearch={handleReSearch}
       />
     </div>
   );

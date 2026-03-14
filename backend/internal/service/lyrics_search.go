@@ -184,6 +184,7 @@ func (s *LyricsSearchService) GetLyrics(ctx context.Context, id string) (*dto.Ly
 		Source:       result.Source,
 		SyncedLyrics: result.SyncedLyrics,
 		PlainLyrics:  result.PlainLyrics,
+		SourceURL:    result.SourceURL,
 		IsSimplified: result.IsSimplified,
 	}, nil
 }

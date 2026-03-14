@@ -11,6 +11,7 @@ interface LyricsPreviewModalProps {
   lyrics: LyricsDetailResponse | null;
   isLoading: boolean;
   onImport: (lyrics: LyricsDetailResponse, convertToTrad: boolean) => void;
+  onReSearch?: (title: string, artist: string) => void;
 }
 
 export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
@@ -19,6 +20,7 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
   lyrics,
   isLoading,
   onImport,
+  onReSearch,
 }) => {
   const [isTraditional, setIsTraditional] = useState(false);
 
@@ -114,14 +116,44 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
                 ) : (
                   <>
                     {/* 無歌詞內容提示 */}
-                    <div className="flex-1 flex items-center justify-center px-5 py-12">
-                      <div className="text-center space-y-2">
-                        <p className="text-[13px] text-[#6B7280] font-mono">此來源僅提供歌曲資訊，不包含歌詞內容</p>
-                        <p className="text-[11px] text-[#6B7280]/60">請嘗試其他搜尋結果</p>
-                      </div>
+                    <div className="px-5 py-8 space-y-4">
+                      <p className="text-[13px] text-[#6B7280] font-mono text-center">
+                        此來源僅提供歌曲資訊，不包含歌詞內容
+                      </p>
+
+                      {/* Genius 網頁連結 */}
+                      {lyrics.sourceUrl && (
+                        <a
+                          href={lyrics.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#2A2D35] text-[13px] text-[#9CA3AF] hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors font-mono"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                          前往 Genius 查看歌詞
+                        </a>
+                      )}
+
+                      {/* 用此歌名重新搜尋 */}
+                      {onReSearch && (
+                        <button
+                          type="button"
+                          onClick={() => { onReSearch(lyrics.title, lyrics.artist); onClose(); }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors font-mono"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                          </svg>
+                          用「{lyrics.title}」重新搜尋歌詞
+                        </button>
+                      )}
                     </div>
 
-                    {/* 只有關閉按鈕 */}
+                    {/* 關閉按鈕 */}
                     <div className="flex items-center justify-end px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
                       <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
                         關閉
