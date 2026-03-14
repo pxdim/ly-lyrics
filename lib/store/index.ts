@@ -526,7 +526,7 @@ export const useLyricsStore = create<LyricsStore>()(
           displaySettings: state.displaySettings,
           role: state.role,
           userId: state.userId,
-          aiSettings: state.aiSettings,
+          aiSettings: { ...state.aiSettings, apiKey: null },
         }),
         // Required for Next.js App Router: prevents persist from calling set()
         // during SSR (server-side rendering), which causes React error #185.
