@@ -57,7 +57,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       setLyricsText("");
       setError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialTab]);
 
   // ESC 關閉
   useEffect(() => {
