@@ -99,5 +99,40 @@ describe("lyrics-search API", () => {
         "/api/lyrics/search/lrcapi-netease-8a3f"
       );
     });
+
+    it("HTTP 500 回傳有效 JSON 錯誤訊息", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: () =>
+          Promise.resolve({ error: { message: "Internal server error" } }),
+      });
+
+      await expect(getLyricsDetail("lrclib-1")).rejects.toThrow(
+        "Internal server error"
+      );
+    });
+
+    it("HTTP 500 回傳非 JSON body 使用 fallback 錯誤訊息", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error("invalid json")),
+      });
+
+      await expect(getLyricsDetail("lrclib-1")).rejects.toThrow(
+        "取得歌詞失敗"
+      );
+    });
+
+    it("HTTP 500 無 error.message 欄位 fallback 為 HTTP status", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ data: "no error field" }),
+      });
+
+      await expect(getLyricsDetail("lrclib-1")).rejects.toThrow("HTTP 500");
+    });
   });
 });
