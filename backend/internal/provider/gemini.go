@@ -66,12 +66,13 @@ func (g *Gemini) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 		return nil, fmt.Errorf("gemini: 序列化請求失敗: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/v1beta/models/gemini-2.0-flash:generateContent?key=%s", g.baseURL, g.apiKey)
+	reqURL := fmt.Sprintf("%s/v1beta/models/gemini-2.0-flash:generateContent", g.baseURL)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("gemini: 建立請求失敗: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-goog-api-key", g.apiKey)
 
 	resp, err := g.client.Do(httpReq)
 	if err != nil {
