@@ -22,6 +22,8 @@ type Config struct {
 	Environment string `env:"ENVIRONMENT" envDefault:"development"`
 	// CORSOrigins 允許的跨域來源
 	CORSOrigins string `env:"CORS_ORIGINS" envDefault:"*"`
+	// DeepgramAPIKey Deepgram STT API 金鑰（選填，未設定時前端需自行提供）
+	DeepgramAPIKey string `env:"DEEPGRAM_API_KEY" envDefault:""`
 }
 
 // Load 從環境變數載入設定

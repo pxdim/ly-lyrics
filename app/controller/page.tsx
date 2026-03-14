@@ -25,6 +25,8 @@ import { Download } from "lucide-react";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 import { SortablePlaylist } from "@/components/playlist/SortablePlaylist";
 import { usePlaylistReorder } from "@/lib/hooks/usePlaylistReorder";
+import { AiTrackingPanel } from "@/components/ai-tracking/AiTrackingPanel";
+import { useAiTracking } from "@/lib/hooks/use-ai-tracking";
 
 // ============================================================================
 // RWD 偵測 Hooks
@@ -150,6 +152,7 @@ type MobileTab = "songs" | "lyrics" | "settings" | "qr";
 function MobileController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
   const [activeTab, setActiveTab] = useState<MobileTab>("songs");
   const isConnected = useLyricsStore((state) => state.connectionState === "connected");
+  const { start: startAi, stop: stopAi, onManualOverride } = useAiTracking();
 
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
@@ -165,11 +168,16 @@ function MobileController({ sessionCode, onRegenerate }: { sessionCode: string; 
         )}
         {activeTab === "lyrics" && (
           <div className="h-full">
-            <CueGrid />
+            <CueGrid onManualOverride={onManualOverride} />
           </div>
         )}
         {activeTab === "settings" && (
-          <div className="h-full">
+          <div className="h-full overflow-y-auto">
+            <div className="p-3">
+              <AiTrackingPanel
+                onToggle={(active) => { if (active) startAi(); else stopAi(); }}
+              />
+            </div>
             <QuickSettings />
           </div>
         )}
@@ -364,6 +372,8 @@ function MobileTabBar({ activeTab, onTabChange }: { activeTab: MobileTab; onTabC
 // ============================================================================
 
 function TabletController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  const { start: startAi, stop: stopAi, onManualOverride } = useAiTracking();
+
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
       <StatusBar sessionCode={sessionCode} onRegenerate={onRegenerate} />
@@ -372,9 +382,14 @@ function TabletController({ sessionCode, onRegenerate }: { sessionCode: string; 
         <div className="w-2/5 min-h-0 flex flex-col">
           <LibraryPanel />
         </div>
-        {/* 右欄 60%：CueGrid + Transport */}
+        {/* 右欄 60%：AI 面板 + CueGrid + Transport */}
         <div className="w-3/5 min-h-0 flex flex-col border-l border-[#2A2D35]">
-          <CueGrid />
+          <div className="p-2 border-b border-[#2A2D35] shrink-0">
+            <AiTrackingPanel
+              onToggle={(active) => { if (active) startAi(); else stopAi(); }}
+            />
+          </div>
+          <CueGrid onManualOverride={onManualOverride} />
         </div>
       </div>
     </div>
@@ -386,6 +401,8 @@ function TabletController({ sessionCode, onRegenerate }: { sessionCode: string; 
 // ============================================================================
 
 function DesktopController({ sessionCode, onRegenerate }: { sessionCode: string; onRegenerate: () => void }) {
+  const { start: startAi, stop: stopAi, onManualOverride } = useAiTracking();
+
   return (
     <div className="h-screen flex flex-col bg-[#090A0C] text-[#E4E7EB] overflow-hidden font-body text-[13px] antialiased">
       <StatusBar sessionCode={sessionCode} onRegenerate={onRegenerate} />
@@ -401,7 +418,7 @@ function DesktopController({ sessionCode, onRegenerate }: { sessionCode: string;
 
           {/* 中欄：Cue Grid */}
           <Panel id="cues" defaultSize="45%" minSize="30%">
-            <CueGrid />
+            <CueGrid onManualOverride={onManualOverride} />
           </Panel>
           <Separator className="w-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
             <div className="w-px h-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
@@ -417,9 +434,16 @@ function DesktopController({ sessionCode, onRegenerate }: { sessionCode: string;
               <Separator className="h-[5px] bg-[#090A0C] hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-row-resize flex items-center justify-center group">
                 <div className="h-px w-8 bg-[#2A2D35] group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
               </Separator>
-              {/* 下：快速設定 */}
+              {/* 下：AI 面板 + 快速設定 */}
               <Panel id="settings" defaultSize="55%" minSize="25%">
-                <QuickSettings />
+                <div className="h-full overflow-y-auto">
+                  <div className="p-3">
+                    <AiTrackingPanel
+                      onToggle={(active) => { if (active) startAi(); else stopAi(); }}
+                    />
+                  </div>
+                  <QuickSettings />
+                </div>
               </Panel>
             </Group>
           </Panel>
@@ -1190,7 +1214,7 @@ function PlaylistListPanel() {
 // 中欄：Cue Grid（歌詞 + 點擊跳轉 + Transport）
 // ============================================================================
 
-function CueGrid() {
+function CueGrid({ onManualOverride }: { onManualOverride?: () => void }) {
   const lyrics = useLyricsStore((state) => state.lyrics);
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const jumpToLine = useLyricsStore((state) => state.jumpToLine);
@@ -1217,21 +1241,21 @@ function CueGrid() {
   // 鍵盤快捷鍵（透過 useKeyboardShortcuts hook 統一管理）
   const keyboardShortcuts = useMemo(
     () => ({
-      ArrowDown: () => nextLine(),
-      ArrowRight: () => nextLine(),
-      ArrowUp: () => prevLine(),
-      ArrowLeft: () => prevLine(),
+      ArrowDown: () => { nextLine(); onManualOverride?.(); },
+      ArrowRight: () => { nextLine(); onManualOverride?.(); },
+      ArrowUp: () => { prevLine(); onManualOverride?.(); },
+      ArrowLeft: () => { prevLine(); onManualOverride?.(); },
       " ": () => togglePlaying(),
-      Home: () => jumpToLine(0),
-      End: () => jumpToLine(totalLines - 1),
+      Home: () => { jumpToLine(0); onManualOverride?.(); },
+      End: () => { jumpToLine(totalLines - 1); onManualOverride?.(); },
       ...Object.fromEntries(
         Array.from({ length: 9 }, (_, i) => [
           String(i + 1),
-          () => jumpToLine(i),
+          () => { jumpToLine(i); onManualOverride?.(); },
         ])
       ),
     }),
-    [nextLine, prevLine, togglePlaying, jumpToLine, totalLines]
+    [nextLine, prevLine, togglePlaying, jumpToLine, totalLines, onManualOverride]
   );
 
   useKeyboardShortcuts(keyboardShortcuts);
@@ -1287,7 +1311,7 @@ function CueGrid() {
               <div
                 key={idx}
                 ref={activeLineRef}
-                onClick={() => jumpToLine(idx)}
+                onClick={() => { jumpToLine(idx); onManualOverride?.(); }}
                 className="flex items-center px-4 py-3.5 bg-[#16181D] border-y border-primary/30 relative cursor-pointer"
                 style={{ boxShadow: "inset 4px 0 0 0 var(--color-primary, #00D9FF)" }}
               >
@@ -1314,7 +1338,7 @@ function CueGrid() {
           return (
             <div
               key={idx}
-              onClick={() => jumpToLine(idx)}
+              onClick={() => { jumpToLine(idx); onManualOverride?.(); }}
               className={`group flex items-center px-4 py-2.5 border-b border-[#2A2D35]/30 cursor-crosshair transition-colors ${
                 isNext
                   ? "bg-[#16181D]/30 hover:bg-[#16181D]/80"
@@ -1357,7 +1381,7 @@ function CueGrid() {
           </span>
         </div>
         <button
-          onClick={() => { if (canGoNext) nextLine(); }}
+          onClick={() => { if (canGoNext) { nextLine(); onManualOverride?.(); } }}
           disabled={!canGoNext}
           className="w-full h-10 bg-[#16181D] border border-primary text-primary font-mono text-[13px] tracking-widest flex items-center justify-center gap-2 hover:bg-primary hover:text-[#090A0C] transition-colors active:scale-[0.99] disabled:opacity-30 disabled:hover:bg-[#16181D] disabled:hover:text-primary disabled:cursor-not-allowed"
           type="button"

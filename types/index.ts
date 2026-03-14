@@ -76,7 +76,6 @@ export interface SessionState {
   currentSong: Song | null;
   currentLineIndex: number;
   connectedClients: number;
-  isAiListening: boolean;
   createdAt: Date;
   lastActivity: Date;
 }
@@ -144,21 +143,38 @@ export interface ConnectionState {
 }
 
 // ============================================
-// AI Listening Types
+// AI Tracking Types
 // ============================================
 
-export interface AiListeningState {
+export type STTProviderType = "deepgram" | "gemini" | "whisper" | "custom";
+
+export type AiTrackingStatus = "idle" | "listening" | "matched" | "cooldown" | "error";
+
+export interface AiTrackingState {
   isActive: boolean;
+  status: AiTrackingStatus;
   confidence: number; // 0-1
   lastMatchedLine: number | null;
-  lastUpdateTime: Date;
-  apiProvider: "gemini" | "whisper" | "local";
+  cooldownUntil: number | null; // Unix ms timestamp，null = 未在冷卻中
+  sttProvider: STTProviderType;
+  errorMessage: string | null;
 }
 
-export interface AudioInput {
-  mediaStream: MediaStream | null;
-  isRecording: boolean;
-  volume: number; // 0-1
+export interface AiTrackingSettings {
+  sttProvider: STTProviderType;
+  apiKey: string | null; // 使用者自行輸入的 API key（null = 用伺服器端的）
+  confidenceThreshold: number; // 預設 0.6
+  windowBefore: number; // 預設 2
+  windowAfter: number; // 預設 3
+  manualOverrideCooldown: number; // 預設 5000ms
+  fullScanThreshold: number; // 預設 0.8
+}
+
+export interface AudioInputState {
+  deviceId: string | null;
+  gain: number; // 0-20 dB（store 存 dB 值，AudioCapture 轉線性值）
+  volume: number; // 即時音量 0-1
+  isCapturing: boolean;
 }
 
 // ============================================
@@ -174,7 +190,6 @@ export type WebSocketMessageType =
   | "session_state"
   | "client_connected"
   | "client_disconnected"
-  | "ai_listening_toggle"
   | "error";
 
 export interface WebSocketMessage<T = unknown> {
@@ -204,16 +219,11 @@ export interface SettingsUpdatedPayload {
   settings: Partial<DisplaySettings>;
 }
 
-export interface AiListeningTogglePayload {
-  isActive: boolean;
-}
-
 // Server → Client messages
 export interface SessionStatePayload {
   currentSong: Song | null;
   currentLineIndex: number;
   connectedClients: number;
-  isAiListening: boolean;
 }
 
 export interface ClientConnectedPayload {

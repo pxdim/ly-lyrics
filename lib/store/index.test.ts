@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
 
 // ============================================================================
 // Mock 設定：必須在 import store 之前
@@ -656,5 +657,78 @@ describe("Selectors", () => {
     result = selectNavigationState(useLyricsStore.getState());
     expect(result.canGoNext).toBe(false);
     expect(result.canGoPrev).toBe(true);
+  });
+});
+
+// ============================================================================
+// AI Tracking actions
+// ============================================================================
+
+describe("AI Tracking actions", () => {
+  beforeEach(() => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.stopAiTracking();
+    });
+  });
+
+  it("startAiTracking sets isActive and status to listening", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.startAiTracking();
+    });
+    expect(result.current.aiTracking.isActive).toBe(true);
+    expect(result.current.aiTracking.status).toBe("listening");
+  });
+
+  it("stopAiTracking resets AI tracking state", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.startAiTracking();
+      result.current.stopAiTracking();
+    });
+    expect(result.current.aiTracking.isActive).toBe(false);
+    expect(result.current.aiTracking.status).toBe("idle");
+  });
+
+  it("updateAiStatus updates status and confidence", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.startAiTracking();
+      result.current.updateAiStatus("matched", 0.85, 3);
+    });
+    expect(result.current.aiTracking.status).toBe("matched");
+    expect(result.current.aiTracking.confidence).toBe(0.85);
+    expect(result.current.aiTracking.lastMatchedLine).toBe(3);
+  });
+
+  it("triggerManualOverride sets cooldown status with timestamp", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    const before = Date.now();
+    act(() => {
+      result.current.startAiTracking();
+      result.current.triggerManualOverride();
+    });
+    expect(result.current.aiTracking.status).toBe("cooldown");
+    expect(result.current.aiTracking.cooldownUntil).toBeGreaterThanOrEqual(before + 5000);
+  });
+
+  it("updateAudioInput partially updates audio input state", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.updateAudioInput({ gain: 10, volume: 0.7 });
+    });
+    expect(result.current.audioInput.gain).toBe(10);
+    expect(result.current.audioInput.volume).toBe(0.7);
+    expect(result.current.audioInput.deviceId).toBeNull(); // unchanged
+  });
+
+  it("updateAiSettings partially updates AI settings", () => {
+    const { result } = renderHook(() => useLyricsStore());
+    act(() => {
+      result.current.updateAiSettings({ confidenceThreshold: 0.8 });
+    });
+    expect(result.current.aiSettings.confidenceThreshold).toBe(0.8);
+    expect(result.current.aiSettings.sttProvider).toBe("deepgram"); // unchanged default
   });
 });
