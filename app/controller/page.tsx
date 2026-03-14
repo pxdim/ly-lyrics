@@ -22,6 +22,7 @@ import { generateSessionCode } from "@/lib/websocket/session-code";
 import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
 import { generateLrcContent, downloadLrcFile } from "@/lib/lrc/export";
 import { Download } from "lucide-react";
+import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 
 // ============================================================================
 // RWD 偵測 Hooks
@@ -743,6 +744,11 @@ function SongListPanel() {
             className="w-full pl-8 pr-3 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
           />
         </div>
+      </div>
+
+      {/* LRC 匯入拖放區 */}
+      <div className="px-3 py-2 border-b border-[#2A2D35] shrink-0">
+        <LrcDropZone onImportSuccess={() => loadSongs(search)} />
       </div>
 
       {/* 歌曲列表 */}
