@@ -1,6 +1,6 @@
 "use client";
 
-import { type FC, useState, useRef, useCallback } from "react";
+import { type FC, useState, useRef, useCallback, useEffect } from "react";
 import type {
   LyricsSearchRequest,
   LyricsSearchResponse,
@@ -49,6 +49,11 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
     } finally {
       setIsSearching(false);
     }
+  }, []);
+
+  // 組件 unmount 時取消進行中的搜尋請求
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   const handleSelectResult = useCallback(async (result: LyricsSearchResultItem) => {
