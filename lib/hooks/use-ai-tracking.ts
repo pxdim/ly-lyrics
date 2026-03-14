@@ -12,6 +12,7 @@ import { TrackingEngine } from "@/lib/ai-tracking/tracking-engine";
 import { AudioCapture } from "@/lib/audio/audio-capture";
 import { DeepgramProvider } from "@/lib/stt/deepgram-provider";
 import { WebSpeechProvider } from "@/lib/stt/web-speech-provider";
+import { GoogleCloudProvider } from "@/lib/stt/google-cloud-provider";
 
 export function useAiTracking() {
   const engineRef = useRef<TrackingEngine | null>(null);
@@ -50,9 +51,9 @@ export function useAiTracking() {
       const store = useLyricsStore.getState();
       const settings = store.aiSettings;
 
-      // Web Speech API 不需要 API key
+      // Google Cloud 和 Web Speech 不需要前端 API key（後端代理 / 瀏覽器內建）
       let apiKey = "";
-      if (settings.sttProvider !== "web-speech") {
+      if (settings.sttProvider === "deepgram") {
         apiKey = settings.apiKey ?? process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] ?? "";
         if (!apiKey) {
           const resp = await fetch("/api/stt/token");
@@ -68,9 +69,18 @@ export function useAiTracking() {
       const audioCapture = new AudioCapture();
       audioCaptureRef.current = audioCapture;
 
-      const sttProvider = settings.sttProvider === "web-speech"
-        ? new WebSpeechProvider()
-        : new DeepgramProvider();
+      let sttProvider;
+      switch (settings.sttProvider) {
+        case "google-cloud":
+          sttProvider = new GoogleCloudProvider();
+          break;
+        case "web-speech":
+          sttProvider = new WebSpeechProvider();
+          break;
+        default:
+          sttProvider = new DeepgramProvider();
+          break;
+      }
 
       const engine = new TrackingEngine({
         sttProvider,

@@ -67,9 +67,10 @@ function AdvancedSettings() {
         <span className="text-[#6B7280]">辨識引擎</span>
         <select
           value={aiSettings.sttProvider}
-          onChange={(e) => updateAiSettings({ sttProvider: e.target.value as "deepgram" | "web-speech" })}
+          onChange={(e) => updateAiSettings({ sttProvider: e.target.value as "google-cloud" | "web-speech" | "deepgram" })}
           className="bg-[#1A1D24] border border-[#2A2D35] text-[#E4E7EB] text-[10px] font-mono rounded px-1.5 py-0.5 focus:outline-none focus:border-primary"
         >
+          <option value="google-cloud">Google Cloud STT</option>
           <option value="web-speech">Web Speech (免費)</option>
           <option value="deepgram">Deepgram</option>
         </select>

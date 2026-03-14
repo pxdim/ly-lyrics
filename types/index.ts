@@ -146,7 +146,7 @@ export interface ConnectionState {
 // AI Tracking Types
 // ============================================
 
-export type STTProviderType = "deepgram" | "web-speech" | "gemini" | "whisper" | "custom";
+export type STTProviderType = "deepgram" | "web-speech" | "google-cloud" | "gemini" | "whisper" | "custom";
 
 export type AiTrackingStatus = "idle" | "listening" | "matched" | "cooldown" | "error";
 
