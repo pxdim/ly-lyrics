@@ -26,6 +26,14 @@ type Config struct {
 	DeepgramAPIKey string `env:"DEEPGRAM_API_KEY" envDefault:""`
 	// GoogleSTTAPIKey Google Cloud Speech-to-Text API 金鑰
 	GoogleSTTAPIKey string `env:"GOOGLE_STT_API_KEY" envDefault:""`
+	// LrcApiURL LrcApi Docker 內網地址（選填，未設定時停用 LrcApi）
+	LrcApiURL string `env:"LRCAPI_URL" envDefault:""`
+	// LrcApiAuthKey LrcApi 認證 Key（選填）
+	LrcApiAuthKey string `env:"LRCAPI_AUTH_KEY" envDefault:""`
+	// GeniusAPIToken Genius API Token（選填，未設定時停用 Genius）
+	GeniusAPIToken string `env:"GENIUS_API_TOKEN" envDefault:""`
+	// GeminiAPIKey Gemini API Key（選填，未設定時停用 Gemini）
+	GeminiAPIKey string `env:"GEMINI_API_KEY" envDefault:""`
 }
 
 // Load 從環境變數載入設定
