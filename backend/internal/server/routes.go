@@ -26,6 +26,8 @@ func (s *Server) setupRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(s.jwtManager))
 		r.Get("/api/auth/me", authHandler.Me)
+		sttHandler := handler.NewSTT(s.cfg.DeepgramAPIKey)
+		r.Get("/api/stt/token", sttHandler.GetToken)
 	})
 
 	// CRUD 路由（OptionalAuth — 未認證使用 demo user）
