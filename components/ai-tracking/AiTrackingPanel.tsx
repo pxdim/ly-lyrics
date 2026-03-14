@@ -4,11 +4,11 @@
  * AiTrackingPanel — AI 監聽主控面板
  *
  * 組合 AiStatusIndicator 與 AudioInputSelector，
- * 提供開關切換與設定入口。收合狀態只顯示切換鈕列。
+ * 提供開關切換與設定入口。齒輪按鈕展開進階設定。
  */
 
-import { useCallback } from "react";
-import { Settings } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Settings, ChevronDown } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { AiStatusIndicator } from "./AiStatusIndicator";
 import { AudioInputSelector } from "./AudioInputSelector";
@@ -19,7 +19,6 @@ import { AudioInputSelector } from "./AudioInputSelector";
 
 export interface AiTrackingPanelProps {
   onToggle: (active: boolean) => void;
-  onSettingsClick: () => void;
 }
 
 // ============================================================================
@@ -54,13 +53,73 @@ function ToggleSwitch({ checked, onChange, label }: ToggleSwitchProps) {
 }
 
 // ============================================================================
+// 進階設定子元件
+// ============================================================================
+
+function AdvancedSettings() {
+  const aiSettings = useLyricsStore((s) => s.aiSettings);
+  const updateAiSettings = useLyricsStore((s) => s.updateAiSettings);
+
+  return (
+    <div className="flex flex-col gap-2.5 text-[11px]">
+      {/* 信心門檻 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[#6B7280]">比對門檻</span>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="range"
+            min={0.3}
+            max={0.95}
+            step={0.05}
+            value={aiSettings.confidenceThreshold}
+            onChange={(e) => updateAiSettings({ confidenceThreshold: Number(e.target.value) })}
+            className="w-16 h-1 accent-primary bg-[#2A2D35] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+          />
+          <span className="text-[#E4E7EB] font-mono w-7 text-right">
+            {(aiSettings.confidenceThreshold * 100).toFixed(0)}%
+          </span>
+        </div>
+      </div>
+
+      {/* 搜尋視窗 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[#6B7280]">搜尋範圍</span>
+        <span className="text-[#E4E7EB] font-mono">
+          前{aiSettings.windowBefore} / 後{aiSettings.windowAfter}行
+        </span>
+      </div>
+
+      {/* 冷卻時間 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[#6B7280]">手動冷卻</span>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="range"
+            min={1000}
+            max={10000}
+            step={500}
+            value={aiSettings.manualOverrideCooldown}
+            onChange={(e) => updateAiSettings({ manualOverrideCooldown: Number(e.target.value) })}
+            className="w-16 h-1 accent-primary bg-[#2A2D35] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+          />
+          <span className="text-[#E4E7EB] font-mono w-7 text-right">
+            {(aiSettings.manualOverrideCooldown / 1000).toFixed(1)}s
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Main Panel Component
 // ============================================================================
 
-export function AiTrackingPanel({ onToggle, onSettingsClick }: AiTrackingPanelProps) {
+export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
   const aiTracking = useLyricsStore((s) => s.aiTracking);
   const audioInput = useLyricsStore((s) => s.audioInput);
   const updateAudioInput = useLyricsStore((s) => s.updateAudioInput);
+  const [showSettings, setShowSettings] = useState(false);
 
   const isActive = aiTracking.isActive;
 
@@ -98,10 +157,13 @@ export function AiTrackingPanel({ onToggle, onSettingsClick }: AiTrackingPanelPr
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={onSettingsClick}
-            className="p-1 text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
+            onClick={() => setShowSettings((prev) => !prev)}
+            className={`p-1 transition-colors ${
+              showSettings ? "text-primary" : "text-[#6B7280] hover:text-[#E4E7EB]"
+            }`}
             title="AI 監聽設定"
-            aria-label="開啟 AI 監聽設定"
+            aria-label="展開 AI 監聽設定"
+            aria-expanded={showSettings}
           >
             <Settings size={13} />
           </button>
@@ -113,6 +175,26 @@ export function AiTrackingPanel({ onToggle, onSettingsClick }: AiTrackingPanelPr
           />
         </div>
       </div>
+
+      {/* 錯誤訊息 */}
+      {aiTracking.errorMessage && !isActive && (
+        <div className="mt-2 text-[10px] text-red-400 font-mono">
+          {aiTracking.errorMessage}
+        </div>
+      )}
+
+      {/* 進階設定（齒輪展開） */}
+      {showSettings && (
+        <div className="mt-3 border-t border-[#2A2D35] pt-3">
+          <div className="flex items-center gap-1 mb-2">
+            <ChevronDown size={10} className="text-[#6B7280]" />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#6B7280]">
+              進階設定
+            </span>
+          </div>
+          <AdvancedSettings />
+        </div>
+      )}
 
       {/* 展開內容：只在激活時顯示 */}
       {isActive && (

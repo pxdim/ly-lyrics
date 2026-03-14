@@ -176,7 +176,6 @@ function MobileController({ sessionCode, onRegenerate }: { sessionCode: string; 
             <div className="p-3">
               <AiTrackingPanel
                 onToggle={(active) => { if (active) startAi(); else stopAi(); }}
-                onSettingsClick={() => {}}
               />
             </div>
             <QuickSettings />
@@ -388,7 +387,6 @@ function TabletController({ sessionCode, onRegenerate }: { sessionCode: string; 
           <div className="p-2 border-b border-[#2A2D35] shrink-0">
             <AiTrackingPanel
               onToggle={(active) => { if (active) startAi(); else stopAi(); }}
-              onSettingsClick={() => {}}
             />
           </div>
           <CueGrid onManualOverride={onManualOverride} />
@@ -442,7 +440,6 @@ function DesktopController({ sessionCode, onRegenerate }: { sessionCode: string;
                   <div className="p-3">
                     <AiTrackingPanel
                       onToggle={(active) => { if (active) startAi(); else stopAi(); }}
-                      onSettingsClick={() => {}}
                     />
                   </div>
                   <QuickSettings />

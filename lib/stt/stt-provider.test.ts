@@ -12,7 +12,7 @@ class MockWebSocket {
   readyState = MockWebSocket.CONNECTING;
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((event: { code: number; reason: string }) => void) | null = null;
   onerror: ((event: unknown) => void) | null = null;
   send = vi.fn();
   close = vi.fn(() => {
@@ -28,15 +28,15 @@ class MockWebSocket {
     this.onmessage?.({ data });
   }
 
-  simulateClose() {
+  simulateClose(code = 1006, reason = "") {
     this.readyState = MockWebSocket.CLOSED;
-    this.onclose?.();
+    this.onclose?.({ code, reason });
   }
 }
 
 let mockWsInstance: MockWebSocket;
 
-const MockWebSocketFactory = vi.fn(function MockWebSocketConstructor() {
+const MockWebSocketFactory = vi.fn(function MockWebSocketConstructor(_url: string, _protocols?: string | string[]) {
   mockWsInstance = new MockWebSocket();
   return mockWsInstance;
 }) as unknown as typeof WebSocket;
@@ -73,7 +73,8 @@ describe("DeepgramProvider", () => {
     await connectPromise;
 
     expect(WebSocket).toHaveBeenCalledWith(
-      expect.stringContaining("wss://api.deepgram.com/v1/listen")
+      expect.stringContaining("wss://api.deepgram.com/v1/listen"),
+      ["token", testConfig.apiKey]
     );
     expect(provider.isConnected()).toBe(true);
   });

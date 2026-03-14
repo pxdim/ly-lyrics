@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_GO_WS_URL: goWsUrl,
     NEXT_PUBLIC_USE_NATIVE_WS: process.env["NEXT_PUBLIC_USE_NATIVE_WS"] || "true",
     NEXT_PUBLIC_APP_URL: process.env["NEXT_PUBLIC_APP_URL"] || "",
+    NEXT_PUBLIC_DEEPGRAM_API_KEY: process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] || "",
   },
   async rewrites() {
     return {

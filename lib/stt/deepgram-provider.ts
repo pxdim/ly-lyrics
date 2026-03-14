@@ -27,13 +27,13 @@ export class DeepgramProvider implements STTProvider {
       sample_rate: String(config.sampleRate),
       encoding: "linear16",
       channels: "1",
-      token: config.apiKey, // 瀏覽器 WebSocket 不支援自訂 header，Deepgram 支援 token query parameter
     });
 
     const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
 
     return new Promise<void>((resolve, reject) => {
-      this.ws = new WebSocket(url);
+      // 瀏覽器 WebSocket 不支援自訂 header，使用 subprotocol 傳遞 API key
+      this.ws = new WebSocket(url, ["token", config.apiKey]);
 
       this.ws.onopen = () => {
         resolve();
@@ -52,10 +52,12 @@ export class DeepgramProvider implements STTProvider {
         }
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
         // 只在非主動斷線時通報錯誤（避免 disconnect() 觸發假錯誤）
         if (!this._intentionalClose && this.errorCallback) {
-          this.errorCallback(new Error("Deepgram WebSocket 非預期斷線"));
+          this.errorCallback(
+            new Error(`Deepgram WebSocket 斷線 (code=${event.code}, reason=${event.reason || "無"})`)
+          );
         }
       };
 

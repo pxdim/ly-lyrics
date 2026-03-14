@@ -48,8 +48,8 @@ export function useAiTracking() {
       const store = useLyricsStore.getState();
       const settings = store.aiSettings;
 
-      // 取得 API key：優先使用者自行輸入，其次從後端取得
-      let apiKey = settings.apiKey;
+      // 取得 API key：優先使用者自行輸入，其次環境變數，最後從後端取得
+      let apiKey = settings.apiKey ?? process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] ?? null;
       if (!apiKey) {
         const resp = await fetch("/api/stt/token");
         if (!resp.ok) {
