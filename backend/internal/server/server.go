@@ -16,6 +16,7 @@ import (
 	"github.com/raymondchen/ly-backend/internal/ent"
 	"github.com/raymondchen/ly-backend/internal/handler"
 	"github.com/raymondchen/ly-backend/internal/middleware"
+	"github.com/raymondchen/ly-backend/internal/provider"
 	lyredis "github.com/raymondchen/ly-backend/internal/redis"
 	"github.com/raymondchen/ly-backend/internal/service"
 	"github.com/raymondchen/ly-backend/internal/ws"
@@ -31,9 +32,10 @@ type Server struct {
 	jwtManager     *auth.JWTManager
 	userService    *service.UserService
 	sessionService *service.SessionService
-	hub            *ws.Hub
-	wsHandler      *handler.WSHandler
-	authLimiter    *middleware.RateLimiter
+	hub             *ws.Hub
+	wsHandler       *handler.WSHandler
+	authLimiter     *middleware.RateLimiter
+	lyricsSearchSvc *service.LyricsSearchService
 }
 
 // New 建立新的 Server 實例
@@ -85,6 +87,22 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 			slog.Info("WebSocket Hub 已啟動")
 		}
 	}
+
+	// 歌詞搜尋 — 根據環境變數動態組裝 providers
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	var lyricsProviders []provider.Provider
+	lyricsProviders = append(lyricsProviders, provider.NewLRClib(httpClient, ""))
+	if cfg.LrcApiURL != "" {
+		lyricsProviders = append(lyricsProviders, provider.NewLrcApi(httpClient, cfg.LrcApiURL, cfg.LrcApiAuthKey))
+	}
+	if cfg.GeniusAPIToken != "" {
+		lyricsProviders = append(lyricsProviders, provider.NewGenius(httpClient, cfg.GeniusAPIToken, ""))
+	}
+	var geminiProvider provider.Provider
+	if cfg.GeminiAPIKey != "" {
+		geminiProvider = provider.NewGemini(httpClient, cfg.GeminiAPIKey, "")
+	}
+	s.lyricsSearchSvc = service.NewLyricsSearchService(lyricsProviders, geminiProvider, 8*time.Second)
 
 	s.setupMiddleware()
 	s.setupRoutes()

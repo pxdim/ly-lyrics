@@ -75,6 +75,13 @@ func (s *Server) setupRoutes() {
 			r.Put("/", settingsHandler.Update)
 			r.Post("/", settingsHandler.Reset)
 		})
+
+		// 歌詞搜尋
+		lyricsSearchHandler := handler.NewLyricsSearch(s.lyricsSearchSvc)
+		r.Route("/api/lyrics", func(r chi.Router) {
+			r.Post("/search", lyricsSearchHandler.Search)
+			r.Get("/search/{id}", lyricsSearchHandler.GetLyrics)
+		})
 	})
 
 	// WebSocket 路由
