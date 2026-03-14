@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -76,8 +77,8 @@ func (s *LyricsSearchService) Search(ctx context.Context, req dto.LyricsSearchRe
 	for pr := range resultsCh {
 		if pr.err != nil {
 			status := "error"
-			// context 超時時，將該 provider 狀態標記為 timeout
-			if ctx.Err() != nil {
+			// 依據個別 provider 回傳的 error 類型判斷是否為 timeout
+			if isTimeoutError(pr.err) {
 				status = "timeout"
 			}
 			sources[pr.source] = dto.SourceStatus{
@@ -103,7 +104,8 @@ func (s *LyricsSearchService) Search(ctx context.Context, req dto.LyricsSearchRe
 			latency := time.Since(start)
 			if err != nil {
 				status := "error"
-				if ctx.Err() != nil {
+				// 依據個別 provider 回傳的 error 類型判斷是否為 timeout
+				if isTimeoutError(err) {
 					status = "timeout"
 				}
 				sources[s.gemini.Name()] = dto.SourceStatus{
@@ -211,6 +213,11 @@ func (s *LyricsSearchService) findProviderByID(id string) provider.Provider {
 		}
 	}
 	return nil
+}
+
+// isTimeoutError 判斷 error 是否為 context 超時或取消類型
+func isTimeoutError(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
 }
 
 // confidenceOrder 可信度排序權重（數字越小優先級越高）

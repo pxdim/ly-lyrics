@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -207,6 +208,81 @@ func TestLyricsSearch_GetLyrics_UnknownPrefix(t *testing.T) {
 	svc := service.NewLyricsSearchService(nil, nil, 8*time.Second)
 	_, err := svc.GetLyrics(context.Background(), "unknown-123")
 	assert.Error(t, err)
+}
+
+// slowErrorProvider 忽略 context 取消，延遲後強制回傳指定 error
+// 用於模擬 provider 在 context 超時後仍回傳普通 error 的情境
+type slowErrorProvider struct {
+	name      string
+	err       error
+	delay     time.Duration
+	lyricsMap map[string]*provider.LyricsResult
+}
+
+func (m *slowErrorProvider) Name() string { return m.name }
+
+func (m *slowErrorProvider) Search(_ context.Context, _ provider.SearchRequest) ([]provider.LyricsResult, error) {
+	// 刻意忽略 ctx，直接 sleep 後回傳普通 error
+	time.Sleep(m.delay)
+	return nil, m.err
+}
+
+func (m *slowErrorProvider) GetLyrics(_ context.Context, id string) (*provider.LyricsResult, error) {
+	if m.lyricsMap != nil {
+		if r, ok := m.lyricsMap[id]; ok {
+			return r, nil
+		}
+	}
+	return nil, errors.New("not found")
+}
+
+// 測試：Provider 回傳普通 error 時，即使 context 已超時，該 provider 的 status 應為 "error" 而非 "timeout"
+func TestLyricsSearch_NormalErrorNotMismarkedAsTimeout(t *testing.T) {
+	// Provider A：延遲 150ms 後回傳普通 error（忽略 ctx，不會因 ctx 超時而改回傳 ctx.Err）
+	providerA := &slowErrorProvider{
+		name:  "lrclib",
+		err:   fmt.Errorf("connection refused"),
+		delay: 150 * time.Millisecond,
+	}
+	// Provider B：延遲很久，會因 context timeout 而被取消
+	providerB := &mockProvider{
+		name:  "genius",
+		delay: 5 * time.Second,
+	}
+
+	// timeout 設為 100ms
+	// Provider A 在 150ms 時回傳普通 error，此時 ctx 已超時
+	// Provider B 在 100ms 時被 ctx.Done() 取消，回傳 context.DeadlineExceeded
+	svc := service.NewLyricsSearchService([]provider.Provider{providerA, providerB}, nil, 100*time.Millisecond)
+	resp, err := svc.Search(context.Background(), dto.LyricsSearchRequest{
+		Query: "Song", SearchType: "title",
+	})
+
+	require.NoError(t, err)
+	// Provider A 回傳的是普通 error，不應被誤標為 timeout
+	assert.Equal(t, "error", resp.Sources["lrclib"].Status,
+		"普通 error 的 provider 不應被誤標為 timeout")
+	// Provider B 因 context 超時被取消，應標為 timeout
+	assert.Equal(t, "timeout", resp.Sources["genius"].Status,
+		"超時的 provider 應被標為 timeout")
+}
+
+// 測試：Provider 回傳 context.DeadlineExceeded 時，status 應為 "timeout"
+func TestLyricsSearch_DeadlineExceededMarkedAsTimeout(t *testing.T) {
+	// 直接回傳 context.DeadlineExceeded 的 provider
+	providerA := &mockProvider{
+		name: "lrclib",
+		err:  context.DeadlineExceeded,
+	}
+
+	svc := service.NewLyricsSearchService([]provider.Provider{providerA}, nil, 8*time.Second)
+	resp, err := svc.Search(context.Background(), dto.LyricsSearchRequest{
+		Query: "Song", SearchType: "title",
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "timeout", resp.Sources["lrclib"].Status,
+		"回傳 context.DeadlineExceeded 的 provider 應被標為 timeout")
 }
 
 func TestLyricsSearch_EmptyProviders(t *testing.T) {
