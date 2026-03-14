@@ -11,13 +11,16 @@ import { createSong } from "@/lib/api/songs";
 import { LyricsSearchPanel } from "@/components/lyrics-search/LyricsSearchPanel";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 
+export type AddSongTab = "search" | "manual" | "lrc";
+
 interface AddSongModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSongAdded: () => void;
+  initialTab?: AddSongTab;
 }
 
-export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdded }) => {
+export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdded, initialTab = "search" }) => {
   const [activeTab, setActiveTab] = useState<"search" | "manual" | "lrc">("search");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -47,7 +50,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   // 開啟時重置狀態並聚焦到歌名輸入框
   useEffect(() => {
     if (isOpen) {
-      setActiveTab("search"); // 預設開啟搜尋 Tab
+      setActiveTab(initialTab);
       titleRef.current?.focus();
       setTitle("");
       setArtist("");

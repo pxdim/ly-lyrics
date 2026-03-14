@@ -16,7 +16,7 @@ import { Panel, Group, Separator } from "react-resizable-panels";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
 import { fetchPlaylists, createPlaylist, updatePlaylist, deletePlaylist, type ClientPlaylist } from "@/lib/api/playlists";
-import { AddSongModal } from "@/components/controller/AddSongModal";
+import { AddSongModal, type AddSongTab } from "@/components/controller/AddSongModal";
 import { QRCodePanel } from "@/components/controller/QRCodePanel";
 import { generateSessionCode } from "@/lib/websocket/session-code";
 import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
@@ -686,6 +686,7 @@ function SongListPanel() {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalTab, setAddModalTab] = useState<"search" | "manual" | "lrc">("search");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const currentSong = useLyricsStore((state) => state.currentSong);
@@ -741,19 +742,26 @@ function SongListPanel() {
 
   return (
     <>
-      {/* 標題列 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2A2D35] shrink-0">
+      {/* 標題列 + 新增按鈕 */}
+      <div className="px-4 py-2 border-b border-[#2A2D35] shrink-0 space-y-2">
         <span className="text-[11px] font-mono text-[#6B7280]">{songs.length} TRACKS</span>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="text-[#6B7280] hover:text-[#E4E7EB] transition-colors"
-          type="button"
-          title="新增歌曲"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+        <div className="flex gap-1.5">
+          {([
+            { key: "search" as AddSongTab, icon: "🔍", label: "搜尋歌詞" },
+            { key: "manual" as AddSongTab, icon: "✏️", label: "手動輸入" },
+            { key: "lrc" as AddSongTab, icon: "📄", label: "匯入 LRC" },
+          ]).map((btn) => (
+            <button
+              key={btn.key}
+              type="button"
+              onClick={() => { setAddModalTab(btn.key); setShowAddModal(true); }}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 border border-[#2A2D35] text-[11px] text-[#9CA3AF] hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors font-mono"
+            >
+              <span>{btn.icon}</span>
+              <span>{btn.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 搜尋 */}
@@ -864,6 +872,7 @@ function SongListPanel() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSongAdded={() => loadSongs(search)}
+        initialTab={addModalTab}
       />
     </>
   );
