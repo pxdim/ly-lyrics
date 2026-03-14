@@ -4,9 +4,9 @@
  * AudioInputSelector — 音訊輸入選擇器
  *
  * 功能：
- * - 枚舉 audioinput 裝置並顯示下拉選單
+ * - 枚舉 audioinput 裝置並顯示下拉選單（含 Audio Interface）
  * - 增益調整滑桿（0-20 dB）
- * - 即時音量計（顏色根據音量等級變化）
+ * - 專業 dBFS 音量計（分段式 LED 風格，綠/黃/紅三色區）
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -19,22 +19,34 @@ import { Volume2 } from "lucide-react";
 export interface AudioInputSelectorProps {
   deviceId: string | null;
   gain: number; // 0-20 dB
-  volume: number; // 0-1（即時音量）
+  volume: number; // 0-1（即時 RMS 音量）
   isCapturing?: boolean;
   onDeviceChange: (deviceId: string) => void;
   onGainChange: (gain: number) => void;
 }
 
 // ============================================================================
-// Volume Meter Color
+// dBFS 換算工具
 // ============================================================================
 
-function getVolumeMeterClass(volume: number): string {
-  // volume 為 0-1
-  if (volume >= 0.8) return "bg-red-500";
-  if (volume >= 0.5) return "bg-amber-400";
-  return "bg-emerald-400";
+const METER_MIN_DB = -48;
+const METER_MAX_DB = 0;
+
+/** 線性音量（0-1 RMS）→ dBFS */
+function volumeToDbfs(volume: number): number {
+  if (volume <= 0.0001) return METER_MIN_DB;
+  return Math.max(METER_MIN_DB, 20 * Math.log10(volume));
 }
+
+/** dBFS → 音量計位置百分比（0-100） */
+function dbfsToPercent(dbfs: number): number {
+  const clamped = Math.max(METER_MIN_DB, Math.min(METER_MAX_DB, dbfs));
+  return ((clamped - METER_MIN_DB) / (METER_MAX_DB - METER_MIN_DB)) * 100;
+}
+
+// 色段邊界（dBFS）
+const YELLOW_THRESHOLD = -18; // 62.5% 位置
+const RED_THRESHOLD = -6;     // 87.5% 位置
 
 // ============================================================================
 // Component
@@ -76,16 +88,25 @@ export function AudioInputSelector({
   useEffect(() => {
     enumerateDevices();
 
-    // 當裝置變更時重新枚舉（例如插拔麥克風）
+    // 當裝置變更時重新枚舉（例如插拔麥克風/Audio Interface）
     navigator.mediaDevices?.addEventListener("devicechange", enumerateDevices);
     return () => {
       navigator.mediaDevices?.removeEventListener("devicechange", enumerateDevices);
     };
   }, [enumerateDevices]);
 
-  // 音量計百分比（0-100）
-  const volumePct = Math.round(Math.min(1, Math.max(0, volume)) * 100);
-  const meterColorClass = getVolumeMeterClass(volume);
+  // dBFS 計算
+  const dbfs = volumeToDbfs(volume);
+  const meterPct = dbfsToPercent(dbfs);
+  const dbfsDisplay = dbfs <= METER_MIN_DB ? "-∞" : dbfs.toFixed(1);
+
+  // 音量條顏色：根據當前 dBFS 決定填充端的顏色
+  const meterColor =
+    dbfs >= RED_THRESHOLD
+      ? "bg-red-500"
+      : dbfs >= YELLOW_THRESHOLD
+        ? "bg-amber-400"
+        : "bg-emerald-400";
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -131,7 +152,7 @@ export function AudioInputSelector({
             Gain
           </label>
           <span className="text-[10px] font-mono text-[#E4E7EB] tabular-nums">
-            {gain >= 0 ? "+" : ""}{gain} dB
+            +{gain} dB
           </span>
         </div>
         <input
@@ -159,12 +180,12 @@ export function AudioInputSelector({
         />
         <div className="flex justify-between text-[9px] font-mono text-[#6B7280]">
           <span>0</span>
-          <span>10</span>
-          <span>20 dB</span>
+          <span>+10</span>
+          <span>+20 dB</span>
         </div>
       </div>
 
-      {/* 音量計 */}
+      {/* 專業 dBFS 音量計 */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -176,25 +197,50 @@ export function AudioInputSelector({
               Level
             </span>
           </div>
-          <span className="text-[10px] font-mono text-[#6B7280] tabular-nums">
-            {volumePct}%
+          <span className={`text-[10px] font-mono tabular-nums ${
+            dbfs >= RED_THRESHOLD
+              ? "text-red-400"
+              : dbfs >= YELLOW_THRESHOLD
+                ? "text-amber-400"
+                : "text-[#6B7280]"
+          }`}>
+            {dbfsDisplay} dBFS
           </span>
         </div>
 
-        {/* 音量條容器 */}
-        <div className="relative h-[3px] w-full bg-[#2A2D35] overflow-hidden">
+        {/* 分段式 LED 音量條 */}
+        <div className="relative h-2 w-full bg-[#1A1D24] border border-[#2A2D35] overflow-hidden">
+          {/* 填充條 */}
           <div
-            className={`absolute inset-y-0 left-0 transition-all duration-100 ${meterColorClass}`}
-            style={{ width: `${volumePct}%` }}
+            className={`absolute inset-y-0 left-0 transition-[width] duration-75 ${meterColor}`}
+            style={{ width: `${meterPct}%` }}
+          />
+          {/* 分段線（LED 效果） */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `repeating-linear-gradient(to right, transparent, transparent 3px, #1A1D24 3px, #1A1D24 4px)`,
+            }}
+          />
+          {/* 色區參考線：-18 dBFS */}
+          <div
+            className="absolute inset-y-0 w-px bg-[#2A2D35]"
+            style={{ left: `${dbfsToPercent(YELLOW_THRESHOLD)}%` }}
+          />
+          {/* 色區參考線：-6 dBFS */}
+          <div
+            className="absolute inset-y-0 w-px bg-[#2A2D35]"
+            style={{ left: `${dbfsToPercent(RED_THRESHOLD)}%` }}
           />
         </div>
 
-        {/* 音量等級刻度標記 */}
-        <div className="flex justify-between text-[9px] font-mono text-[#2A2D35]">
-          <span>0</span>
-          <span className="text-amber-900/80">50</span>
-          <span className="text-red-900/80">80</span>
-          <span>100%</span>
+        {/* dBFS 刻度 */}
+        <div className="flex justify-between text-[8px] font-mono text-[#3A3D45]">
+          <span>-48</span>
+          <span className="text-[#4A4D55]">-24</span>
+          <span className="text-amber-900/80">-12</span>
+          <span className="text-red-900/80">-6</span>
+          <span className="text-red-900">0</span>
         </div>
       </div>
     </div>

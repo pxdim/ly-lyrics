@@ -97,14 +97,16 @@ export class AudioCapture {
       throw new Error("AudioCapture not started");
     }
 
-    const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
-    this.analyserNode.getByteFrequencyData(dataArray);
+    // 使用 time-domain RMS 量測（專業音量計標準）
+    const dataArray = new Float32Array(this.analyserNode.fftSize);
+    this.analyserNode.getFloatTimeDomainData(dataArray);
 
-    let sum = 0;
+    let sumSquares = 0;
     for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i] ?? 0;
+      const sample = dataArray[i] ?? 0;
+      sumSquares += sample * sample;
     }
-    return sum / (dataArray.length * 255);
+    return Math.min(1, Math.sqrt(sumSquares / dataArray.length));
   }
 
   /**

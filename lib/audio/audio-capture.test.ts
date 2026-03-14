@@ -12,12 +12,13 @@ const mockGainNode = {
 };
 
 const mockAnalyserNode = {
-  fftSize: 0,
+  fftSize: 256,
   frequencyBinCount: 128,
   connect: vi.fn(),
   disconnect: vi.fn(),
-  getByteFrequencyData: vi.fn((arr: Uint8Array) => {
-    for (let i = 0; i < arr.length; i++) arr[i] = 128;
+  getFloatTimeDomainData: vi.fn((arr: Float32Array) => {
+    // 模擬 RMS ≈ 0.5 的訊號
+    for (let i = 0; i < arr.length; i++) arr[i] = 0.5;
   }),
 };
 

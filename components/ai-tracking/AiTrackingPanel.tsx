@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AiTrackingPanel — AI 監聽主控面板
+ * AiTrackingPanel — AI 自動跟歌主控面板
  *
  * 組合 AiStatusIndicator 與 AudioInputSelector，
  * 提供開關切換與設定入口。齒輪按鈕展開進階設定。
@@ -163,7 +163,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
           )}
           <span className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280]">
-            AI 監聽
+            AI 自動跟歌
           </span>
         </div>
 
@@ -175,8 +175,8 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             className={`p-1 transition-colors ${
               showSettings ? "text-primary" : "text-[#6B7280] hover:text-[#E4E7EB]"
             }`}
-            title="AI 監聽設定"
-            aria-label="展開 AI 監聽設定"
+            title="AI 自動跟歌設定"
+            aria-label="展開 AI 自動跟歌設定"
             aria-expanded={showSettings}
           >
             <Settings size={13} />
@@ -185,7 +185,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           <ToggleSwitch
             checked={isActive}
             onChange={handleToggle}
-            label="切換 AI 監聽"
+            label="切換 AI 自動跟歌"
           />
         </div>
       </div>
