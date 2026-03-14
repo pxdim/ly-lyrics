@@ -54,11 +54,12 @@ type googleSTTRequest struct {
 }
 
 type googleSTTConfig struct {
-	Encoding                   string `json:"encoding"`
-	SampleRateHertz            int    `json:"sampleRateHertz"`
-	LanguageCode               string `json:"languageCode"`
-	Model                      string `json:"model"`
-	EnableAutomaticPunctuation bool   `json:"enableAutomaticPunctuation"`
+	Encoding                   string   `json:"encoding"`
+	SampleRateHertz            int      `json:"sampleRateHertz"`
+	LanguageCode               string   `json:"languageCode"`
+	AlternativeLanguageCodes   []string `json:"alternativeLanguageCodes,omitempty"`
+	Model                      string   `json:"model"`
+	EnableAutomaticPunctuation bool     `json:"enableAutomaticPunctuation"`
 }
 
 type googleSTTAudio struct {
@@ -179,11 +180,15 @@ func (h *STT) StreamSTT(w http.ResponseWriter, r *http.Request) {
 
 // recognizeGoogle 呼叫 Google Cloud Speech-to-Text REST API
 func (h *STT) recognizeGoogle(ctx context.Context, audio []byte, sampleRate int, language string) (string, float64, error) {
+	// 根據主語言設定候選語言，實現自動語言偵測
+	altLangs := alternativeLanguages(language)
+
 	reqBody := googleSTTRequest{
 		Config: googleSTTConfig{
 			Encoding:                   "LINEAR16",
 			SampleRateHertz:            sampleRate,
 			LanguageCode:               language,
+			AlternativeLanguageCodes:   altLangs,
 			Model:                      "default",
 			EnableAutomaticPunctuation: true,
 		},
@@ -235,4 +240,16 @@ func (h *STT) recognizeGoogle(ctx context.Context, audio []byte, sampleRate int,
 
 	alt := sttResp.Results[0].Alternatives[0]
 	return alt.Transcript, alt.Confidence, nil
+}
+
+// alternativeLanguages 根據主語言回傳候選語言清單，讓 Google STT 自動偵測
+func alternativeLanguages(primary string) []string {
+	all := []string{"zh-TW", "zh-CN", "en-US", "ja-JP", "ko-KR", "th-TH"}
+	var result []string
+	for _, lang := range all {
+		if lang != primary {
+			result = append(result, lang)
+		}
+	}
+	return result
 }
