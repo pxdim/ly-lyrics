@@ -8,6 +8,8 @@
 
 import { type FC, useState, useRef, useEffect, useCallback } from "react";
 import { createSong } from "@/lib/api/songs";
+import { LyricsSearchPanel } from "@/components/lyrics-search/LyricsSearchPanel";
+import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 
 interface AddSongModalProps {
   isOpen: boolean;
@@ -16,12 +18,19 @@ interface AddSongModalProps {
 }
 
 export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdded }) => {
+  const [activeTab, setActiveTab] = useState<"search" | "manual" | "lrc">("search");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [lyricsText, setLyricsText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+
+  const tabs = [
+    { key: "search" as const, label: "🔍 搜尋歌詞" },
+    { key: "manual" as const, label: "✏️ 手動輸入" },
+    { key: "lrc"    as const, label: "📄 匯入 LRC" },
+  ];
 
   // 偵測手機螢幕寬度，用於響應式調整
   const [isMobile, setIsMobile] = useState(false);
@@ -35,9 +44,10 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
     return () => mql.removeEventListener("change", handleMediaChange);
   }, [handleMediaChange]);
 
-  // 開啟時聚焦到歌名輸入框
+  // 開啟時重置狀態並聚焦到歌名輸入框
   useEffect(() => {
     if (isOpen) {
+      setActiveTab("search"); // 預設開啟搜尋 Tab
       titleRef.current?.focus();
       setTitle("");
       setArtist("");
@@ -127,80 +137,115 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
           </button>
         </div>
 
-        {/* 表單 */}
-        <div className="p-5 space-y-4">
-          {/* 歌名 */}
-          <div>
-            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
-              Title *
-            </label>
-            <input
-              ref={titleRef}
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="輸入歌曲名稱..."
-              className={inputClass}
-            />
-          </div>
+        {/* Tab 切換列 */}
+        <div className="flex border-b border-[#2A2D35]">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 px-4 py-2.5 text-[12px] font-mono transition-colors ${
+                activeTab === tab.key
+                  ? "text-primary border-b-2 border-primary bg-primary/5"
+                  : "text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[#1E2028]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* 歌手 */}
-          <div>
-            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
-              Artist
-            </label>
-            <input
-              type="text"
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              placeholder="輸入歌手名稱（選填）..."
-              className={inputClass}
-            />
+        {/* Tab 內容 */}
+        {activeTab === "search" && (
+          <div className="p-5">
+            <LyricsSearchPanel onSongAdded={onSongAdded} onClose={onClose} />
           </div>
+        )}
 
-          {/* 歌詞 */}
-          <div>
-            <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
-              Lyrics * (one line per cue)
-            </label>
-            <textarea
-              value={lyricsText}
-              onChange={(e) => setLyricsText(e.target.value)}
-              placeholder={"第一行歌詞\n第二行歌詞\n第三行歌詞\n..."}
-              rows={isMobile ? 6 : 10}
-              className={`${inputClass} resize-y`}
-            />
-          </div>
+        {activeTab === "manual" && (
+          <>
+            {/* 表單 */}
+            <div className="p-5 space-y-4">
+              {/* 歌名 */}
+              <div>
+                <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+                  Title *
+                </label>
+                <input
+                  ref={titleRef}
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="輸入歌曲名稱..."
+                  className={inputClass}
+                />
+              </div>
 
-          {/* 錯誤訊息 */}
-          {error && (
-            <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 text-[13px] text-red-400 font-mono">
-              {error}
+              {/* 歌手 */}
+              <div>
+                <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+                  Artist
+                </label>
+                <input
+                  type="text"
+                  value={artist}
+                  onChange={(e) => setArtist(e.target.value)}
+                  placeholder="輸入歌手名稱（選填）..."
+                  className={inputClass}
+                />
+              </div>
+
+              {/* 歌詞 */}
+              <div>
+                <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1.5">
+                  Lyrics * (one line per cue)
+                </label>
+                <textarea
+                  value={lyricsText}
+                  onChange={(e) => setLyricsText(e.target.value)}
+                  placeholder={"第一行歌詞\n第二行歌詞\n第三行歌詞\n..."}
+                  rows={isMobile ? 6 : 10}
+                  className={`${inputClass} resize-y`}
+                />
+              </div>
+
+              {/* 錯誤訊息 */}
+              {error && (
+                <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 text-[13px] text-red-400 font-mono">
+                  {error}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* 按鈕列 */}
-        <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono"
-            type="button"
-          >
-            CANCEL
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-mono"
-            type="button"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            {isSubmitting ? "ADDING..." : "ADD TRACK"}
-          </button>
-        </div>
+            {/* 按鈕列 */}
+            <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono"
+                type="button"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-mono"
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                {isSubmitting ? "ADDING..." : "ADD TRACK"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {activeTab === "lrc" && (
+          <div className="p-5">
+            <LrcDropZone onImportSuccess={() => { onSongAdded(); onClose(); }} />
+          </div>
+        )}
       </div>
     </div>
   );
