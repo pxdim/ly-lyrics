@@ -116,6 +116,11 @@ func EnableAnimation(v bool) predicate.Settings {
 	return predicate.Settings(sql.FieldEQ(FieldEnableAnimation, v))
 }
 
+// LineSpacing applies equality check predicate on the "line_spacing" field. It's identical to LineSpacingEQ.
+func LineSpacing(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldEQ(FieldLineSpacing, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Settings {
 	return predicate.Settings(sql.FieldEQ(FieldCreatedAt, v))
@@ -649,6 +654,46 @@ func EnableAnimationEQ(v bool) predicate.Settings {
 // EnableAnimationNEQ applies the NEQ predicate on the "enable_animation" field.
 func EnableAnimationNEQ(v bool) predicate.Settings {
 	return predicate.Settings(sql.FieldNEQ(FieldEnableAnimation, v))
+}
+
+// LineSpacingEQ applies the EQ predicate on the "line_spacing" field.
+func LineSpacingEQ(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldEQ(FieldLineSpacing, v))
+}
+
+// LineSpacingNEQ applies the NEQ predicate on the "line_spacing" field.
+func LineSpacingNEQ(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldNEQ(FieldLineSpacing, v))
+}
+
+// LineSpacingIn applies the In predicate on the "line_spacing" field.
+func LineSpacingIn(vs ...float64) predicate.Settings {
+	return predicate.Settings(sql.FieldIn(FieldLineSpacing, vs...))
+}
+
+// LineSpacingNotIn applies the NotIn predicate on the "line_spacing" field.
+func LineSpacingNotIn(vs ...float64) predicate.Settings {
+	return predicate.Settings(sql.FieldNotIn(FieldLineSpacing, vs...))
+}
+
+// LineSpacingGT applies the GT predicate on the "line_spacing" field.
+func LineSpacingGT(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldGT(FieldLineSpacing, v))
+}
+
+// LineSpacingGTE applies the GTE predicate on the "line_spacing" field.
+func LineSpacingGTE(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldGTE(FieldLineSpacing, v))
+}
+
+// LineSpacingLT applies the LT predicate on the "line_spacing" field.
+func LineSpacingLT(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldLT(FieldLineSpacing, v))
+}
+
+// LineSpacingLTE applies the LTE predicate on the "line_spacing" field.
+func LineSpacingLTE(v float64) predicate.Settings {
+	return predicate.Settings(sql.FieldLTE(FieldLineSpacing, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

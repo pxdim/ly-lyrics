@@ -105,7 +105,7 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: `${displaySettings.fontSize * 0.5}px`,
+    gap: `${displaySettings.fontSize * (displaySettings.lineSpacing ?? 0.5)}px`,
     overflowY: "auto",
     maxHeight: "80vh",
     padding: isMobile ? "1rem 0" : "2rem 0",

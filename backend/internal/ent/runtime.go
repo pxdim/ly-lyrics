@@ -141,12 +141,16 @@ func init() {
 	settingsDescEnableAnimation := settingsFields[12].Descriptor()
 	// settings.DefaultEnableAnimation holds the default value on creation for the enable_animation field.
 	settings.DefaultEnableAnimation = settingsDescEnableAnimation.Default.(bool)
+	// settingsDescLineSpacing is the schema descriptor for line_spacing field.
+	settingsDescLineSpacing := settingsFields[13].Descriptor()
+	// settings.DefaultLineSpacing holds the default value on creation for the line_spacing field.
+	settings.DefaultLineSpacing = settingsDescLineSpacing.Default.(float64)
 	// settingsDescCreatedAt is the schema descriptor for created_at field.
-	settingsDescCreatedAt := settingsFields[13].Descriptor()
+	settingsDescCreatedAt := settingsFields[14].Descriptor()
 	// settings.DefaultCreatedAt holds the default value on creation for the created_at field.
 	settings.DefaultCreatedAt = settingsDescCreatedAt.Default.(func() time.Time)
 	// settingsDescUpdatedAt is the schema descriptor for updated_at field.
-	settingsDescUpdatedAt := settingsFields[14].Descriptor()
+	settingsDescUpdatedAt := settingsFields[15].Descriptor()
 	// settings.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	settings.DefaultUpdatedAt = settingsDescUpdatedAt.Default.(func() time.Time)
 	// settings.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

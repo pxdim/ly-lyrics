@@ -39,6 +39,8 @@ const (
 	FieldScrollDuration = "scroll_duration"
 	// FieldEnableAnimation holds the string denoting the enable_animation field in the database.
 	FieldEnableAnimation = "enable_animation"
+	// FieldLineSpacing holds the string denoting the line_spacing field in the database.
+	FieldLineSpacing = "line_spacing"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -71,6 +73,7 @@ var Columns = []string{
 	FieldAutoScroll,
 	FieldScrollDuration,
 	FieldEnableAnimation,
+	FieldLineSpacing,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -112,6 +115,8 @@ var (
 	DefaultScrollDuration int
 	// DefaultEnableAnimation holds the default value on creation for the "enable_animation" field.
 	DefaultEnableAnimation bool
+	// DefaultLineSpacing holds the default value on creation for the "line_spacing" field.
+	DefaultLineSpacing float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -188,6 +193,11 @@ func ByScrollDuration(opts ...sql.OrderTermOption) OrderOption {
 // ByEnableAnimation orders the results by the enable_animation field.
 func ByEnableAnimation(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnableAnimation, opts...).ToFunc()
+}
+
+// ByLineSpacing orders the results by the line_spacing field.
+func ByLineSpacing(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLineSpacing, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

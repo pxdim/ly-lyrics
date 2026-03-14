@@ -37,10 +37,11 @@ type SessionSong struct {
 
 // SessionSettings 為 session 中的顯示設定，JSON tag 與 Node.js 格式完全一致。
 type SessionSettings struct {
-	DisplayLines    int    `json:"displayLines"`
-	FontSize        int    `json:"fontSize"`
-	FontFamily      string `json:"fontFamily"`
-	Theme           string `json:"theme"`
+	DisplayLines    int     `json:"displayLines"`
+	FontSize        int     `json:"fontSize"`
+	FontFamily      string  `json:"fontFamily"`
+	LineSpacing     float64 `json:"lineSpacing"`
+	Theme           string  `json:"theme"`
 	ShowBackground  bool   `json:"showBackground"`
 	BackgroundColor string `json:"backgroundColor"`
 	TextColor       string `json:"textColor"`

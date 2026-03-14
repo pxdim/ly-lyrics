@@ -78,10 +78,11 @@ type SetPlayingPayload struct {
 
 // UpdateSettingsPayload 更新設定的請求 payload，所有欄位皆為可選
 type UpdateSettingsPayload struct {
-	DisplayLines    *int    `json:"displayLines,omitempty"`
-	FontSize        *int    `json:"fontSize,omitempty"`
-	FontFamily      *string `json:"fontFamily,omitempty"`
-	Theme           *string `json:"theme,omitempty"`
+	DisplayLines    *int      `json:"displayLines,omitempty"`
+	FontSize        *int      `json:"fontSize,omitempty"`
+	FontFamily      *string   `json:"fontFamily,omitempty"`
+	LineSpacing     *float64  `json:"lineSpacing,omitempty"`
+	Theme           *string   `json:"theme,omitempty"`
 	ShowBackground  *bool   `json:"showBackground,omitempty"`
 	BackgroundColor *string `json:"backgroundColor,omitempty"`
 	TextColor       *string `json:"textColor,omitempty"`
@@ -144,6 +145,7 @@ func NewSessionState(sessionID string) *lyredis.SessionState {
 			DisplayLines:    4,
 			FontSize:        24,
 			FontFamily:      "Inter",
+			LineSpacing:     0.5,
 			Theme:           "dark",
 			ShowBackground:  true,
 			BackgroundColor: "#000000",

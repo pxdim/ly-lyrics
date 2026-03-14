@@ -19,6 +19,7 @@ export interface DisplaySettings {
   displayLines: number;
   fontSize: number;
   fontFamily: string;
+  lineSpacing: number; // 行距倍率，0.0-2.0，gap = fontSize * lineSpacing
   theme: "light" | "dark" | "transparent";
   showBackground: boolean;
   backgroundColor: string;

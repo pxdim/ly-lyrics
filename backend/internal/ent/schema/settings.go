@@ -61,6 +61,9 @@ func (Settings) Fields() []ent.Field {
 			Default(300),
 		field.Bool("enable_animation").
 			Default(true),
+		field.Float("line_spacing").
+			Default(0.5).
+			Comment("行距倍率，gap = fontSize * lineSpacing"),
 		field.Time("created_at").
 			Default(time.Now).
 			SchemaType(map[string]string{

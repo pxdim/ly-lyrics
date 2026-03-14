@@ -1558,6 +1558,23 @@ function QuickSettings() {
           />
         </div>
 
+        {/* 行距 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-mono text-[#6B7280] uppercase">Line Spacing</span>
+            <span className="text-[11px] font-mono text-primary">{(displaySettings.lineSpacing ?? 0.5).toFixed(1)}x</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={2}
+            step={0.1}
+            value={displaySettings.lineSpacing ?? 0.5}
+            onChange={(e) => updateDisplaySettings({ lineSpacing: parseFloat(e.target.value) })}
+            className="w-full h-[2px] bg-[#2A2D35] accent-primary cursor-pointer appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-none"
+          />
+        </div>
+
         {/* 高亮色 */}
         <div>
           <span className="block text-[11px] font-mono text-[#6B7280] uppercase mb-1.5">

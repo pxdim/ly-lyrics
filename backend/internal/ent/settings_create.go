@@ -182,6 +182,20 @@ func (_c *SettingsCreate) SetNillableEnableAnimation(v *bool) *SettingsCreate {
 	return _c
 }
 
+// SetLineSpacing sets the "line_spacing" field.
+func (_c *SettingsCreate) SetLineSpacing(v float64) *SettingsCreate {
+	_c.mutation.SetLineSpacing(v)
+	return _c
+}
+
+// SetNillableLineSpacing sets the "line_spacing" field if the given value is not nil.
+func (_c *SettingsCreate) SetNillableLineSpacing(v *float64) *SettingsCreate {
+	if v != nil {
+		_c.SetLineSpacing(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *SettingsCreate) SetCreatedAt(v time.Time) *SettingsCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -296,6 +310,10 @@ func (_c *SettingsCreate) defaults() {
 		v := settings.DefaultEnableAnimation
 		_c.mutation.SetEnableAnimation(v)
 	}
+	if _, ok := _c.mutation.LineSpacing(); !ok {
+		v := settings.DefaultLineSpacing
+		_c.mutation.SetLineSpacing(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := settings.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -363,6 +381,9 @@ func (_c *SettingsCreate) check() error {
 	}
 	if _, ok := _c.mutation.EnableAnimation(); !ok {
 		return &ValidationError{Name: "enable_animation", err: errors.New(`ent: missing required field "Settings.enable_animation"`)}
+	}
+	if _, ok := _c.mutation.LineSpacing(); !ok {
+		return &ValidationError{Name: "line_spacing", err: errors.New(`ent: missing required field "Settings.line_spacing"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Settings.created_at"`)}
@@ -451,6 +472,10 @@ func (_c *SettingsCreate) createSpec() (*Settings, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.EnableAnimation(); ok {
 		_spec.SetField(settings.FieldEnableAnimation, field.TypeBool, value)
 		_node.EnableAnimation = value
+	}
+	if value, ok := _c.mutation.LineSpacing(); ok {
+		_spec.SetField(settings.FieldLineSpacing, field.TypeFloat64, value)
+		_node.LineSpacing = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(settings.FieldCreatedAt, field.TypeTime, value)

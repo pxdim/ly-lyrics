@@ -43,6 +43,8 @@ type Settings struct {
 	ScrollDuration int `json:"scroll_duration,omitempty"`
 	// EnableAnimation holds the value of the "enable_animation" field.
 	EnableAnimation bool `json:"enable_animation,omitempty"`
+	// 行距倍率，gap = fontSize * lineSpacing
+	LineSpacing float64 `json:"line_spacing,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -80,6 +82,8 @@ func (*Settings) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case settings.FieldShowBackground, settings.FieldAutoScroll, settings.FieldEnableAnimation:
 			values[i] = new(sql.NullBool)
+		case settings.FieldLineSpacing:
+			values[i] = new(sql.NullFloat64)
 		case settings.FieldDisplayLines, settings.FieldFontSize, settings.FieldScrollDuration:
 			values[i] = new(sql.NullInt64)
 		case settings.FieldFontFamily, settings.FieldTheme, settings.FieldBackgroundColor, settings.FieldTextColor, settings.FieldHighlightColor:
@@ -184,6 +188,12 @@ func (_m *Settings) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.EnableAnimation = value.Bool
 			}
+		case settings.FieldLineSpacing:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field line_spacing", values[i])
+			} else if value.Valid {
+				_m.LineSpacing = value.Float64
+			}
 		case settings.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -278,6 +288,9 @@ func (_m *Settings) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enable_animation=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EnableAnimation))
+	builder.WriteString(", ")
+	builder.WriteString("line_spacing=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LineSpacing))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

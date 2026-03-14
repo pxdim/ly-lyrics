@@ -100,6 +100,7 @@ export interface DisplaySettings {
   theme: Theme;
   fontSize: FontSize;
   fontFamily: string;
+  lineSpacing: number; // 行距倍率，0.0-2.0，gap = fontSize * lineSpacing
   showBackground: boolean;
   backgroundColor: string;
   textColor: string;
@@ -114,6 +115,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   theme: "dark",
   fontSize: 32,
   fontFamily: "Inter",
+  lineSpacing: 0.5,
   showBackground: true,
   backgroundColor: "#000000",
   textColor: "#ffffff",

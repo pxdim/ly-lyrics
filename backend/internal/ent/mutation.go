@@ -1945,6 +1945,8 @@ type SettingsMutation struct {
 	scroll_duration    *int
 	addscroll_duration *int
 	enable_animation   *bool
+	line_spacing       *float64
+	addline_spacing    *float64
 	created_at         *time.Time
 	updated_at         *time.Time
 	clearedFields      map[string]struct{}
@@ -2590,6 +2592,62 @@ func (m *SettingsMutation) ResetEnableAnimation() {
 	m.enable_animation = nil
 }
 
+// SetLineSpacing sets the "line_spacing" field.
+func (m *SettingsMutation) SetLineSpacing(f float64) {
+	m.line_spacing = &f
+	m.addline_spacing = nil
+}
+
+// LineSpacing returns the value of the "line_spacing" field in the mutation.
+func (m *SettingsMutation) LineSpacing() (r float64, exists bool) {
+	v := m.line_spacing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLineSpacing returns the old "line_spacing" field's value of the Settings entity.
+// If the Settings object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SettingsMutation) OldLineSpacing(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLineSpacing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLineSpacing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLineSpacing: %w", err)
+	}
+	return oldValue.LineSpacing, nil
+}
+
+// AddLineSpacing adds f to the "line_spacing" field.
+func (m *SettingsMutation) AddLineSpacing(f float64) {
+	if m.addline_spacing != nil {
+		*m.addline_spacing += f
+	} else {
+		m.addline_spacing = &f
+	}
+}
+
+// AddedLineSpacing returns the value that was added to the "line_spacing" field in this mutation.
+func (m *SettingsMutation) AddedLineSpacing() (r float64, exists bool) {
+	v := m.addline_spacing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLineSpacing resets all changes to the "line_spacing" field.
+func (m *SettingsMutation) ResetLineSpacing() {
+	m.line_spacing = nil
+	m.addline_spacing = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *SettingsMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -2723,7 +2781,7 @@ func (m *SettingsMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SettingsMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.user != nil {
 		fields = append(fields, settings.FieldUserID)
 	}
@@ -2759,6 +2817,9 @@ func (m *SettingsMutation) Fields() []string {
 	}
 	if m.enable_animation != nil {
 		fields = append(fields, settings.FieldEnableAnimation)
+	}
+	if m.line_spacing != nil {
+		fields = append(fields, settings.FieldLineSpacing)
 	}
 	if m.created_at != nil {
 		fields = append(fields, settings.FieldCreatedAt)
@@ -2798,6 +2859,8 @@ func (m *SettingsMutation) Field(name string) (ent.Value, bool) {
 		return m.ScrollDuration()
 	case settings.FieldEnableAnimation:
 		return m.EnableAnimation()
+	case settings.FieldLineSpacing:
+		return m.LineSpacing()
 	case settings.FieldCreatedAt:
 		return m.CreatedAt()
 	case settings.FieldUpdatedAt:
@@ -2835,6 +2898,8 @@ func (m *SettingsMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldScrollDuration(ctx)
 	case settings.FieldEnableAnimation:
 		return m.OldEnableAnimation(ctx)
+	case settings.FieldLineSpacing:
+		return m.OldLineSpacing(ctx)
 	case settings.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case settings.FieldUpdatedAt:
@@ -2932,6 +2997,13 @@ func (m *SettingsMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnableAnimation(v)
 		return nil
+	case settings.FieldLineSpacing:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLineSpacing(v)
+		return nil
 	case settings.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2963,6 +3035,9 @@ func (m *SettingsMutation) AddedFields() []string {
 	if m.addscroll_duration != nil {
 		fields = append(fields, settings.FieldScrollDuration)
 	}
+	if m.addline_spacing != nil {
+		fields = append(fields, settings.FieldLineSpacing)
+	}
 	return fields
 }
 
@@ -2977,6 +3052,8 @@ func (m *SettingsMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFontSize()
 	case settings.FieldScrollDuration:
 		return m.AddedScrollDuration()
+	case settings.FieldLineSpacing:
+		return m.AddedLineSpacing()
 	}
 	return nil, false
 }
@@ -3006,6 +3083,13 @@ func (m *SettingsMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddScrollDuration(v)
+		return nil
+	case settings.FieldLineSpacing:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLineSpacing(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Settings numeric field %s", name)
@@ -3090,6 +3174,9 @@ func (m *SettingsMutation) ResetField(name string) error {
 		return nil
 	case settings.FieldEnableAnimation:
 		m.ResetEnableAnimation()
+		return nil
+	case settings.FieldLineSpacing:
+		m.ResetLineSpacing()
 		return nil
 	case settings.FieldCreatedAt:
 		m.ResetCreatedAt()

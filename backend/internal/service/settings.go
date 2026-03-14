@@ -75,6 +75,7 @@ func (s *SettingsService) Update(ctx context.Context, userID uuid.UUID, req dto.
 		SetNillableDisplayLines(ds.DisplayLines).
 		SetNillableFontSize(ds.FontSize).
 		SetNillableFontFamily(ds.FontFamily).
+		SetNillableLineSpacing(ds.LineSpacing).
 		SetNillableTheme(ds.Theme).
 		SetNillableShowBackground(ds.ShowBackground).
 		SetNillableBackgroundColor(ds.BackgroundColor).
@@ -117,6 +118,7 @@ func (s *SettingsService) createDefaults(ctx context.Context, userID uuid.UUID) 
 		SetDisplayLines(4).
 		SetFontSize(32).
 		SetFontFamily("Inter").
+		SetLineSpacing(0.5).
 		SetTheme("dark").
 		SetShowBackground(true).
 		SetBackgroundColor(bgColor).
@@ -143,6 +145,7 @@ func entSettingsToDTO(s *ent.Settings) dto.SettingsResponse {
 			DisplayLines:    s.DisplayLines,
 			FontSize:        s.FontSize,
 			FontFamily:      s.FontFamily,
+			LineSpacing:     s.LineSpacing,
 			Theme:           s.Theme,
 			ShowBackground:  s.ShowBackground,
 			BackgroundColor: s.BackgroundColor,

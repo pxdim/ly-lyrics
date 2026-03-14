@@ -103,6 +103,7 @@ var (
 		{Name: "auto_scroll", Type: field.TypeBool, Default: true},
 		{Name: "scroll_duration", Type: field.TypeInt, Default: 300},
 		{Name: "enable_animation", Type: field.TypeBool, Default: true},
+		{Name: "line_spacing", Type: field.TypeFloat64, Default: 0.5},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "user_id", Type: field.TypeUUID, Unique: true},
@@ -115,7 +116,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "settings_users_settings",
-				Columns:    []*schema.Column{SettingsColumns[14]},
+				Columns:    []*schema.Column{SettingsColumns[15]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

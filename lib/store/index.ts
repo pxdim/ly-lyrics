@@ -109,6 +109,7 @@ const defaultDisplaySettings: DisplaySettings = {
   displayLines: 4,
   fontSize: 32,
   fontFamily: "Inter",
+  lineSpacing: 0.5,
   theme: "dark",
   showBackground: true,
   backgroundColor: "#000000",

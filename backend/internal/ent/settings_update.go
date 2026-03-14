@@ -237,6 +237,27 @@ func (_u *SettingsUpdate) SetNillableEnableAnimation(v *bool) *SettingsUpdate {
 	return _u
 }
 
+// SetLineSpacing sets the "line_spacing" field.
+func (_u *SettingsUpdate) SetLineSpacing(v float64) *SettingsUpdate {
+	_u.mutation.ResetLineSpacing()
+	_u.mutation.SetLineSpacing(v)
+	return _u
+}
+
+// SetNillableLineSpacing sets the "line_spacing" field if the given value is not nil.
+func (_u *SettingsUpdate) SetNillableLineSpacing(v *float64) *SettingsUpdate {
+	if v != nil {
+		_u.SetLineSpacing(*v)
+	}
+	return _u
+}
+
+// AddLineSpacing adds value to the "line_spacing" field.
+func (_u *SettingsUpdate) AddLineSpacing(v float64) *SettingsUpdate {
+	_u.mutation.AddLineSpacing(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SettingsUpdate) SetUpdatedAt(v time.Time) *SettingsUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -390,6 +411,12 @@ func (_u *SettingsUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.EnableAnimation(); ok {
 		_spec.SetField(settings.FieldEnableAnimation, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LineSpacing(); ok {
+		_spec.SetField(settings.FieldLineSpacing, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLineSpacing(); ok {
+		_spec.AddField(settings.FieldLineSpacing, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(settings.FieldUpdatedAt, field.TypeTime, value)
@@ -650,6 +677,27 @@ func (_u *SettingsUpdateOne) SetNillableEnableAnimation(v *bool) *SettingsUpdate
 	return _u
 }
 
+// SetLineSpacing sets the "line_spacing" field.
+func (_u *SettingsUpdateOne) SetLineSpacing(v float64) *SettingsUpdateOne {
+	_u.mutation.ResetLineSpacing()
+	_u.mutation.SetLineSpacing(v)
+	return _u
+}
+
+// SetNillableLineSpacing sets the "line_spacing" field if the given value is not nil.
+func (_u *SettingsUpdateOne) SetNillableLineSpacing(v *float64) *SettingsUpdateOne {
+	if v != nil {
+		_u.SetLineSpacing(*v)
+	}
+	return _u
+}
+
+// AddLineSpacing adds value to the "line_spacing" field.
+func (_u *SettingsUpdateOne) AddLineSpacing(v float64) *SettingsUpdateOne {
+	_u.mutation.AddLineSpacing(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SettingsUpdateOne) SetUpdatedAt(v time.Time) *SettingsUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -833,6 +881,12 @@ func (_u *SettingsUpdateOne) sqlSave(ctx context.Context) (_node *Settings, err 
 	}
 	if value, ok := _u.mutation.EnableAnimation(); ok {
 		_spec.SetField(settings.FieldEnableAnimation, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LineSpacing(); ok {
+		_spec.SetField(settings.FieldLineSpacing, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLineSpacing(); ok {
+		_spec.AddField(settings.FieldLineSpacing, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(settings.FieldUpdatedAt, field.TypeTime, value)

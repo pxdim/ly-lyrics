@@ -386,6 +386,9 @@ func (h *EventHandler) handleUpdateSettings(ctx context.Context, client *Client,
 	if p.FontFamily != nil {
 		s.FontFamily = *p.FontFamily
 	}
+	if p.LineSpacing != nil {
+		s.LineSpacing = *p.LineSpacing
+	}
 	if p.Theme != nil {
 		s.Theme = *p.Theme
 	}

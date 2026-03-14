@@ -14,6 +14,7 @@ type DisplaySettings struct {
 	DisplayLines    int     `json:"displayLines"`
 	FontSize        int     `json:"fontSize"`
 	FontFamily      string  `json:"fontFamily"`
+	LineSpacing     float64 `json:"lineSpacing"`
 	Theme           string  `json:"theme"`
 	ShowBackground  bool    `json:"showBackground"`
 	BackgroundColor *string `json:"backgroundColor"` // nullable
@@ -40,15 +41,16 @@ type UpdateSettingsRequest struct {
 
 // UpdateDisplaySettings 更新顯示設定（所有欄位可選）
 type UpdateDisplaySettings struct {
-	DisplayLines    *int    `json:"displayLines,omitempty" validate:"omitempty,min=1,max=10"`
-	FontSize        *int    `json:"fontSize,omitempty" validate:"omitempty,min=12,max=72"`
-	FontFamily      *string `json:"fontFamily,omitempty"`
-	Theme           *string `json:"theme,omitempty" validate:"omitempty,oneof=light dark transparent"`
-	ShowBackground  *bool   `json:"showBackground,omitempty"`
-	BackgroundColor *string `json:"backgroundColor,omitempty" validate:"omitempty,hexcolor"`
-	TextColor       *string `json:"textColor,omitempty" validate:"omitempty,hexcolor"`
-	HighlightColor  *string `json:"highlightColor,omitempty" validate:"omitempty,hexcolor"`
-	AutoScroll      *bool   `json:"autoScroll,omitempty"`
-	ScrollDuration  *int    `json:"scrollDuration,omitempty" validate:"omitempty,min=100,max=1000"`
-	EnableAnimation *bool   `json:"enableAnimation,omitempty"`
+	DisplayLines    *int      `json:"displayLines,omitempty" validate:"omitempty,min=1,max=10"`
+	FontSize        *int      `json:"fontSize,omitempty" validate:"omitempty,min=12,max=72"`
+	FontFamily      *string   `json:"fontFamily,omitempty"`
+	LineSpacing     *float64  `json:"lineSpacing,omitempty" validate:"omitempty,min=0,max=2"`
+	Theme           *string   `json:"theme,omitempty" validate:"omitempty,oneof=light dark transparent"`
+	ShowBackground  *bool     `json:"showBackground,omitempty"`
+	BackgroundColor *string   `json:"backgroundColor,omitempty" validate:"omitempty,hexcolor"`
+	TextColor       *string   `json:"textColor,omitempty" validate:"omitempty,hexcolor"`
+	HighlightColor  *string   `json:"highlightColor,omitempty" validate:"omitempty,hexcolor"`
+	AutoScroll      *bool     `json:"autoScroll,omitempty"`
+	ScrollDuration  *int      `json:"scrollDuration,omitempty" validate:"omitempty,min=100,max=1000"`
+	EnableAnimation *bool     `json:"enableAnimation,omitempty"`
 }
