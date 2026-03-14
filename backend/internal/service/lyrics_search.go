@@ -222,12 +222,10 @@ var confidenceOrder = map[string]int{
 
 // sourceOrder 來源優先級（數字越小優先級越高）
 var sourceOrder = map[string]int{
-	"lrclib":         0,
-	"lrcapi-kugou":   1,
-	"lrcapi-netease": 1,
-	"lrcapi-migu":    1,
-	"genius":         2,
-	"gemini":         3,
+	"lrclib": 0,
+	"lrcapi": 1,
+	"genius": 2,
+	"gemini": 3,
 }
 
 // sortResults 依可信度 → 是否有同步歌詞 → 來源優先級排序

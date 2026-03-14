@@ -20,14 +20,14 @@ func stripLRCTimestamps(text string) string {
 	return lrcTimestampRegex.ReplaceAllString(text, "")
 }
 
-// lrcapiResult LrcApi 回應結構
+// lrcapiResult HisAtri /jsonapi 回應結構
 type lrcapiResult struct {
-	Title  string   `json:"title"`
-	Artist string   `json:"artist"`
-	Lyrics string   `json:"lyrics"`
-	Source string   `json:"source"` // "kugou", "netease", "migu"
-	Ratio  *float64 `json:"ratio"`
-	Cover  *string  `json:"cover"`
+	Title  string  `json:"title"`
+	Artist string  `json:"artist"`
+	Album  string  `json:"album"`
+	Lyrics string  `json:"lyrics"`
+	Cover  *string `json:"cover"`
+	ID     string  `json:"id"`
 }
 
 // LrcApi HisAtri/LrcApi 歌詞提供者
@@ -65,7 +65,7 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 		params.Set("title", req.Query)
 	}
 
-	reqURL := fmt.Sprintf("%s/api?%s", l.baseURL, params.Encode())
+	reqURL := fmt.Sprintf("%s/jsonapi?%s", l.baseURL, params.Encode())
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("lrcapi: 建立請求失敗: %w", err)
@@ -100,8 +100,8 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 	results := make([]LyricsResult, 0, len(raw))
 	for _, r := range raw {
 		// 用內容 MD5 產生唯一 ID
-		hash := fmt.Sprintf("%x", md5.Sum([]byte(r.Title+r.Artist+r.Source+r.Lyrics)))
-		id := fmt.Sprintf("lrcapi-%s-%s", r.Source, hash[:8])
+		hash := fmt.Sprintf("%x", md5.Sum([]byte(r.Title+r.Artist+r.Lyrics)))
+		id := fmt.Sprintf("lrcapi-%s", hash[:8])
 
 		hasSynced := lrcTimestampRegex.MatchString(r.Lyrics)
 		plainLyrics := r.Lyrics
@@ -112,13 +112,13 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 			ID:              id,
 			Title:           r.Title,
 			Artist:          r.Artist,
-			Source:          fmt.Sprintf("lrcapi-%s", r.Source),
+			Album:           r.Album,
+			Source:          "lrcapi",
 			Confidence:      "high",
 			HasSyncedLyrics: hasSynced,
 			HasPlainLyrics:  r.Lyrics != "",
 			SyncedLyrics:    r.Lyrics,
 			PlainLyrics:     plainLyrics,
-			Ratio:           r.Ratio,
 			CoverURL:        r.Cover,
 			IsSimplified:    true,
 			IsAiGenerated:   false,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/raymondchen/ly-backend/internal/provider"
@@ -19,25 +20,25 @@ func TestLrcApi_Name(t *testing.T) {
 
 func TestLrcApi_Search_ByTitle(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api", r.URL.Path)
+		assert.Equal(t, "/jsonapi", r.URL.Path)
 		assert.Equal(t, "告白氣球", r.URL.Query().Get("title"))
 		assert.Equal(t, "周杰倫", r.URL.Query().Get("artist"))
 
+		// HisAtri 真實回應格式：無 source / ratio 欄位
 		results := []map[string]any{
 			{
 				"title":  "告白气球",
 				"artist": "周杰伦",
+				"album":  "周杰伦的床边故事",
 				"lyrics": "[00:00.00]告白气球\n[00:12.34]塞纳河畔",
-				"source": "netease",
-				"ratio":  0.98,
 				"cover":  "https://example.com/cover.jpg",
+				"id":     "abc123",
 			},
 			{
 				"title":  "告白气球",
 				"artist": "周杰伦",
 				"lyrics": "[00:00.00]告白气球",
-				"source": "kugou",
-				"ratio":  0.95,
+				"id":     "def456",
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -56,12 +57,12 @@ func TestLrcApi_Search_ByTitle(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, results, 2)
 	assert.Equal(t, "告白气球", results[0].Title)
-	assert.Equal(t, "lrcapi-netease", results[0].Source)
+	assert.Equal(t, "周杰伦的床边故事", results[0].Album)
+	assert.Equal(t, "lrcapi", results[0].Source)
 	assert.Equal(t, "high", results[0].Confidence)
 	assert.True(t, results[0].HasSyncedLyrics)
 	assert.True(t, results[0].IsSimplified)
-	assert.NotNil(t, results[0].Ratio)
-	assert.InDelta(t, 0.98, *results[0].Ratio, 0.001)
+	assert.True(t, strings.HasPrefix(results[0].ID, "lrcapi-"))
 }
 
 func TestLrcApi_GetLyrics_FromCache(t *testing.T) {
@@ -71,8 +72,7 @@ func TestLrcApi_GetLyrics_FromCache(t *testing.T) {
 				"title":  "測試歌曲",
 				"artist": "測試歌手",
 				"lyrics": "[00:00.00]第一行\n[00:05.00]第二行",
-				"source": "netease",
-				"ratio":  0.99,
+				"id":     "abc123",
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
