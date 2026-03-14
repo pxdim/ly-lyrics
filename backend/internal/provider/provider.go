@@ -52,9 +52,10 @@ type cacheEntry struct {
 
 // TTLCache 帶過期時間的 in-memory 快取
 type TTLCache struct {
-	data sync.Map
-	ttl  time.Duration
-	stop chan struct{}
+	data     sync.Map
+	ttl      time.Duration
+	stop     chan struct{}
+	stopOnce sync.Once
 }
 
 // NewTTLCache 建立新的 TTL 快取，啟動背景清理 goroutine
@@ -89,9 +90,9 @@ func (c *TTLCache) Get(key string) (*LyricsResult, bool) {
 	return entry.result, true
 }
 
-// Stop 停止背景清理 goroutine
+// Stop 停止背景清理 goroutine（可安全多次呼叫）
 func (c *TTLCache) Stop() {
-	close(c.stop)
+	c.stopOnce.Do(func() { close(c.stop) })
 }
 
 // cleanup 每 5 分鐘清理過期項目
