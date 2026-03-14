@@ -19,6 +19,7 @@ import { fetchPlaylists, createPlaylist, updatePlaylist, deletePlaylist, type Cl
 import { AddSongModal } from "@/components/controller/AddSongModal";
 import { QRCodePanel } from "@/components/controller/QRCodePanel";
 import { generateSessionCode } from "@/lib/websocket/session-code";
+import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
 
 // ============================================================================
 // RWD 偵測 Hooks
@@ -1199,10 +1200,10 @@ function CueGrid() {
   const displaySettings = useLyricsStore((state) => state.displaySettings);
   const nextLine = useLyricsStore((state) => state.nextLine);
   const prevLine = useLyricsStore((state) => state.prevLine);
+  const togglePlaying = useLyricsStore((state) => state.togglePlaying);
 
   const activeLineRef = useRef<HTMLDivElement>(null);
   const totalLines = lyrics.length;
-  const canGoPrev = currentIndex > 0;
   const canGoNext = currentIndex < totalLines - 1;
 
   // 自動滾動到當前行
@@ -1215,24 +1216,27 @@ function CueGrid() {
     }
   }, [currentIndex, displaySettings.autoScroll]);
 
-  // 鍵盤快捷鍵
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  // 鍵盤快捷鍵（透過 useKeyboardShortcuts hook 統一管理）
+  const keyboardShortcuts = useMemo(
+    () => ({
+      ArrowDown: () => nextLine(),
+      ArrowRight: () => nextLine(),
+      ArrowUp: () => prevLine(),
+      ArrowLeft: () => prevLine(),
+      " ": () => togglePlaying(),
+      Home: () => jumpToLine(0),
+      End: () => jumpToLine(totalLines - 1),
+      ...Object.fromEntries(
+        Array.from({ length: 9 }, (_, i) => [
+          String(i + 1),
+          () => jumpToLine(i),
+        ])
+      ),
+    }),
+    [nextLine, prevLine, togglePlaying, jumpToLine, totalLines]
+  );
 
-      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-        e.preventDefault();
-        if (canGoPrev) prevLine();
-      } else if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === " ") {
-        e.preventDefault();
-        if (canGoNext) nextLine();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canGoPrev, canGoNext, prevLine, nextLine]);
+  useKeyboardShortcuts(keyboardShortcuts);
 
   if (!currentSong || totalLines === 0) {
     return (
