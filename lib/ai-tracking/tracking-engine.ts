@@ -60,6 +60,10 @@ export class TrackingEngine {
   async start(sttConfig: STTConfig, deviceId?: string, gainDb?: number): Promise<void> {
     await this.audioCapture.start(deviceId, gainDb);
 
+    // 用實際 AudioContext 取樣率覆蓋設定（避免 44100→16000 不匹配）
+    const actualSampleRate = this.audioCapture.getSampleRate();
+    const resolvedConfig: STTConfig = { ...sttConfig, sampleRate: actualSampleRate };
+
     this.sttProvider.onTranscript((text, isFinal) => {
       this.handleTranscript(text, isFinal);
     });
@@ -68,7 +72,7 @@ export class TrackingEngine {
       this.onErrorCallback?.(error);
     });
 
-    await this.sttProvider.connect(sttConfig);
+    await this.sttProvider.connect(resolvedConfig);
 
     // 將音訊資料從 AudioCapture 串入 STT Provider
     this.audioCapture.onAudioData((chunk) => {

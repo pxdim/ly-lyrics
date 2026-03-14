@@ -118,6 +118,13 @@ export class AudioCapture {
     return this.destinationNode?.stream ?? null;
   }
 
+  getSampleRate(): number {
+    if (!this.audioContext) {
+      throw new Error("AudioCapture not started");
+    }
+    return this.audioContext.sampleRate;
+  }
+
   isCapturing(): boolean {
     return this._isCapturing;
   }

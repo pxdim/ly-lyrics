@@ -45,6 +45,7 @@ const mockAudioContext = {
   destination: {},
   close: vi.fn(),
   state: "running",
+  sampleRate: 48000,
 };
 
 vi.stubGlobal(

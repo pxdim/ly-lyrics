@@ -460,6 +460,19 @@ export const useLyricsStore = create<LyricsStore>()(
               cooldownUntil: Date.now() + cooldown,
             },
           });
+          // 冷卻結束後自動恢復監聽狀態
+          setTimeout(() => {
+            const current = get().aiTracking;
+            if (current.isActive && current.status === "cooldown") {
+              set({
+                aiTracking: {
+                  ...get().aiTracking,
+                  status: "listening",
+                  cooldownUntil: null,
+                },
+              });
+            }
+          }, cooldown);
         },
 
         updateAudioInput: (partial) => {
