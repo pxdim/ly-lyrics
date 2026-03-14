@@ -158,6 +158,8 @@ export interface AiTrackingState {
   cooldownUntil: number | null; // Unix ms timestamp，null = 未在冷卻中
   sttProvider: STTProviderType;
   errorMessage: string | null;
+  lastTranscript: string | null; // STT 最新辨識結果（含 interim）
+  lastTranscriptFinal: boolean; // 是否為最終結果
 }
 
 export interface AiTrackingSettings {

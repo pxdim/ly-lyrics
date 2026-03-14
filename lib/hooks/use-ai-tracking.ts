@@ -21,6 +21,7 @@ export function useAiTracking() {
   const stopAiTracking = useLyricsStore((s) => s.stopAiTracking);
   const updateAiStatus = useLyricsStore((s) => s.updateAiStatus);
   const updateAudioInput = useLyricsStore((s) => s.updateAudioInput);
+  const updateAiTranscript = useLyricsStore((s) => s.updateAiTranscript);
   const triggerManualOverride = useLyricsStore((s) => s.triggerManualOverride);
   const audioInput = useLyricsStore((s) => s.audioInput);
 
@@ -74,6 +75,9 @@ export function useAiTracking() {
         getLrcTimestamps: () => useLyricsStore.getState().currentSong?.lrcTimestamps,
         onError: (error) => {
           updateAiStatus("error", undefined, undefined, error.message);
+        },
+        onTranscript: (text, isFinal) => {
+          updateAiTranscript(text, isFinal);
         },
         matchConfig: {
           confidenceThreshold: settings.confidenceThreshold,

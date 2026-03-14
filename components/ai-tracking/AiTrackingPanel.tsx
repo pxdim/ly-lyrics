@@ -219,6 +219,32 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             lastMatchedLine={aiTracking.lastMatchedLine}
             cooldownUntil={aiTracking.cooldownUntil}
           />
+
+          {/* 即時逐字稿 */}
+          {aiTracking.lastTranscript && (
+            <>
+              <div className="h-px bg-[#2A2D35]" />
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#6B7280]">
+                    STT 辨識
+                  </span>
+                  <span className={`text-[9px] font-mono px-1 rounded ${
+                    aiTracking.lastTranscriptFinal
+                      ? "bg-primary/20 text-primary"
+                      : "bg-[#2A2D35] text-[#6B7280]"
+                  }`}>
+                    {aiTracking.lastTranscriptFinal ? "FINAL" : "INTERIM"}
+                  </span>
+                </div>
+                <p className={`text-[11px] font-mono leading-relaxed break-all ${
+                  aiTracking.lastTranscriptFinal ? "text-[#E4E7EB]" : "text-[#6B7280] italic"
+                }`}>
+                  {aiTracking.lastTranscript}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

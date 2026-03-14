@@ -95,6 +95,7 @@ export interface LyricsActions {
   startAiTracking: () => void;
   stopAiTracking: () => void;
   updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number, errorMessage?: string | null) => void;
+  updateAiTranscript: (text: string, isFinal: boolean) => void;
   triggerManualOverride: () => void;
   updateAudioInput: (partial: Partial<AudioInputState>) => void;
   updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
@@ -155,6 +156,8 @@ export const useLyricsStore = create<LyricsStore>()(
           cooldownUntil: null,
           sttProvider: "deepgram" as const,
           errorMessage: null,
+          lastTranscript: null,
+          lastTranscriptFinal: false,
         },
         aiSettings: {
           sttProvider: "deepgram" as const,
@@ -421,6 +424,8 @@ export const useLyricsStore = create<LyricsStore>()(
               isActive: true,
               status: "listening",
               errorMessage: null,
+              lastTranscript: null,
+              lastTranscriptFinal: false,
             },
           });
         },
@@ -435,6 +440,8 @@ export const useLyricsStore = create<LyricsStore>()(
               cooldownUntil: null,
               sttProvider: get().aiSettings.sttProvider,
               errorMessage: null,
+              lastTranscript: null,
+              lastTranscriptFinal: false,
             },
           });
         },
@@ -447,6 +454,16 @@ export const useLyricsStore = create<LyricsStore>()(
               ...(confidence !== undefined && { confidence }),
               ...(matchedLine !== undefined && { lastMatchedLine: matchedLine }),
               ...(errorMessage !== undefined && { errorMessage }),
+            },
+          });
+        },
+
+        updateAiTranscript: (text, isFinal) => {
+          set({
+            aiTracking: {
+              ...get().aiTracking,
+              lastTranscript: text,
+              lastTranscriptFinal: isFinal,
             },
           });
         },

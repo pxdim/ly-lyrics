@@ -17,6 +17,7 @@ export interface TrackingEngineConfig {
   getLyrics: () => string[];
   getLrcTimestamps: () => number[] | undefined;
   onError?: (error: Error) => void;
+  onTranscript?: (text: string, isFinal: boolean) => void;
   matchConfig?: Partial<MatchConfig>;
   cooldownMs?: number;
 }
@@ -37,6 +38,7 @@ export class TrackingEngine {
   private getLyrics: () => string[];
   private getLrcTimestamps: () => number[] | undefined;
   private onErrorCallback: ((error: Error) => void) | null;
+  private onTranscriptCallback: ((text: string, isFinal: boolean) => void) | null;
   private matchConfig: MatchConfig;
   private cooldownMs: number;
 
@@ -53,6 +55,7 @@ export class TrackingEngine {
     this.getLyrics = config.getLyrics;
     this.getLrcTimestamps = config.getLrcTimestamps;
     this.onErrorCallback = config.onError ?? null;
+    this.onTranscriptCallback = config.onTranscript ?? null;
     this.matchConfig = { ...DEFAULT_MATCH_CONFIG, ...config.matchConfig };
     this.cooldownMs = config.cooldownMs ?? 5000;
   }
@@ -114,6 +117,9 @@ export class TrackingEngine {
   }
 
   private handleTranscript(text: string, isFinal: boolean): void {
+    // 所有辨識結果（含 interim）都傳出去供 UI 顯示
+    this.onTranscriptCallback?.(text, isFinal);
+
     if (!isFinal) return;
 
     if (this._cooldownUntil && Date.now() < this._cooldownUntil) return;
