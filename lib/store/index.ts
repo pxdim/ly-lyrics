@@ -94,7 +94,7 @@ export interface LyricsActions {
   // AI Tracking actions
   startAiTracking: () => void;
   stopAiTracking: () => void;
-  updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number) => void;
+  updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number, errorMessage?: string | null) => void;
   triggerManualOverride: () => void;
   updateAudioInput: (partial: Partial<AudioInputState>) => void;
   updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
@@ -439,13 +439,14 @@ export const useLyricsStore = create<LyricsStore>()(
           });
         },
 
-        updateAiStatus: (status, confidence, matchedLine) => {
+        updateAiStatus: (status, confidence, matchedLine, errorMessage) => {
           set({
             aiTracking: {
               ...get().aiTracking,
               status,
               ...(confidence !== undefined && { confidence }),
               ...(matchedLine !== undefined && { lastMatchedLine: matchedLine }),
+              ...(errorMessage !== undefined && { errorMessage }),
             },
           });
         },

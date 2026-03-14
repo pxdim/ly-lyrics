@@ -61,19 +61,13 @@ export function AiTrackingPanel({ onToggle, onSettingsClick }: AiTrackingPanelPr
   const aiTracking = useLyricsStore((s) => s.aiTracking);
   const audioInput = useLyricsStore((s) => s.audioInput);
   const updateAudioInput = useLyricsStore((s) => s.updateAudioInput);
-  const startAiTracking = useLyricsStore((s) => s.startAiTracking);
-  const stopAiTracking = useLyricsStore((s) => s.stopAiTracking);
 
   const isActive = aiTracking.isActive;
 
+  // Store 狀態由 useAiTracking hook 統一管理，Panel 只負責通知
   const handleToggle = useCallback((value: boolean) => {
-    if (value) {
-      startAiTracking();
-    } else {
-      stopAiTracking();
-    }
     onToggle(value);
-  }, [startAiTracking, stopAiTracking, onToggle]);
+  }, [onToggle]);
 
   // Memoize callbacks 避免音量輪詢（~60fps）觸發不必要的重渲染
   const handleDeviceChange = useCallback(
