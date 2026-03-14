@@ -149,33 +149,31 @@ AI tracking 設定使用 `persist` middleware 持久化到 localStorage。需在
 
 **核心問題：** `jumpToLine()` 被 AI 和手動操作共用，如何避免 AI 觸發自己的冷卻？
 
-**解法：** TrackingEngine 維護一個內部 flag `_isAiAction`。
+**解法：** TrackingEngine 維護一個 `_lastAiLineIndex: number | null` 欄位，用於區分 AI 操作和手動操作。
 
 ```
 手動操作（鍵盤/點擊）
   → Controller UI 呼叫 store.nextLine() / jumpToLine()
   → Controller UI 同時呼叫 trackingEngine.onManualOverride()
-  → TrackingEngine 設定冷卻 timer
+  → TrackingEngine 設定冷卻 timer，清除 _lastAiLineIndex
 
 AI 操作
-  → TrackingEngine 內部設定 _isAiAction = true
-  → 呼叫 store.setCurrentIndex(matchedLine)
-  → _isAiAction = false
-  → 不觸發冷卻
+  → TrackingEngine 記錄 _lastAiLineIndex = matchedLine
+  → 呼叫 store.jumpToLine(matchedLine)
+  → 後端廣播 line_changed 回彈到 Controller
+  → TrackingEngine 檢查：lineIndex === _lastAiLineIndex → 忽略（是自己觸發的）
 ```
 
 Controller 的鍵盤/點擊 handler 需要在呼叫 store action 的同時通知 TrackingEngine。透過在 Controller 中 import TrackingEngine 實例，在現有的 onClick/onKeyDown handler 末尾加一行 `trackingEngine.onManualOverride()` 即可。
 
 ### WebSocket 回彈處理
 
-AI 呼叫 `jumpToLine()` → 後端廣播 `line_changed` → Controller 自己也會收到這個事件。需避免：
-1. 回彈事件被誤判為「外部手動操作」而觸發冷卻
-2. 不必要的重複 state 更新
+AI 呼叫 `jumpToLine()` → 後端廣播 `line_changed` → Controller 自己也會收到這個事件。`_lastAiLineIndex` 機制處理這個問題：
 
-**解法：** TrackingEngine 維護一個 `_lastAiLineIndex: number | null` 欄位。呼叫 `jumpToLine()` 前記錄目標行，收到 `line_changed` 回彈時比對：
 - 如果 `lineIndex === _lastAiLineIndex`，是 AI 自己觸發的回彈 → 忽略，不觸發冷卻
 - 如果 `lineIndex !== _lastAiLineIndex`，是來自另一個 Controller 的手動操作 → 觸發冷卻
-- 呼叫 `onManualOverride()` 時清除 `_lastAiLineIndex`
+- 每次 AI 發送新的 `jumpToLine()` 時更新 `_lastAiLineIndex`
+- `onManualOverride()` 清除 `_lastAiLineIndex`
 
 ### 清理舊型別
 
@@ -184,7 +182,12 @@ AI 呼叫 `jumpToLine()` → 後端廣播 `line_changed` → Controller 自己�
 - `AiListeningState` interface（被 `AiTrackingState` 取代）
 - `apiProvider: "gemini" | "whisper" | "local"`（被 `STTProviderType` 取代）
 
-同時移除 `lib/websocket/types.ts` 中的 `ai_listening_toggle` 事件型別（AI 監聽完全在前端處理，不需要 WebSocket 事件）。
+同時從 `types/index.ts` 移除以下舊 AI 監聽相關定義：
+- `WebSocketMessageType` 聯合型別中的 `"ai_listening_toggle"` 值
+- `AiListeningTogglePayload` interface
+- `SessionState.isAiListening` 欄位
+
+（AI 監聽完全在前端處理，不需要 WebSocket 事件。）
 
 ---
 
@@ -356,7 +359,7 @@ Provider interface 允許未來新增：
         → STT 回傳文字片段（interim / final）
         → LyricsMatcher.match(text, currentIndex, lyrics, lrcTimestamps)
         → 匹配成功且非冷卻中
-          → store.setCurrentIndex(matchedLine)
+          → store.jumpToLine(matchedLine)
           → WebSocket 自動廣播到 Display
 ```
 
