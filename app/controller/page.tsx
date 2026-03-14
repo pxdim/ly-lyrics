@@ -20,6 +20,8 @@ import { AddSongModal } from "@/components/controller/AddSongModal";
 import { QRCodePanel } from "@/components/controller/QRCodePanel";
 import { generateSessionCode } from "@/lib/websocket/session-code";
 import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
+import { generateLrcContent, downloadLrcFile } from "@/lib/lrc/export";
+import { Download } from "lucide-react";
 
 // ============================================================================
 // RWD 偵測 Hooks
@@ -791,6 +793,23 @@ function SongListPanel() {
                   <span className="font-mono text-[10px] text-[#6B7280]">
                     {song.lyrics.length}L
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const content = generateLrcContent(
+                        song.title,
+                        song.artist ?? null,
+                        song.lyrics,
+                        song.lrcTimestamps
+                      );
+                      downloadLrcFile(content, song.title);
+                    }}
+                    className="p-1 opacity-0 group-hover:opacity-100 text-[#6B7280] hover:text-primary transition-all"
+                    type="button"
+                    title="匯出 LRC"
+                  >
+                    <Download className="w-[11px] h-[11px]" />
+                  </button>
                   <button
                     onClick={(e) => handleDeleteSong(e, song.id)}
                     disabled={deletingId === song.id}
