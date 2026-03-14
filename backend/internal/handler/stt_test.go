@@ -13,7 +13,7 @@ import (
 
 func TestSTTHandler_GetToken(t *testing.T) {
 	t.Run("returns token when DEEPGRAM_API_KEY is set", func(t *testing.T) {
-		h := handler.NewSTT("dg-test-key-123")
+		h := handler.NewSTT("dg-test-key-123", "")
 		req := httptest.NewRequest(http.MethodGet, "/api/stt/token", nil)
 		w := httptest.NewRecorder()
 
@@ -29,7 +29,7 @@ func TestSTTHandler_GetToken(t *testing.T) {
 	})
 
 	t.Run("returns 503 when DEEPGRAM_API_KEY is empty", func(t *testing.T) {
-		h := handler.NewSTT("")
+		h := handler.NewSTT("", "")
 		req := httptest.NewRequest(http.MethodGet, "/api/stt/token", nil)
 		w := httptest.NewRecorder()
 
