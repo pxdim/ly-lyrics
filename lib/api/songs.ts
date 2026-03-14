@@ -80,6 +80,7 @@ export async function createSong(data: {
   title: string;
   artist?: string;
   lyrics: string[];
+  lrcTimestamps?: number[];
   language?: string;
 }): Promise<ClientSong> {
   const response = await fetch("/api/songs", {
