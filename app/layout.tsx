@@ -34,6 +34,14 @@ export const metadata: Metadata = {
   description: "市場首創的 AI 驅動歌詞顯示系統，支援即時聽歌辨識、多裝置同步、NDI 輸出到 VJ 軟體",
   keywords: ["歌詞顯示", "AI 歌詞辨識", "NDI 輸出", "Resolume", "歌詞同步"],
   authors: [{ name: "LY Team" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -43,6 +51,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-TW" className="dark" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#06b6d4" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body
         className={`${orbitron.variable} ${exo2.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
       >

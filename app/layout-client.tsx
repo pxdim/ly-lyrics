@@ -9,6 +9,7 @@
 
 import { useEffect } from "react";
 import { logError } from "@/lib/errors/AppError";
+import { registerServiceWorker } from "@/lib/pwa/registerServiceWorker";
 
 export function ClientErrorWrapper({
   children,
@@ -41,6 +42,9 @@ export function ClientErrorWrapper({
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
     window.addEventListener("error", handleError);
+
+    // 註冊 Service Worker（PWA 離線支援）
+    registerServiceWorker();
 
     return () => {
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
