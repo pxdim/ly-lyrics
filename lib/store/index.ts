@@ -13,6 +13,12 @@ import type {
   DisplaySettings,
   ClientRole,
 } from "../websocket/types";
+import type {
+  AiTrackingState,
+  AiTrackingSettings,
+  AiTrackingStatus,
+  AudioInputState,
+} from "@/types";
 import { initNativeWSClient } from "../websocket/native-client";
 
 // ============================================================================
@@ -45,6 +51,11 @@ export interface LyricsState {
   // UI state
   isLoading: boolean;
   error: string | null;
+
+  // AI Tracking
+  aiTracking: AiTrackingState;
+  aiSettings: AiTrackingSettings;
+  audioInput: AudioInputState;
 }
 
 export interface LyricsActions {
@@ -79,6 +90,14 @@ export interface LyricsActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+
+  // AI Tracking actions
+  startAiTracking: () => void;
+  stopAiTracking: () => void;
+  updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number) => void;
+  triggerManualOverride: () => void;
+  updateAudioInput: (partial: Partial<AudioInputState>) => void;
+  updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
 }
 
 // ============================================================================
@@ -126,6 +145,32 @@ export const useLyricsStore = create<LyricsStore>()(
         isPlaying: false,
         isLoading: false,
         error: null,
+
+        // AI Tracking
+        aiTracking: {
+          isActive: false,
+          status: "idle" as const,
+          confidence: 0,
+          lastMatchedLine: null,
+          cooldownUntil: null,
+          sttProvider: "deepgram" as const,
+          errorMessage: null,
+        },
+        aiSettings: {
+          sttProvider: "deepgram" as const,
+          apiKey: null,
+          confidenceThreshold: 0.6,
+          windowBefore: 2,
+          windowAfter: 3,
+          manualOverrideCooldown: 5000,
+          fullScanThreshold: 0.8,
+        },
+        audioInput: {
+          deviceId: null,
+          gain: 0,
+          volume: 0,
+          isCapturing: false,
+        },
 
         // ========================================
         // Song Actions
@@ -367,6 +412,68 @@ export const useLyricsStore = create<LyricsStore>()(
         },
 
         // ========================================
+        // AI Tracking Actions
+        // ========================================
+        startAiTracking: () => {
+          set({
+            aiTracking: {
+              ...get().aiTracking,
+              isActive: true,
+              status: "listening",
+              errorMessage: null,
+            },
+          });
+        },
+
+        stopAiTracking: () => {
+          set({
+            aiTracking: {
+              isActive: false,
+              status: "idle",
+              confidence: 0,
+              lastMatchedLine: null,
+              cooldownUntil: null,
+              sttProvider: get().aiSettings.sttProvider,
+              errorMessage: null,
+            },
+          });
+        },
+
+        updateAiStatus: (status, confidence, matchedLine) => {
+          set({
+            aiTracking: {
+              ...get().aiTracking,
+              status,
+              ...(confidence !== undefined && { confidence }),
+              ...(matchedLine !== undefined && { lastMatchedLine: matchedLine }),
+            },
+          });
+        },
+
+        triggerManualOverride: () => {
+          const cooldown = get().aiSettings.manualOverrideCooldown;
+          set({
+            aiTracking: {
+              ...get().aiTracking,
+              status: "cooldown",
+              cooldownUntil: Date.now() + cooldown,
+            },
+          });
+        },
+
+        updateAudioInput: (partial) => {
+          set({
+            audioInput: { ...get().audioInput, ...partial },
+          });
+        },
+
+        updateAiSettings: (partial) => {
+          set({
+            aiSettings: { ...get().aiSettings, ...partial },
+          });
+        },
+
+        // ========================================
         // UI State Actions
         // ========================================
         setLoading: (loading) => {
@@ -387,6 +494,7 @@ export const useLyricsStore = create<LyricsStore>()(
           displaySettings: state.displaySettings,
           role: state.role,
           userId: state.userId,
+          aiSettings: state.aiSettings,
         }),
         // Required for Next.js App Router: prevents persist from calling set()
         // during SSR (server-side rendering), which causes React error #185.
