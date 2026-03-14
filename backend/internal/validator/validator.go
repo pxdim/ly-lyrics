@@ -61,6 +61,8 @@ func msgForTag(fe validator.FieldError) string {
 		return fmt.Sprintf("must be at least %s", fe.Param())
 	case "lte":
 		return fmt.Sprintf("must be at most %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("must be one of: %s", fe.Param())
 	case "len":
 		return fmt.Sprintf("must be exactly %s characters", fe.Param())
 	default:
