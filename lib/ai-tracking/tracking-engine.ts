@@ -23,10 +23,10 @@ export interface TrackingEngineConfig {
 }
 
 const DEFAULT_MATCH_CONFIG: MatchConfig = {
-  confidenceThreshold: 0.6,
+  confidenceThreshold: 0.45, // 中文 STT 準確度較低，門檻適度放寬
   windowBefore: 2,
-  windowAfter: 3,
-  fullScanThreshold: 0.8,
+  windowAfter: 5, // 向後多看幾行，提升跳轉容錯
+  fullScanThreshold: 0.7,
   forwardBias: 0.1,
 };
 
@@ -65,7 +65,13 @@ export class TrackingEngine {
 
     // 用實際 AudioContext 取樣率覆蓋設定（避免 44100→16000 不匹配）
     const actualSampleRate = this.audioCapture.getSampleRate();
-    const resolvedConfig: STTConfig = { ...sttConfig, sampleRate: actualSampleRate };
+    // 將歌詞作為 keywords 提示，提升中文辨識準確度
+    const lyrics = this.getLyrics();
+    const resolvedConfig: STTConfig = {
+      ...sttConfig,
+      sampleRate: actualSampleRate,
+      keywords: lyrics,
+    };
 
     this.sttProvider.onTranscript((text, isFinal) => {
       this.handleTranscript(text, isFinal);

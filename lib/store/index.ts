@@ -162,11 +162,11 @@ export const useLyricsStore = create<LyricsStore>()(
         aiSettings: {
           sttProvider: "deepgram" as const,
           apiKey: null,
-          confidenceThreshold: 0.6,
+          confidenceThreshold: 0.45,
           windowBefore: 2,
-          windowAfter: 3,
+          windowAfter: 5,
           manualOverrideCooldown: 5000,
-          fullScanThreshold: 0.8,
+          fullScanThreshold: 0.7,
         },
         audioInput: {
           deviceId: null,

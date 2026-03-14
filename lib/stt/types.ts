@@ -8,6 +8,7 @@ export interface STTConfig {
   language: string;
   sampleRate: number;
   apiKey: string;
+  keywords?: string[]; // 提示詞（歌詞內容），提升辨識準確度
 }
 
 export interface STTProvider {

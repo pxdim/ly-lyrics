@@ -24,10 +24,27 @@ export class DeepgramProvider implements STTProvider {
       language: config.language,
       model: "nova-2",
       interim_results: "true",
+      smart_format: "true",
       sample_rate: String(config.sampleRate),
       encoding: "linear16",
       channels: "1",
+      // 縮短靜音判斷，加速 final 結果回傳（歌詞場景停頓較短）
+      endpointing: "300",
+      // 斷句判斷：800ms 靜音視為一句結束
+      utterance_end_ms: "800",
     });
+
+    // 將歌詞內容作為 keywords 提示，大幅提升中文辨識率
+    if (config.keywords?.length) {
+      // Deepgram keywords 格式：每個 keyword 加權重，最高 10
+      // 取不重複的字詞，避免 URL 過長
+      const uniqueKeywords = [...new Set(config.keywords)]
+        .filter((k) => k.trim().length > 0)
+        .slice(0, 100); // 限制數量避免 URL 過長
+      for (const kw of uniqueKeywords) {
+        params.append("keywords", `${kw}:5`);
+      }
+    }
 
     const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
 
