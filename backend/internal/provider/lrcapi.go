@@ -21,13 +21,23 @@ func stripLRCTimestamps(text string) string {
 }
 
 // lrcapiResult HisAtri /jsonapi 回應結構
+// 自架 Docker 使用 lyrics 欄位，公開 API (api.lrc.cx) 使用 lrc 欄位
 type lrcapiResult struct {
 	Title  string  `json:"title"`
 	Artist string  `json:"artist"`
 	Album  string  `json:"album"`
 	Lyrics string  `json:"lyrics"`
+	Lrc    string  `json:"lrc"`
 	Cover  *string `json:"cover"`
 	ID     string  `json:"id"`
+}
+
+// lyricsText 回傳歌詞文字，優先使用 lyrics，其次 lrc
+func (r *lrcapiResult) lyricsText() string {
+	if r.Lyrics != "" {
+		return r.Lyrics
+	}
+	return r.Lrc
 }
 
 // LrcApi HisAtri/LrcApi 歌詞提供者
@@ -98,15 +108,23 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 	}
 
 	results := make([]LyricsResult, 0, len(raw))
-	for _, r := range raw {
+	for i := range raw {
+		r := &raw[i]
+		text := r.lyricsText()
+
+		// 跳過無歌詞內容的結果
+		if text == "" {
+			continue
+		}
+
 		// 用內容 MD5 產生唯一 ID
-		hash := fmt.Sprintf("%x", md5.Sum([]byte(r.Title+r.Artist+r.Lyrics)))
+		hash := fmt.Sprintf("%x", md5.Sum([]byte(r.Title+r.Artist+text)))
 		id := fmt.Sprintf("lrcapi-%s", hash[:8])
 
-		hasSynced := lrcTimestampRegex.MatchString(r.Lyrics)
-		plainLyrics := r.Lyrics
+		hasSynced := lrcTimestampRegex.MatchString(text)
+		plainLyrics := text
 		if hasSynced {
-			plainLyrics = stripLRCTimestamps(r.Lyrics)
+			plainLyrics = stripLRCTimestamps(text)
 		}
 		result := LyricsResult{
 			ID:              id,
@@ -116,8 +134,8 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 			Source:          "lrcapi",
 			Confidence:      "high",
 			HasSyncedLyrics: hasSynced,
-			HasPlainLyrics:  r.Lyrics != "",
-			SyncedLyrics:    r.Lyrics,
+			HasPlainLyrics:  true,
+			SyncedLyrics:    text,
 			PlainLyrics:     plainLyrics,
 			CoverURL:        r.Cover,
 			IsSimplified:    true,

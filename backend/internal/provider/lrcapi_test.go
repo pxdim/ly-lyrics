@@ -97,6 +97,41 @@ func TestLrcApi_GetLyrics_FromCache(t *testing.T) {
 	assert.Contains(t, detail.SyncedLyrics, "[00:00.00]")
 }
 
+func TestLrcApi_Search_LrcField(t *testing.T) {
+	// 公開 API (api.lrc.cx) 使用 lrc 欄位而非 lyrics
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		results := []map[string]any{
+			{
+				"title":  "光辉岁月",
+				"artist": "Beyond",
+				"album":  "命运派对",
+				"lrc":    "[00:28.740]鐘聲響起歸家的信號\n[00:33.129]在他生命裏 彷彿帶點唏噓",
+				"cover":  "https://example.com/cover.jpg",
+				"id":     "pub123",
+			},
+			{
+				"title":  "光辉岁月",
+				"artist": "Beyond",
+				"id":     "pub456",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(results)
+	}))
+	defer server.Close()
+
+	p := provider.NewLrcApi(&http.Client{}, server.URL, "")
+	results, err := p.Search(context.Background(), provider.SearchRequest{
+		Query: "光辉岁月", SearchType: "title", Artist: "Beyond", Limit: 10,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, results, 1, "無歌詞的結果應被過濾")
+	assert.Equal(t, "光辉岁月", results[0].Title)
+	assert.True(t, results[0].HasSyncedLyrics)
+	assert.Contains(t, results[0].SyncedLyrics, "[00:28.740]")
+}
+
 func TestLrcApi_GetLyrics_CacheMiss(t *testing.T) {
 	p := provider.NewLrcApi(&http.Client{}, "http://localhost:28883", "")
 	_, err := p.GetLyrics(context.Background(), "lrcapi-netease-nonexistent")
