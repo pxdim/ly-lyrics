@@ -6,7 +6,7 @@
 
 ## 核心設計原則
 
-**AI 是 Controller 的「自動操作員」**——它做的事跟人按鍵盤一模一樣（呼叫 `store.setCurrentIndex()`），只是觸發來源從人變成演算法。Display 端零改動。
+**AI 是 Controller 的「自動操作員」**——它做的事跟人按鍵盤一模一樣（呼叫 `store.jumpToLine()`），只是觸發來源從人變成演算法。Display 端零改動。
 
 ---
 
@@ -18,7 +18,7 @@ Controller 瀏覽器
   │     └── 音量視覺化 + Gain 控制
   ├── STT Provider 模組：音訊串流 → Deepgram（透過後端 proxy）→ 即時文字
   ├── LyricsMatcher 模組：辨識文字 + 滑動視窗 + LRC 時間戳輔助 → 匹配行索引
-  └── 匹配成功 → 呼叫現有 store.setCurrentIndex() → WebSocket change_line
+  └── 匹配成功 → 呼叫現有 store.jumpToLine() → WebSocket change_line
 
 Go 後端
   └── GET /api/stt/token — 回傳 Deepgram API key（RequireAuth 保護，不暴露給未認證用戶）
@@ -118,7 +118,7 @@ interface AiTrackingSettings {
 
 interface AudioInputState {
   deviceId: string | null;              // 選擇的音訊設備 ID
-  gain: number;                         // 0-20 dB
+  gain: number;                         // 0-20 dB（store 存 dB 值，AudioCapture 用 Math.pow(10, dB/20) 轉線性值給 GainNode）
   volume: number;                       // 即時音量 0-1
   isCapturing: boolean;
 }
@@ -143,17 +143,17 @@ updateAudioInput: (partial: Partial<AudioInputState>) => void;
 updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
 ```
 
-AI tracking 設定使用 `persist` middleware 持久化到 localStorage（與現有 displaySettings 相同機制）。
+AI tracking 設定使用 `persist` middleware 持久化到 localStorage。需在現有 store 的 `partialize` 函式中加入 `aiSettings`（與 `displaySettings`、`role`、`userId` 同級）。
 
 ### 手動 vs AI 操作區分
 
-**核心問題：** `setCurrentIndex()` 被 AI 和手動操作共用，如何避免 AI 觸發自己的冷卻？
+**核心問題：** `jumpToLine()` 被 AI 和手動操作共用，如何避免 AI 觸發自己的冷卻？
 
 **解法：** TrackingEngine 維護一個內部 flag `_isAiAction`。
 
 ```
 手動操作（鍵盤/點擊）
-  → Controller UI 呼叫 store.nextLine() / setCurrentIndex()
+  → Controller UI 呼叫 store.nextLine() / jumpToLine()
   → Controller UI 同時呼叫 trackingEngine.onManualOverride()
   → TrackingEngine 設定冷卻 timer
 
@@ -165,6 +165,26 @@ AI 操作
 ```
 
 Controller 的鍵盤/點擊 handler 需要在呼叫 store action 的同時通知 TrackingEngine。透過在 Controller 中 import TrackingEngine 實例，在現有的 onClick/onKeyDown handler 末尾加一行 `trackingEngine.onManualOverride()` 即可。
+
+### WebSocket 回彈處理
+
+AI 呼叫 `jumpToLine()` → 後端廣播 `line_changed` → Controller 自己也會收到這個事件。需避免：
+1. 回彈事件被誤判為「外部手動操作」而觸發冷卻
+2. 不必要的重複 state 更新
+
+**解法：** TrackingEngine 維護一個 `_lastAiLineIndex: number | null` 欄位。呼叫 `jumpToLine()` 前記錄目標行，收到 `line_changed` 回彈時比對：
+- 如果 `lineIndex === _lastAiLineIndex`，是 AI 自己觸發的回彈 → 忽略，不觸發冷卻
+- 如果 `lineIndex !== _lastAiLineIndex`，是來自另一個 Controller 的手動操作 → 觸發冷卻
+- 呼叫 `onManualOverride()` 時清除 `_lastAiLineIndex`
+
+### 清理舊型別
+
+實作時需從 `types/index.ts` 移除以下舊定義：
+- `AudioInput` interface（被 `AudioInputState` 取代）
+- `AiListeningState` interface（被 `AiTrackingState` 取代）
+- `apiProvider: "gemini" | "whisper" | "local"`（被 `STTProviderType` 取代）
+
+同時移除 `lib/websocket/types.ts` 中的 `ai_listening_toggle` 事件型別（AI 監聽完全在前端處理，不需要 WebSocket 事件）。
 
 ---
 
@@ -431,7 +451,7 @@ DeepgramAPIKey string `env:"DEEPGRAM_API_KEY" envDefault:""`
 ### 現有接入點
 
 - `types/index.ts:158-162` — 已有 `AudioInput` 和 `AiListeningState` 型別定義
-- `lib/store/index.ts` — Zustand store，`setCurrentIndex()` 是核心接入 action
+- `lib/store/index.ts` — Zustand store，`jumpToLine()` 是核心接入 action
 - `lib/websocket/types.ts` — WebSocket 事件型別
 - `app/controller/page.tsx` — Controller UI，新增 AiTrackingPanel
 - `backend/internal/config/config.go` — 環境變數定義
