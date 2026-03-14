@@ -153,6 +153,34 @@ func TestLrcApi_Search_WithAuthKey(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestLrcApi_Search_PlainLyricsNoSync(t *testing.T) {
+	// 測試：歌詞不含時間戳時，SyncedLyrics 應為空字串
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		results := []map[string]any{
+			{
+				"title":  "測試純文字",
+				"artist": "測試歌手",
+				"lyrics": "第一行歌詞\n第二行歌詞\n第三行歌詞",
+				"id":     "plain123",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(results)
+	}))
+	defer server.Close()
+
+	p := provider.NewLrcApi(&http.Client{}, server.URL, "")
+	results, err := p.Search(context.Background(), provider.SearchRequest{
+		Query: "測試", SearchType: "title", Limit: 10,
+	})
+
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.False(t, results[0].HasSyncedLyrics)
+	assert.Empty(t, results[0].SyncedLyrics, "純文字歌詞不應填入 SyncedLyrics")
+	assert.NotEmpty(t, results[0].PlainLyrics)
+}
+
 func TestLrcApi_Search_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

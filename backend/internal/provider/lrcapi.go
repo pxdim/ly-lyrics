@@ -123,8 +123,10 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 
 		hasSynced := lrcTimestampRegex.MatchString(text)
 		plainLyrics := text
+		syncedText := ""
 		if hasSynced {
 			plainLyrics = stripLRCTimestamps(text)
+			syncedText = text
 		}
 		result := LyricsResult{
 			ID:              id,
@@ -135,7 +137,7 @@ func (l *LrcApi) Search(ctx context.Context, req SearchRequest) ([]LyricsResult,
 			Confidence:      "high",
 			HasSyncedLyrics: hasSynced,
 			HasPlainLyrics:  true,
-			SyncedLyrics:    text,
+			SyncedLyrics:    syncedText,
 			PlainLyrics:     plainLyrics,
 			CoverURL:        r.Cover,
 			IsSimplified:    true,
