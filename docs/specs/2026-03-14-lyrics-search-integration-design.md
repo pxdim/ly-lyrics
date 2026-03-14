@@ -82,19 +82,17 @@ Gemini 不是每次都呼叫，僅在前三個來源的結果總數 < 3 筆時�
 {
   "query": "告白氣球",
   "searchType": "title",
-  "artist": "周杰倫",
-  "page": 1,
-  "pageSize": 20
+  "artist": "周杰倫"
 }
 ```
 
-| 欄位 | 類型 | 必填 | 說明 |
-|------|------|------|------|
-| `query` | string | ✅ | 搜尋關鍵字 |
-| `searchType` | enum | ✅ | `"title"` / `"artist"` / `"lyrics"` |
-| `artist` | string | ❌ | 搭配 title 搜尋時可選填歌手 |
-| `page` | int | ❌ | 預設 1 |
-| `pageSize` | int | ❌ | 預設 20，上限 50 |
+| 欄位 | 類型 | 必填 | 驗證規則 | 說明 |
+|------|------|------|---------|------|
+| `query` | string | ✅ | `min=1, max=200` | 搜尋關鍵字 |
+| `searchType` | enum | ✅ | `oneof=title,artist,lyrics` | 搜尋類型 |
+| `artist` | string | ❌ | `max=200` | 搭配 title 搜尋時可選填歌手 |
+
+不使用分頁。各 Provider 各回傳最多 10 筆，總結果上限 50 筆。歌詞搜尋不需要深度分頁。
 
 **Response：**
 
@@ -175,6 +173,17 @@ Gemini 不是每次都呼叫，僅在前三個來源的結果總數 < 3 筆時�
 
 用戶選擇候選結果後，取得完整歌詞內容。
 
+**依來源的取得策略：**
+
+| Provider | GetLyrics 實作 | 說明 |
+|----------|---------------|------|
+| LRClib | 呼叫 `GET https://lrclib.net/api/get/{id}` | 有穩定的 get-by-ID API |
+| Genius | 呼叫 `GET https://api.genius.com/songs/{id}` | 有穩定的 get-by-ID API |
+| LrcApi | 從 in-memory cache 取得 | LrcApi 無 get-by-ID API，搜尋時已快取完整歌詞 |
+| Gemini | 從 in-memory cache 取得 | AI 生成結果無外部 ID，搜尋時已快取 |
+
+LrcApi 和 Gemini 的搜尋結果在 `Search()` 階段就包含完整歌詞，存入 in-memory cache（TTL 10 分鐘）。`GetLyrics()` 直接從 cache 取得，不需要二次 HTTP 呼叫。
+
 **Response：**
 
 ```json
@@ -203,8 +212,10 @@ Gemini 不是每次都呼叫，僅在前三個來源的結果總數 < 3 筆時�
 
 1. `confidence`：high > medium > low
 2. `hasSyncedLyrics`：有時間戳排前面
-3. `ratio`（若有）：高分排前面
+3. `ratio`（若有）：LrcApi 回傳的模糊匹配相似度分數（0-1），其他 Provider 為 null
 4. `source` 優先級：lrclib > lrcapi > genius > gemini
+
+各 Provider 回傳上限 10 筆結果，避免單一來源佔滿清單。
 
 ---
 
@@ -255,11 +266,21 @@ type SearchRequest struct {
     Query      string
     SearchType string // "title", "artist", "lyrics"
     Artist     string
+    Limit      int    // 每個 Provider 的回傳上限，預設 10
 }
 
 type Provider interface {
+    // Search 搜尋歌詞候選清單。
+    // LRClib/Genius：回傳元資料（歌詞在 GetLyrics 時取得）。
+    // LrcApi/Gemini：回傳含完整歌詞的結果（同時快取供 GetLyrics 使用）。
     Search(ctx context.Context, req SearchRequest) ([]LyricsResult, error)
+
+    // GetLyrics 取得完整歌詞。
+    // LRClib/Genius：呼叫外部 API by ID。
+    // LrcApi/Gemini：從 in-memory cache 取得。
     GetLyrics(ctx context.Context, id string) (*LyricsResult, error)
+
+    // Name 來源名稱
     Name() string
 }
 ```
@@ -303,11 +324,51 @@ func (s *LyricsSearchService) Search(ctx context.Context, req dto.LyricsSearchRe
 ### 5.4 路由註冊
 
 ```go
-// server/routes.go — 加在 OptionalAuth group 內
+// backend/internal/server/routes.go — 加在 OptionalAuth group 內
 r.Route("/api/lyrics", func(r chi.Router) {
     r.Post("/search", lyricsSearchHandler.Search)
     r.Get("/search/{id}", lyricsSearchHandler.GetLyrics)
 })
+```
+
+### 5.5 服務初始化
+
+```go
+// backend/internal/server/server.go — New() 函式內新增
+
+// 建立 HTTP client（共用，帶連線池）
+httpClient := &http.Client{Timeout: 10 * time.Second}
+
+// 根據環境變數動態組裝 providers
+var providers []provider.Provider
+providers = append(providers, provider.NewLRClib(httpClient))
+
+if cfg.LrcApiURL != "" {
+    providers = append(providers, provider.NewLrcApi(httpClient, cfg.LrcApiURL, cfg.LrcApiAuthKey))
+}
+if cfg.GeniusAPIToken != "" {
+    providers = append(providers, provider.NewGenius(httpClient, cfg.GeniusAPIToken))
+}
+if cfg.GeminiAPIKey != "" {
+    providers = append(providers, provider.NewGemini(httpClient, cfg.GeminiAPIKey))
+}
+
+lyricsSearchSvc := service.NewLyricsSearchService(providers, 8*time.Second)
+lyricsSearchHandler := handler.NewLyricsSearch(lyricsSearchSvc)
+```
+
+### 5.6 Config 變更
+
+```go
+// backend/internal/config/config.go — 新增欄位
+type Config struct {
+    // ...existing fields...
+
+    LrcApiURL      string `env:"LRCAPI_URL"`       // 選填，LrcApi Docker 內網地址
+    LrcApiAuthKey  string `env:"LRCAPI_AUTH_KEY"`   // 選填，LrcApi 認證 Key
+    GeniusAPIToken string `env:"GENIUS_API_TOKEN"`  // 選填，Genius API Token
+    GeminiAPIKey   string `env:"GEMINI_API_KEY"`    // 選填，Gemini API Key
+}
 ```
 
 ---
@@ -402,7 +463,8 @@ lib/
 
 - 輸入 >= 2 個字元後，500ms debounce 自動觸發背景搜尋
 - 同時提供 🔍 按鈕手動觸發
-- 結果即時渲染，後到的 Provider 結果動態合併
+- 使用 AbortController 取消前一次未完成的請求，避免競態條件
+- Go 後端收齊所有 Provider 結果後一次回傳（不做 SSE），前端只需處理一次 response
 
 ### 6.6 匯入流程
 
@@ -425,14 +487,20 @@ createSong({ title, artist, lyrics, lrcTimestamps })
 使用 [opencc-js](https://www.npmjs.com/package/opencc-js)（~50KB）：
 
 ```typescript
-import OpenCC from 'opencc-js';
+import * as OpenCC from 'opencc-js';
 const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
-// "简体歌词" → "簡體歌詞"
+const traditional = converter("简体歌词"); // → "簡體歌詞"
 ```
 
 - 在 LyricsPreviewModal 中，用戶可切換「轉繁體」開關
 - 開關僅影響預覽和匯入，不影響搜尋結果的原始資料
 - `isSimplified` 欄位用於判斷是否顯示轉換開關
+
+### `isSimplified` 判定策略
+
+- 來自 LrcApi 的結果一律標記 `isSimplified: true`（酷狗/網易/咪咕皆使用簡體中文）
+- 來自 LRClib、Genius、Gemini 的結果標記 `isSimplified: false`
+- 此欄位僅用於 UI 提示，不做字元層級的自動偵測（避免複雜度）
 
 ### 6.8 搜尋類型對 UI 的影響
 
@@ -474,10 +542,12 @@ services:
 
 | 變數 | 必填 | 說明 | 範例 |
 |------|------|------|------|
-| `LRCAPI_URL` | ✅ | LrcApi 內網地址 | `http://lrcapi:28883` |
+| `LRCAPI_URL` | ❌ | LrcApi 內網地址（無則停用 LrcApi） | `http://lrcapi:28883` |
 | `LRCAPI_AUTH_KEY` | ❌ | LrcApi 認證 Key | `my-secret` |
-| `GENIUS_API_TOKEN` | ✅ | Genius API Bearer Token | `Bearer xxxxx` |
-| `GEMINI_API_KEY` | ❌ | Gemini API Key（無則停用） | `AIzaSy...` |
+| `GENIUS_API_TOKEN` | ❌ | Genius API Token（無則停用 Genius） | `xxxxx` |
+| `GEMINI_API_KEY` | ❌ | Gemini API Key（無則停用 Gemini） | `AIzaSy...` |
+
+所有環境變數皆為選填，與 Section 3 降級策略一致。最少零設定即可運作（僅 LRClib）。
 
 ### 7.3 API Key 取得方式
 
@@ -505,19 +575,22 @@ services:
 
 每個來源的結果需要一個可識別的 ID，用於 `GET /api/lyrics/search/{id}` 取得完整歌詞：
 
-- LRClib：`lrclib-{lrclib_id}`
-- LrcApi：`lrcapi-{source}-{md5_hash}`（source = kugou/netease/migu）
-- Genius：`genius-{genius_id}`
-- Gemini：`gemini-{uuid}`（暫存在記憶體 cache，TTL 10 分鐘）
+- LRClib：`lrclib-{lrclib_id}` — 有穩定的外部 get-by-ID API
+- LrcApi：`lrcapi-{source}-{md5_hash}`（source = kugou/netease/migu）— 無 get-by-ID API，需快取
+- Genius：`genius-{genius_id}` — 有穩定的外部 get-by-ID API
+- Gemini：`gemini-{uuid}` — 無外部 ID，需快取
 
-### 8.3 Gemini 暫存
+### 8.3 搜尋結果快取（LrcApi + Gemini）
 
-Gemini 生成的歌詞沒有外部 ID 可回查，需在 Go 後端暫存：
+LrcApi 和 Gemini 沒有穩定的 get-by-ID API，因此搜尋階段就包含完整歌詞，並快取在 Go 後端記憶體中：
 
-- 使用 `sync.Map` 或簡易 in-memory cache
-- Key：生成的 UUID
-- Value：歌詞內容
+- 使用 `sync.Map` 搭配 TTL 過期清理
+- Key：結果 ID（如 `lrcapi-netease-8a3f...` 或 `gemini-uuid`）
+- Value：完整 `LyricsResult`（含歌詞內容）
 - TTL：10 分鐘（過期後需重新搜尋）
+- 定期清理過期項目（每 5 分鐘掃描一次）
+
+LRClib 和 Genius 不需要快取，`GetLyrics()` 直接呼叫外部 API by ID。
 
 ### 8.4 錯誤處理
 
@@ -525,9 +598,43 @@ Gemini 生成的歌詞沒有外部 ID 可回查，需在 Go 後端暫存：
 - `sources` 欄位回報每個 Provider 的狀態（ok/error/timeout/skipped）
 - 所有 Provider 都失敗時回傳 HTTP 200 + 空結果集（不是 500）
 
+### 8.5 `album` 欄位處理
+
+搜尋結果包含 `album` 資訊供 UI 顯示，但匯入歌曲時**刻意不匯入 album**。LY 的 Song 資料模型目前沒有 album 欄位，且歌詞顯示系統不需要專輯資訊。匯入流程只使用 `title`、`artist`、`lyrics`、`lrcTimestamps`。
+
+### 8.6 `sources` 欄位與子來源
+
+Response 中的 `sources` 欄位以 Provider 為單位聚合（`lrcapi` 代表酷狗+網易+咪咕的總和），而個別結果的 `source` 欄位使用細分名稱（`lrcapi-kugou`、`lrcapi-netease`）。這是刻意設計：`sources` 用於狀態總覽，`source` 用於結果標記。
+
 ---
 
-## 9. 不在範圍內
+## 9. 部署
+
+### 9.1 本地開發
+
+```bash
+# LrcApi Docker（本地）
+docker run -d -p 28883:28883 hisatri/lrcapi:1.6.0
+
+# Go 後端加環境變數
+LRCAPI_URL=http://localhost:28883 go run ./cmd/server
+```
+
+### 9.2 Railway 部署
+
+Railway 支援多服務部署。LrcApi 作為獨立 service 加入同一個 project：
+
+1. 在 Railway project 中新增 service，使用 Docker image `hisatri/lrcapi:1.6.0`
+2. 設定 internal networking：Go 後端環境變數 `LRCAPI_URL` 指向 Railway 內網地址（如 `http://lrcapi.railway.internal:28883`）
+3. Genius/Gemini API Key 設定在 Go 後端 service 的環境變數中
+
+### 9.3 docker-compose（測試環境）
+
+更新 `docker-compose.test.yml` 加入 LrcApi 服務，供 E2E 測試使用。
+
+---
+
+## 10. 不在範圍內
 
 以下功能不在本次實作範圍：
 
@@ -540,7 +647,7 @@ Gemini 生成的歌詞沒有外部 ID 可回查，需在 Go 後端暫存：
 
 ---
 
-## 10. 依賴
+## 11. 依賴
 
 ### 新增 npm 套件
 
