@@ -68,44 +68,70 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
             載入中...
           </div>
         ) : lyrics ? (
-          <>
-            {/* 歌曲資訊 */}
-            <div className="px-5 py-3 border-b border-[#2A2D35]">
-              <div className="text-[14px] text-[#E4E7EB] font-medium">
-                {isTraditional ? convertToTraditional(lyrics.title) : lyrics.title}
-                <span className="text-[#6B7280] mx-2">—</span>
-                {isTraditional ? convertToTraditional(lyrics.artist) : lyrics.artist}
-              </div>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-[11px] text-[#6B7280] font-mono">來源：{lyrics.source}</span>
-                {lyrics.syncedLyrics && <span className="text-[11px] text-primary/70">⏱ 有時間戳</span>}
-                {lyrics.isSimplified && (
-                  <SimplifiedToggle isTraditional={isTraditional} onToggle={() => setIsTraditional(!isTraditional)} />
+          (() => {
+            const hasLyricsContent = !!(lyrics.syncedLyrics || lyrics.plainLyrics);
+            return (
+              <>
+                {/* 歌曲資訊 */}
+                <div className="px-5 py-3 border-b border-[#2A2D35]">
+                  <div className="text-[14px] text-[#E4E7EB] font-medium">
+                    {isTraditional ? convertToTraditional(lyrics.title) : lyrics.title}
+                    <span className="text-[#6B7280] mx-2">—</span>
+                    {isTraditional ? convertToTraditional(lyrics.artist) : lyrics.artist}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-[11px] text-[#6B7280] font-mono">來源：{lyrics.source}</span>
+                    {lyrics.syncedLyrics && <span className="text-[11px] text-primary/70">⏱ 有時間戳</span>}
+                    {lyrics.isSimplified && (
+                      <SimplifiedToggle isTraditional={isTraditional} onToggle={() => setIsTraditional(!isTraditional)} />
+                    )}
+                  </div>
+                </div>
+
+                {hasLyricsContent ? (
+                  <>
+                    {/* 歌詞內容 */}
+                    <div className="flex-1 overflow-y-auto px-5 py-3">
+                      <pre className="text-[13px] text-[#C9CDD3] font-body whitespace-pre-wrap leading-relaxed">
+                        {displayLyrics()}
+                      </pre>
+                    </div>
+
+                    {/* 按鈕列 */}
+                    <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
+                      <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onImport(lyrics, isTraditional)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors font-mono"
+                      >
+                        ✅ 匯入到歌單
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* 無歌詞內容提示 */}
+                    <div className="flex-1 flex items-center justify-center px-5 py-12">
+                      <div className="text-center space-y-2">
+                        <p className="text-[13px] text-[#6B7280] font-mono">此來源僅提供歌曲資訊，不包含歌詞內容</p>
+                        <p className="text-[11px] text-[#6B7280]/60">請嘗試其他搜尋結果</p>
+                      </div>
+                    </div>
+
+                    {/* 只有關閉按鈕 */}
+                    <div className="flex items-center justify-end px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
+                      <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
+                        關閉
+                      </button>
+                    </div>
+                  </>
                 )}
-              </div>
-            </div>
-
-            {/* 歌詞內容 */}
-            <div className="flex-1 overflow-y-auto px-5 py-3">
-              <pre className="text-[13px] text-[#C9CDD3] font-body whitespace-pre-wrap leading-relaxed">
-                {displayLyrics()}
-              </pre>
-            </div>
-
-            {/* 按鈕列 */}
-            <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
-              <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => onImport(lyrics, isTraditional)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/40 text-[13px] text-primary font-semibold hover:bg-primary/20 transition-colors font-mono"
-              >
-                ✅ 匯入到歌單
-              </button>
-            </div>
-          </>
+              </>
+            );
+          })()
         ) : (
           <div className="flex items-center justify-center py-12 text-[#6B7280] text-[13px] font-mono">
             無歌詞資料

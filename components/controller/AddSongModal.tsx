@@ -114,8 +114,8 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       {/* 背景遮罩 */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-      {/* 對話框：手機上限制最大高度並允許滾動 */}
-      <div className={`relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] overflow-hidden ${isMobile ? "max-h-[90vh] overflow-y-auto" : ""}`}>
+      {/* 對話框 */}
+      <div className="relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] max-h-[85vh] overflow-y-auto">
         {/* 標題列 */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#2A2D35] bg-[#090A0C]">
           <div className="flex items-center gap-2">

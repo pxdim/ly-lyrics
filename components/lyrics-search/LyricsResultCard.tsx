@@ -59,6 +59,9 @@ export const LyricsResultCard: FC<LyricsResultCardProps> = ({ result, onClick })
             {!result.hasSyncedLyrics && result.hasPlainLyrics && (
               <span className="text-[11px] text-[#6B7280]">📝 純文字</span>
             )}
+            {!result.hasSyncedLyrics && !result.hasPlainLyrics && (
+              <span className="text-[11px] text-[#6B7280]/60">ℹ️ 僅資訊</span>
+            )}
             {result.duration && (
               <span className="text-[11px] text-[#6B7280]">
                 {Math.floor(result.duration / 60)}:{String(result.duration % 60).padStart(2, "0")}
