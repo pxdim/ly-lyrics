@@ -184,7 +184,7 @@ func (h *STT) recognizeGoogle(ctx context.Context, audio []byte, sampleRate int,
 			Encoding:                   "LINEAR16",
 			SampleRateHertz:            sampleRate,
 			LanguageCode:               language,
-			Model:                      "latest_short",
+			Model:                      "default",
 			EnableAutomaticPunctuation: true,
 		},
 		Audio: googleSTTAudio{
