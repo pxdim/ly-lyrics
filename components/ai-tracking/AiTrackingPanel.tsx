@@ -62,6 +62,19 @@ function AdvancedSettings() {
 
   return (
     <div className="flex flex-col gap-2.5 text-[11px]">
+      {/* 辨識引擎 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[#6B7280]">辨識引擎</span>
+        <select
+          value={aiSettings.sttProvider}
+          onChange={(e) => updateAiSettings({ sttProvider: e.target.value as "deepgram" | "web-speech" })}
+          className="bg-[#1A1D24] border border-[#2A2D35] text-[#E4E7EB] text-[10px] font-mono rounded px-1.5 py-0.5 focus:outline-none focus:border-primary"
+        >
+          <option value="web-speech">Web Speech (免費)</option>
+          <option value="deepgram">Deepgram</option>
+        </select>
+      </div>
+
       {/* 信心門檻 */}
       <div className="flex items-center justify-between">
         <span className="text-[#6B7280]">比對門檻</span>

@@ -11,6 +11,7 @@ import { useLyricsStore } from "@/lib/store";
 import { TrackingEngine } from "@/lib/ai-tracking/tracking-engine";
 import { AudioCapture } from "@/lib/audio/audio-capture";
 import { DeepgramProvider } from "@/lib/stt/deepgram-provider";
+import { WebSpeechProvider } from "@/lib/stt/web-speech-provider";
 
 export function useAiTracking() {
   const engineRef = useRef<TrackingEngine | null>(null);
@@ -49,22 +50,27 @@ export function useAiTracking() {
       const store = useLyricsStore.getState();
       const settings = store.aiSettings;
 
-      // 取得 API key：優先使用者自行輸入，其次環境變數，最後從後端取得
-      let apiKey = settings.apiKey ?? process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] ?? null;
-      if (!apiKey) {
-        const resp = await fetch("/api/stt/token");
-        if (!resp.ok) {
-          updateAiStatus("error", undefined, undefined, "無法取得 STT API 金鑰");
-          return;
+      // Web Speech API 不需要 API key
+      let apiKey = "";
+      if (settings.sttProvider !== "web-speech") {
+        apiKey = settings.apiKey ?? process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] ?? "";
+        if (!apiKey) {
+          const resp = await fetch("/api/stt/token");
+          if (!resp.ok) {
+            updateAiStatus("error", undefined, undefined, "無法取得 STT API 金鑰");
+            return;
+          }
+          const data = await resp.json() as { token: string };
+          apiKey = data.token;
         }
-        const data = await resp.json() as { token: string };
-        apiKey = data.token;
       }
 
       const audioCapture = new AudioCapture();
       audioCaptureRef.current = audioCapture;
 
-      const sttProvider = new DeepgramProvider();
+      const sttProvider = settings.sttProvider === "web-speech"
+        ? new WebSpeechProvider()
+        : new DeepgramProvider();
 
       const engine = new TrackingEngine({
         sttProvider,

@@ -729,6 +729,6 @@ describe("AI Tracking actions", () => {
       result.current.updateAiSettings({ confidenceThreshold: 0.8 });
     });
     expect(result.current.aiSettings.confidenceThreshold).toBe(0.8);
-    expect(result.current.aiSettings.sttProvider).toBe("deepgram"); // unchanged default
+    expect(result.current.aiSettings.sttProvider).toBe("web-speech"); // unchanged default
   });
 });
