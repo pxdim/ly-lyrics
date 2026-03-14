@@ -26,7 +26,12 @@ func (s *Server) setupRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(s.jwtManager))
 		r.Get("/api/auth/me", authHandler.Me)
-		sttHandler := handler.NewSTT(s.cfg.DeepgramAPIKey)
+	})
+
+	// STT token（OptionalAuth — demo 使用者也需要 STT 功能）
+	sttHandler := handler.NewSTT(s.cfg.DeepgramAPIKey)
+	s.router.Group(func(r chi.Router) {
+		r.Use(auth.OptionalAuth(s.jwtManager))
 		r.Get("/api/stt/token", sttHandler.GetToken)
 	})
 
