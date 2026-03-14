@@ -21,7 +21,8 @@ Controller 瀏覽器
   └── 匹配成功 → 呼叫現有 store.setCurrentIndex() → WebSocket change_line
 
 Go 後端
-  └── GET /api/stt/token — 產生短期 Deepgram API key（不暴露主 key）
+  └── GET /api/stt/token — 回傳 Deepgram API key（RequireAuth 保護，不暴露給未認證用戶）
+      前端取得 key 後直接連線 Deepgram WebSocket（wss://api.deepgram.com/v1/listen）
 
 Display 端
   └── 零改動（收 line_changed 就顯示，不管來源是人還是 AI）
@@ -81,6 +82,89 @@ backend/internal/config/config.go   — 新增 DEEPGRAM_API_KEY 環境變數
 - `stt/` 只管「音訊變文字」，不知道歌詞的存在
 - `lyrics-matcher` 只管「文字找行數」，不知道音訊的存在
 - `tracking-engine` 串接以上三者，是唯一知道全流程的模組
+
+---
+
+## 型別定義與 Store 整合
+
+### 更新 AiListeningState（types/index.ts）
+
+取代現有的 `AiListeningState` 和 `AudioInput` 型別：
+
+```typescript
+type STTProviderType = "deepgram" | "gemini" | "whisper" | "custom";
+
+type AiTrackingStatus = "idle" | "listening" | "matched" | "cooldown" | "error";
+
+interface AiTrackingState {
+  isActive: boolean;                    // AI 監聽開關
+  status: AiTrackingStatus;            // 當前狀態
+  confidence: number;                   // 最近一次匹配信心度（0-1）
+  lastMatchedLine: number | null;       // 最近匹配到的行索引
+  cooldownUntil: number | null;         // 冷卻結束時間戳（ms），null = 非冷卻中
+  sttProvider: STTProviderType;         // 當前使用的 STT 引擎
+  errorMessage: string | null;          // 錯誤訊息
+}
+
+interface AiTrackingSettings {
+  sttProvider: STTProviderType;
+  apiKey: string | null;                // 使用者自行輸入的 API key（null = 用伺服器端的）
+  confidenceThreshold: number;          // 預設 0.6
+  windowBefore: number;                 // 預設 2
+  windowAfter: number;                  // 預設 3
+  manualOverrideCooldown: number;       // 預設 5000ms
+  fullScanThreshold: number;            // 預設 0.8
+}
+
+interface AudioInputState {
+  deviceId: string | null;              // 選擇的音訊設備 ID
+  gain: number;                         // 0-20 dB
+  volume: number;                       // 即時音量 0-1
+  isCapturing: boolean;
+}
+```
+
+### Zustand Store 新增（lib/store/index.ts）
+
+新增 state 欄位（嵌入現有 store，不建獨立 store）：
+
+```typescript
+// 新增 State
+aiTracking: AiTrackingState;
+aiSettings: AiTrackingSettings;
+audioInput: AudioInputState;
+
+// 新增 Actions
+startAiTracking: () => void;           // 啟動 AI 監聽
+stopAiTracking: () => void;            // 停止 AI 監聽
+updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number) => void;
+triggerManualOverride: () => void;      // 手動介入，啟動冷卻
+updateAudioInput: (partial: Partial<AudioInputState>) => void;
+updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
+```
+
+AI tracking 設定使用 `persist` middleware 持久化到 localStorage（與現有 displaySettings 相同機制）。
+
+### 手動 vs AI 操作區分
+
+**核心問題：** `setCurrentIndex()` 被 AI 和手動操作共用，如何避免 AI 觸發自己的冷卻？
+
+**解法：** TrackingEngine 維護一個內部 flag `_isAiAction`。
+
+```
+手動操作（鍵盤/點擊）
+  → Controller UI 呼叫 store.nextLine() / setCurrentIndex()
+  → Controller UI 同時呼叫 trackingEngine.onManualOverride()
+  → TrackingEngine 設定冷卻 timer
+
+AI 操作
+  → TrackingEngine 內部設定 _isAiAction = true
+  → 呼叫 store.setCurrentIndex(matchedLine)
+  → _isAiAction = false
+  → 不觸發冷卻
+```
+
+Controller 的鍵盤/點擊 handler 需要在呼叫 store action 的同時通知 TrackingEngine。透過在 Controller 中 import TrackingEngine 實例，在現有的 onClick/onKeyDown handler 末尾加一行 `trackingEngine.onManualOverride()` 即可。
 
 ---
 
@@ -170,17 +254,21 @@ interface STTProvider {
 interface STTConfig {
   language: string;       // "zh-TW", "en-US" 等
   sampleRate: number;     // 通常 16000
-  apiKey?: string;        // 使用者自己的 key（可選）
-  proxyUrl?: string;      // 後端 proxy URL（預設）
+  apiKey: string;         // 從後端取得或使用者自行輸入的 key
 }
 ```
 
 ### Deepgram 實作
 
-- 透過 WebSocket 連線到 Deepgram Streaming API
+連線流程：
+1. 前端呼叫 `GET /api/stt/token`（RequireAuth）取得 Deepgram API key
+2. 前端用取得的 key 直接建立 WebSocket 連線到 `wss://api.deepgram.com/v1/listen?language=zh-TW&model=nova-2&interim_results=true`
+3. `sendAudio()` 將 Float32Array 轉為 Int16 PCM 後寫入 WebSocket binary frame
+4. Deepgram 回傳 JSON 包含 `channel.alternatives[0].transcript` 和 `is_final` 欄位
+
 - 支援 interim results（即時部分辨識）和 final results（完整句子）
 - interim 用於即時 UI 回饋，final 用於正式比對切行
-- API key 透過後端 `GET /api/stt/token` 取得短期 token
+- 如果使用者在設定頁面自行輸入 API key，則跳過後端 token endpoint，直接使用使用者的 key
 
 ### 未來擴充
 
@@ -243,7 +331,7 @@ Provider interface 允許未來新增：
   → AudioCapture.start(deviceId, gain)
   → STTProvider.connect(proxy token)
   → TrackingEngine 開始循環：
-      AudioCapture 音訊 chunk (每 250ms)
+      AudioCapture 音訊 chunk (每 100ms，可調)
         → STTProvider 串流送出
         → STT 回傳文字片段（interim / final）
         → LyricsMatcher.match(text, currentIndex, lyrics, lrcTimestamps)
@@ -278,9 +366,11 @@ Provider interface 允許未來新增：
 
 ### GET /api/stt/token
 
-- 產生 Deepgram 短期 API key（或直接回傳 key，視 Deepgram API 支援）
-- 需要認證（使用現有 auth middleware）
+- 回傳伺服器端設定的 Deepgram API key，供前端建立直連 WebSocket
+- 使用 `RequireAuth` middleware（不是 `OptionalAuth`），確保只有登入使用者可取得
+- 回應格式：`{ "token": "dg-xxxx", "provider": "deepgram" }`
 - 環境變數：`DEEPGRAM_API_KEY`
+- 若環境變數未設定，回傳 `503 Service Unavailable`（提示使用者在前端設定自己的 key）
 
 ### config.go 新增
 
@@ -296,7 +386,7 @@ DeepgramAPIKey string `env:"DEEPGRAM_API_KEY" envDefault:""`
 |------|------|---------|
 | 麥克風權限拒絕 | 顯示提示引導授權 | 紅色狀態 + 說明文字 |
 | STT 連線失敗 | 3 次重試，間隔 2/4/8 秒 | 狀態顯示「重連中...」 |
-| STT 連線中斷 | 自動重連，音訊 buffer 保留 | 黃色狀態 |
+| STT 連線中斷 | 自動重連（AudioCapture 持續運行，重連成功後繼續送音訊） | 黃色狀態 |
 | API key 無效/餘額不足 | 停止 AI，提示檢查設定 | 紅色 + 引導到設定頁 |
 | 長時間無匹配（>30s） | 不主動停止，但顯示提示 | 「未偵測到人聲」 |
 
@@ -353,4 +443,4 @@ DeepgramAPIKey string `env:"DEEPGRAM_API_KEY" envDefault:""`
 - `lib/store/index.ts` — 新增 AI tracking 相關 state 和 actions
 - `backend/internal/config/config.go` — 新增 DEEPGRAM_API_KEY
 - `backend/internal/server/routes.go` — 註冊 /api/stt/token 路由
-- `types/index.ts` — 擴充 AiListeningState 型別
+- `types/index.ts` — 取代現有 `AiListeningState` / `AudioInput` 為新的 `AiTrackingState` / `AudioInputState` / `AiTrackingSettings`
