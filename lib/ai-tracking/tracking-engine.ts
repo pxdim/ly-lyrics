@@ -16,6 +16,7 @@ export interface TrackingEngineConfig {
   getCurrentIndex: () => number;
   getLyrics: () => string[];
   getLrcTimestamps: () => number[] | undefined;
+  onError?: (error: Error) => void;
   matchConfig?: Partial<MatchConfig>;
   cooldownMs?: number;
 }
@@ -35,6 +36,7 @@ export class TrackingEngine {
   private getCurrentIndex: () => number;
   private getLyrics: () => string[];
   private getLrcTimestamps: () => number[] | undefined;
+  private onErrorCallback: ((error: Error) => void) | null;
   private matchConfig: MatchConfig;
   private cooldownMs: number;
 
@@ -50,6 +52,7 @@ export class TrackingEngine {
     this.getCurrentIndex = config.getCurrentIndex;
     this.getLyrics = config.getLyrics;
     this.getLrcTimestamps = config.getLrcTimestamps;
+    this.onErrorCallback = config.onError ?? null;
     this.matchConfig = { ...DEFAULT_MATCH_CONFIG, ...config.matchConfig };
     this.cooldownMs = config.cooldownMs ?? 5000;
   }
@@ -61,11 +64,16 @@ export class TrackingEngine {
       this.handleTranscript(text, isFinal);
     });
 
-    this.sttProvider.onError((_error) => {
-      // 錯誤處理交由 UI 層透過 store 顯示
+    this.sttProvider.onError((error) => {
+      this.onErrorCallback?.(error);
     });
 
     await this.sttProvider.connect(sttConfig);
+
+    // 將音訊資料從 AudioCapture 串入 STT Provider
+    this.audioCapture.onAudioData((chunk) => {
+      this.sttProvider.sendAudio(chunk);
+    });
 
     this._isActive = true;
     this._startTime = Date.now();

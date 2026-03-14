@@ -72,6 +72,9 @@ export function useAiTracking() {
         getCurrentIndex: () => useLyricsStore.getState().currentIndex,
         getLyrics: () => useLyricsStore.getState().lyrics,
         getLrcTimestamps: () => useLyricsStore.getState().currentSong?.lrcTimestamps,
+        onError: (error) => {
+          updateAiStatus("error", undefined, undefined, error.message);
+        },
         matchConfig: {
           confidenceThreshold: settings.confidenceThreshold,
           windowBefore: settings.windowBefore,
@@ -90,12 +93,13 @@ export function useAiTracking() {
       );
 
       startAiTracking();
+      updateAudioInput({ isCapturing: true });
       startVolumePolling();
     } catch (error) {
       const message = error instanceof Error ? error.message : "啟動 AI 追蹤失敗";
       updateAiStatus("error", undefined, undefined, message);
     }
-  }, [startAiTracking, updateAiStatus, startVolumePolling]);
+  }, [startAiTracking, updateAiStatus, updateAudioInput, startVolumePolling]);
 
   const stop = useCallback(() => {
     engineRef.current?.stop();
@@ -103,7 +107,7 @@ export function useAiTracking() {
     audioCaptureRef.current = null;
     stopVolumePolling();
     stopAiTracking();
-    updateAudioInput({ volume: 0 });
+    updateAudioInput({ isCapturing: false, volume: 0 });
   }, [stopAiTracking, updateAudioInput, stopVolumePolling]);
 
   // 手動介入：同時通知 store 和 TrackingEngine

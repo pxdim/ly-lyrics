@@ -15,8 +15,11 @@ export class DeepgramProvider implements STTProvider {
   private ws: WebSocket | null = null;
   private transcriptCallback: ((text: string, isFinal: boolean) => void) | null = null;
   private errorCallback: ((error: Error) => void) | null = null;
+  private _intentionalClose = false;
 
   async connect(config: STTConfig): Promise<void> {
+    this._intentionalClose = false;
+
     const params = new URLSearchParams({
       language: config.language,
       model: "nova-2",
@@ -50,8 +53,9 @@ export class DeepgramProvider implements STTProvider {
       };
 
       this.ws.onclose = () => {
-        if (this.errorCallback) {
-          this.errorCallback(new Error("Deepgram WebSocket closed"));
+        // 只在非主動斷線時通報錯誤（避免 disconnect() 觸發假錯誤）
+        if (!this._intentionalClose && this.errorCallback) {
+          this.errorCallback(new Error("Deepgram WebSocket 非預期斷線"));
         }
       };
 
@@ -62,6 +66,7 @@ export class DeepgramProvider implements STTProvider {
   }
 
   disconnect(): void {
+    this._intentionalClose = true;
     if (this.ws) {
       this.ws.close();
       this.ws = null;

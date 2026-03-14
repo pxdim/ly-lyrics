@@ -30,11 +30,19 @@ const mockMediaStreamDestination = {
   stream: new MediaStream(),
 };
 
+const mockScriptProcessor = {
+  onaudioprocess: null as ((e: { inputBuffer: { getChannelData: (ch: number) => Float32Array } }) => void) | null,
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+};
+
 const mockAudioContext = {
   createGain: vi.fn(() => mockGainNode),
   createAnalyser: vi.fn(() => mockAnalyserNode),
   createMediaStreamSource: vi.fn(() => mockMediaStreamSource),
   createMediaStreamDestination: vi.fn(() => mockMediaStreamDestination),
+  createScriptProcessor: vi.fn(() => mockScriptProcessor),
+  destination: {},
   close: vi.fn(),
   state: "running",
 };
@@ -142,5 +150,29 @@ describe("AudioCapture", () => {
 
   it("throws when not started and getVolume is called", () => {
     expect(() => capture.getVolume()).toThrow();
+  });
+
+  it("onAudioData callback receives PCM chunks from ScriptProcessor", async () => {
+    vi.stubGlobal("navigator", {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue(mockMediaStream),
+      },
+    });
+
+    const callback = vi.fn();
+    capture.onAudioData(callback);
+    await capture.start();
+
+    // 模擬 ScriptProcessor 的 onaudioprocess 事件
+    const fakeData = new Float32Array([0.1, -0.2, 0.3]);
+    mockScriptProcessor.onaudioprocess?.({
+      inputBuffer: {
+        getChannelData: () => fakeData,
+      },
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    // 應該收到 Float32Array 的拷貝
+    expect(callback.mock.calls[0]?.[0]).toBeInstanceOf(Float32Array);
   });
 });

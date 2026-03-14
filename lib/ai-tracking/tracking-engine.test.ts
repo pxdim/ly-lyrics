@@ -32,6 +32,7 @@ function createMockAudioCapture(): AudioCapture {
     setGain: vi.fn(),
     getVolume: vi.fn().mockReturnValue(0.5),
     getOutputStream: vi.fn().mockReturnValue(new MediaStream()),
+    onAudioData: vi.fn(),
     isCapturing: vi.fn().mockReturnValue(true),
   } as unknown as AudioCapture;
 }

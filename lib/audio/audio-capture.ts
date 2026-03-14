@@ -12,6 +12,8 @@ export class AudioCapture {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private destinationNode: MediaStreamAudioDestinationNode | null = null;
   private mediaStream: MediaStream | null = null;
+  private scriptProcessor: ScriptProcessorNode | null = null;
+  private audioDataCallback: ((data: Float32Array) => void) | null = null;
   private _isCapturing = false;
 
   static dbToLinear(db: number): number {
@@ -37,6 +39,18 @@ export class AudioCapture {
     this.gainNode.connect(this.analyserNode);
     this.analyserNode.connect(this.destinationNode);
 
+    // ScriptProcessorNode 用於擷取 PCM 音訊資料送入 STT
+    this.scriptProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
+    this.scriptProcessor.onaudioprocess = (e) => {
+      if (this.audioDataCallback) {
+        const inputData = e.inputBuffer.getChannelData(0);
+        this.audioDataCallback(new Float32Array(inputData));
+      }
+    };
+    // 從 gain 分支出一條路給 ScriptProcessor（不影響主鏈）
+    this.gainNode.connect(this.scriptProcessor);
+    this.scriptProcessor.connect(this.audioContext.destination);
+
     this.gainNode.gain.value = AudioCapture.dbToLinear(gainDb);
 
     this._isCapturing = true;
@@ -55,6 +69,11 @@ export class AudioCapture {
       this.gainNode.disconnect();
       this.gainNode = null;
     }
+    if (this.scriptProcessor) {
+      this.scriptProcessor.disconnect();
+      this.scriptProcessor = null;
+    }
+    this.audioDataCallback = null;
     if (this.analyserNode) {
       this.analyserNode.disconnect();
       this.analyserNode = null;
@@ -86,6 +105,13 @@ export class AudioCapture {
       sum += dataArray[i] ?? 0;
     }
     return sum / (dataArray.length * 255);
+  }
+
+  /**
+   * 註冊音訊資料回呼（供 STT provider 消費 PCM Float32 chunks）
+   */
+  onAudioData(callback: (data: Float32Array) => void): void {
+    this.audioDataCallback = callback;
   }
 
   getOutputStream(): MediaStream | null {
