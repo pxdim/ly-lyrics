@@ -480,9 +480,10 @@ func TestRefresh_ValidToken(t *testing.T) {
 	refreshToken, err := jwtMgr.GenerateRefreshToken(user.ID)
 	require.NoError(t, err)
 
-	req := newRequest(t, "POST", "/api/auth/refresh", dto.RefreshRequest{
-		RefreshToken: refreshToken,
-	})
+	// Refresh token 透過 HttpOnly cookie 傳遞
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: refreshToken})
 	rr := executeRequest(h.Refresh, req)
 
 	assertStatus(t, rr, http.StatusOK)
@@ -501,9 +502,10 @@ func TestRefresh_SetsCookies(t *testing.T) {
 	refreshToken, err := jwtMgr.GenerateRefreshToken(user.ID)
 	require.NoError(t, err)
 
-	req := newRequest(t, "POST", "/api/auth/refresh", dto.RefreshRequest{
-		RefreshToken: refreshToken,
-	})
+	// Refresh token 透過 HttpOnly cookie 傳遞
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: refreshToken})
 	rr := executeRequest(h.Refresh, req)
 
 	assertStatus(t, rr, http.StatusOK)
@@ -536,6 +538,53 @@ func TestRefresh_SetsCookies(t *testing.T) {
 	assert.Nil(t, body["refreshToken"], "body 不應包含 refreshToken")
 }
 
+func TestRefresh_ReadsCookieNotBody(t *testing.T) {
+	jwtMgr := newTestJWTManager()
+	user := newTestUser()
+	mock := &mockUserService{getUser: user}
+	h := makeHandler(mock, jwtMgr)
+
+	refreshToken, err := jwtMgr.GenerateRefreshToken(user.ID)
+	require.NoError(t, err)
+
+	// 建立空 body 請求，refresh token 僅放在 cookie 中
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:  "refresh_token",
+		Value: refreshToken,
+	})
+
+	rr := executeRequest(h.Refresh, req)
+
+	assertStatus(t, rr, http.StatusOK)
+
+	// 驗證回應包含新的 Set-Cookie
+	cookies := rr.Result().Cookies()
+	var hasAccess bool
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			hasAccess = true
+		}
+	}
+	assert.True(t, hasAccess, "回應應設定新的 access_token cookie")
+}
+
+func TestRefresh_MissingCookie(t *testing.T) {
+	jwtMgr := newTestJWTManager()
+	mock := &mockUserService{}
+	h := makeHandler(mock, jwtMgr)
+
+	// 空 body、無 cookie — 應回傳 401
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := executeRequest(h.Refresh, req)
+
+	assertStatus(t, rr, http.StatusUnauthorized)
+	assertErrorCode(t, rr, "AUTH_TOKEN_EXPIRED")
+}
+
 func TestRefresh_ExpiredToken(t *testing.T) {
 	jwtMgr := newTestJWTManager()
 	mock := &mockUserService{}
@@ -545,9 +594,10 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 	user := newTestUser()
 	expiredToken := makeExpiredRefreshToken(t, user.ID)
 
-	req := newRequest(t, "POST", "/api/auth/refresh", dto.RefreshRequest{
-		RefreshToken: expiredToken,
-	})
+	// 過期 token 透過 cookie 傳遞
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: expiredToken})
 	rr := executeRequest(h.Refresh, req)
 
 	assertStatus(t, rr, http.StatusUnauthorized)
@@ -564,9 +614,10 @@ func TestRefresh_AccessTokenRejected(t *testing.T) {
 	accessToken, err := jwtMgr.GenerateAccessToken(user.ID, user.Email, user.Name)
 	require.NoError(t, err)
 
-	req := newRequest(t, "POST", "/api/auth/refresh", dto.RefreshRequest{
-		RefreshToken: accessToken,
-	})
+	// 錯誤類型的 token 透過 cookie 傳遞
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: accessToken})
 	rr := executeRequest(h.Refresh, req)
 
 	assertStatus(t, rr, http.StatusUnauthorized)
@@ -578,11 +629,12 @@ func TestRefresh_EmptyToken(t *testing.T) {
 	mock := &mockUserService{}
 	h := makeHandler(mock, jwtMgr)
 
-	req := newRequest(t, "POST", "/api/auth/refresh", map[string]string{
-		"refreshToken": "",
-	})
+	// 空字串的 cookie value — 應回傳 401
+	req := httptest.NewRequest("POST", "/api/auth/refresh", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: ""})
 	rr := executeRequest(h.Refresh, req)
 
-	assertStatus(t, rr, http.StatusBadRequest)
-	assertErrorCode(t, rr, "VALIDATION_ERROR")
+	assertStatus(t, rr, http.StatusUnauthorized)
+	assertErrorCode(t, rr, "AUTH_TOKEN_EXPIRED")
 }

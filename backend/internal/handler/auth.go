@@ -226,13 +226,17 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 }
 
 // Refresh POST /api/auth/refresh — 更新 access token（含 token 輪換與撤銷）
+// refresh token 從 HttpOnly cookie 讀取，因為 JavaScript 無法存取 HttpOnly cookie
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-	var req dto.RefreshRequest
-	if !decodeAndValidate(w, r, &req) {
+	// 從 HttpOnly cookie 讀取 refresh token
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil || cookie.Value == "" {
+		writeError(w, "AUTH_TOKEN_EXPIRED", "Refresh token 缺失", http.StatusUnauthorized)
 		return
 	}
+	refreshTokenValue := cookie.Value
 
-	claims, err := h.jwtManager.ValidateRefreshToken(req.RefreshToken)
+	claims, err := h.jwtManager.ValidateRefreshToken(refreshTokenValue)
 	if err != nil {
 		writeError(w, "AUTH_TOKEN_EXPIRED", "Refresh token 無效或過期", http.StatusUnauthorized)
 		return
