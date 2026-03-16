@@ -120,7 +120,7 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     borderRadius: "9999px",
     border: "1px solid " + "rgba(0, 217, 255, 0.3)",
     backgroundColor: "rgba(0, 217, 255, 0.1)",
-    color: "#00D9FF",
+    color: "hsl(var(--color-primary))",
     cursor: "pointer",
     transition: "all 200ms ease-out",
   };
@@ -139,7 +139,7 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     borderRadius: "0.5rem",
     border: "1px solid " + "rgba(0, 217, 255, 0.3)",
     backgroundColor: "rgba(3, 3, 4, 0.8)",
-    color: "#FFFFFF",
+    color: "hsl(var(--color-text-primary))",
     fontSize: isMobile ? "0.75rem" : "0.875rem",
     fontFamily: "'Exo 2', sans-serif",
     cursor: "pointer",

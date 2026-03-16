@@ -43,12 +43,12 @@ export function SortableSongItem({ song, index, isActive, onSelect }: SortableSo
       ref={setNodeRef}
       style={style}
       data-testid="sortable-song-item"
-      className={`group flex items-center gap-2 px-3 py-2.5 border-b border-[#2A2D35]/50 transition-colors ${
+      className={`group flex items-center gap-2 px-3 py-2.5 border-b border-border-dim/50 transition-colors ${
         isDragging
-          ? "opacity-50 bg-[#16181D] z-50"
+          ? "opacity-50 bg-elevated z-50"
           : isActive
-            ? "bg-[#16181D] text-[#E4E7EB] border-l-2 border-l-primary relative"
-            : "hover:bg-[#16181D]/50 text-[#6B7280] hover:text-[#E4E7EB]"
+            ? "bg-elevated text-text-primary border-l-2 border-l-primary relative"
+            : "hover:bg-elevated/50 text-text-muted hover:text-text-primary"
       }`}
     >
       {/* 背景高亮（當前播放中） */}
@@ -61,7 +61,7 @@ export function SortableSongItem({ song, index, isActive, onSelect }: SortableSo
         {...attributes}
         {...listeners}
         data-testid="drag-handle"
-        className="cursor-grab active:cursor-grabbing p-0.5 text-[#6B7280] hover:text-[#E4E7EB] transition-colors shrink-0 touch-none"
+        className="cursor-grab active:cursor-grabbing p-0.5 text-text-muted hover:text-text-primary transition-colors shrink-0 touch-none"
         type="button"
         aria-label="拖曳排序"
       >
@@ -102,7 +102,7 @@ export function SortableSongItem({ song, index, isActive, onSelect }: SortableSo
             <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
         ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280] shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
             <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
           </svg>
         )}
@@ -110,11 +110,11 @@ export function SortableSongItem({ song, index, isActive, onSelect }: SortableSo
         {/* 歌曲資訊 */}
         <div className="flex-1 min-w-0 relative z-10">
           <p className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}>{song.title}</p>
-          {song.artist && <p className="text-[11px] text-[#6B7280] truncate">{song.artist}</p>}
+          {song.artist && <p className="text-[11px] text-text-muted truncate">{song.artist}</p>}
         </div>
 
         {/* 歌詞行數 */}
-        <span className="font-mono text-[10px] text-[#6B7280] shrink-0">{song.lyrics.length}L</span>
+        <span className="font-mono text-[10px] text-text-muted shrink-0">{song.lyrics.length}L</span>
       </div>
     </div>
   );

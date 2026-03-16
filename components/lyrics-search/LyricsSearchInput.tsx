@@ -60,13 +60,13 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
   };
 
   const inputClass =
-    "w-full px-3 py-2 bg-[#090A0C] border border-[#2A2D35] text-[13px] text-[#E4E7EB] placeholder:text-[#6B7280] focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none";
+    "w-full px-3 py-2 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none";
 
   return (
     <div className="space-y-3">
       {/* 搜尋類型 Radio */}
       <div className="flex items-center gap-4">
-        <span className="text-[11px] text-[#6B7280] font-mono uppercase tracking-wider">搜尋類型:</span>
+        <span className="text-[11px] text-text-muted font-mono uppercase tracking-wider">搜尋類型:</span>
         {(Object.keys(searchTypeConfig) as SearchType[]).map((type_) => (
           <label key={type_} className="flex items-center gap-1.5 cursor-pointer">
             <input
@@ -77,7 +77,7 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
               onChange={() => setSearchType(type_)}
               className="accent-primary"
             />
-            <span className={`text-[12px] ${searchType === type_ ? "text-primary" : "text-[#9CA3AF]"}`}>
+            <span className={`text-[12px] ${searchType === type_ ? "text-primary" : "text-text-muted"}`}>
               {searchTypeConfig[type_].label}
             </span>
           </label>
@@ -108,7 +108,7 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
       {/* 歌手欄位（title 和 lyrics 模式顯示） */}
       {config.showArtist && (
         <div>
-          <label className="block font-mono text-[11px] text-[#6B7280] uppercase tracking-wider mb-1">
+          <label className="block font-mono text-[11px] text-text-muted uppercase tracking-wider mb-1">
             Artist (optional)
           </label>
           <input

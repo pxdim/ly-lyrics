@@ -52,21 +52,21 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div className="relative w-full max-w-lg mx-4 bg-[#16181D] border border-[#2A2D35] max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-lg mx-4 bg-elevated border border-border-dim max-h-[85vh] flex flex-col overflow-hidden">
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2A2D35] bg-[#090A0C]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border-dim bg-surface">
           <span className="font-mono text-[13px] font-semibold uppercase tracking-wider text-primary">
             歌詞預覽
           </span>
-          <button onClick={onClose} type="button" className="p-1.5 border border-[#2A2D35] hover:bg-primary/10 transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280]">
+          <button onClick={onClose} type="button" className="p-1.5 border border-border-dim hover:bg-primary/10 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-[#6B7280] text-[13px] font-mono">
+          <div className="flex items-center justify-center py-12 text-text-muted text-[13px] font-mono">
             載入中...
           </div>
         ) : lyrics ? (
@@ -75,14 +75,14 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
             return (
               <>
                 {/* 歌曲資訊 */}
-                <div className="px-5 py-3 border-b border-[#2A2D35]">
-                  <div className="text-[14px] text-[#E4E7EB] font-medium">
+                <div className="px-5 py-3 border-b border-border-dim">
+                  <div className="text-[14px] text-text-primary font-medium">
                     {isTraditional ? convertToTraditional(lyrics.title) : lyrics.title}
-                    <span className="text-[#6B7280] mx-2">—</span>
+                    <span className="text-text-muted mx-2">—</span>
                     {isTraditional ? convertToTraditional(lyrics.artist) : lyrics.artist}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[11px] text-[#6B7280] font-mono">來源：{lyrics.source}</span>
+                    <span className="text-[11px] text-text-muted font-mono">來源：{lyrics.source}</span>
                     {lyrics.syncedLyrics && <span className="text-[11px] text-primary/70">⏱ 有時間戳</span>}
                     {lyrics.isSimplified && (
                       <SimplifiedToggle isTraditional={isTraditional} onToggle={() => setIsTraditional(!isTraditional)} />
@@ -94,14 +94,14 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
                   <>
                     {/* 歌詞內容 */}
                     <div className="flex-1 overflow-y-auto px-5 py-3">
-                      <pre className="text-[13px] text-[#C9CDD3] font-body whitespace-pre-wrap leading-relaxed">
+                      <pre className="text-[13px] text-text-primary/80 font-body whitespace-pre-wrap leading-relaxed">
                         {displayLyrics()}
                       </pre>
                     </div>
 
                     {/* 按鈕列 */}
-                    <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
-                      <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
+                    <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-border-dim bg-surface/50">
+                      <button onClick={onClose} type="button" className="px-4 py-2 border border-border-dim text-[13px] text-text-muted hover:bg-elevated transition-colors font-mono">
                         取消
                       </button>
                       <button
@@ -117,7 +117,7 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
                   <>
                     {/* 無歌詞內容提示 */}
                     <div className="px-5 py-8 space-y-4">
-                      <p className="text-[13px] text-[#6B7280] font-mono text-center">
+                      <p className="text-[13px] text-text-muted font-mono text-center">
                         此來源僅提供歌曲資訊，不包含歌詞內容
                       </p>
 
@@ -127,7 +127,7 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
                           href={lyrics.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-[#2A2D35] text-[13px] text-[#9CA3AF] hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors font-mono"
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-border-dim text-[13px] text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors font-mono"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
@@ -154,8 +154,8 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
                     </div>
 
                     {/* 關閉按鈕 */}
-                    <div className="flex items-center justify-end px-5 py-3 border-t border-[#2A2D35] bg-[#090A0C]/50">
-                      <button onClick={onClose} type="button" className="px-4 py-2 border border-[#2A2D35] text-[13px] text-[#6B7280] hover:bg-[#16181D] transition-colors font-mono">
+                    <div className="flex items-center justify-end px-5 py-3 border-t border-border-dim bg-surface/50">
+                      <button onClick={onClose} type="button" className="px-4 py-2 border border-border-dim text-[13px] text-text-muted hover:bg-elevated transition-colors font-mono">
                         關閉
                       </button>
                     </div>
@@ -165,7 +165,7 @@ export const LyricsPreviewModal: FC<LyricsPreviewModalProps> = ({
             );
           })()
         ) : (
-          <div className="flex items-center justify-center py-12 text-[#6B7280] text-[13px] font-mono">
+          <div className="flex items-center justify-center py-12 text-text-muted text-[13px] font-mono">
             無歌詞資料
           </div>
         )}
