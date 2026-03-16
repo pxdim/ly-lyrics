@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,6 +73,32 @@ func (h *AuthHandler) storeRefreshTokenJTI(ctx context.Context, refreshToken str
 	}
 }
 
+// setCookies 設定 HttpOnly cookie 傳遞 token，避免前端 JavaScript 存取明文 token
+func (h *AuthHandler) setCookies(w http.ResponseWriter, accessToken, refreshToken string) {
+	// 開發環境不要求 Secure（localhost 無 HTTPS）
+	secure := os.Getenv("ENVIRONMENT") != "development"
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Path:     "/",
+		MaxAge:   86400, // 24 小時
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/api/auth/refresh",
+		MaxAge:   2592000, // 30 天
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
 // Login POST /api/auth/login — 使用者登入
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
@@ -104,10 +131,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// 將 refresh token JTI 寫入 session store（若可用）
 	h.storeRefreshTokenJTI(r.Context(), refreshToken, u.ID)
 
-	writeJSON(w, http.StatusOK, dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
+	// 透過 HttpOnly cookie 傳遞 token，body 不包含明文 token
+	h.setCookies(w, accessToken, refreshToken)
+
+	writeJSON(w, http.StatusOK, dto.AuthCookieResponse{
+		ExpiresAt: time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,
@@ -151,10 +179,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// 將 refresh token JTI 寫入 session store（若可用）
 	h.storeRefreshTokenJTI(r.Context(), refreshToken, u.ID)
 
-	writeJSON(w, http.StatusCreated, dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
+	// 透過 HttpOnly cookie 傳遞 token，body 不包含明文 token
+	h.setCookies(w, accessToken, refreshToken)
+
+	writeJSON(w, http.StatusCreated, dto.AuthCookieResponse{
+		ExpiresAt: time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,
@@ -255,10 +284,11 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 	h.storeRefreshTokenJTI(r.Context(), newRefreshToken, u.ID)
 
-	writeJSON(w, http.StatusOK, dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: newRefreshToken,
-		ExpiresAt:    time.Now().Add(h.jwtManager.AccessExpiry()),
+	// 透過 HttpOnly cookie 傳遞 token，body 不包含明文 token
+	h.setCookies(w, accessToken, newRefreshToken)
+
+	writeJSON(w, http.StatusOK, dto.AuthCookieResponse{
+		ExpiresAt: time.Now().Add(h.jwtManager.AccessExpiry()),
 		User: dto.UserResponse{
 			ID:            u.ID,
 			Email:         u.Email,

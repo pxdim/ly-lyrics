@@ -3,6 +3,7 @@ package handler_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -115,10 +116,9 @@ func TestLogin_Success(t *testing.T) {
 	rr := executeRequest(h.Login, req)
 
 	assertStatus(t, rr, http.StatusOK)
-	var resp dto.AuthResponse
+	var resp dto.AuthCookieResponse
 	decodeJSON(t, rr, &resp)
-	assert.NotEmpty(t, resp.AccessToken, "access token 不應為空")
-	assert.NotEmpty(t, resp.RefreshToken, "refresh token 不應為空")
+	assert.False(t, resp.ExpiresAt.IsZero(), "expiresAt 不應為零值")
 	assert.Equal(t, user.Email, resp.User.Email)
 }
 
@@ -181,6 +181,48 @@ func TestLogin_NonExistentEmail(t *testing.T) {
 	assertErrorCode(t, rr, "AUTH_INVALID_CREDENTIALS")
 }
 
+func TestLogin_SetsCookies(t *testing.T) {
+	jwtMgr := newTestJWTManager()
+	user := newTestUser()
+	mock := &mockUserService{verifyUser: user}
+	h := makeHandler(mock, jwtMgr)
+
+	req := newRequest(t, "POST", "/api/auth/login", dto.LoginRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+	})
+	rr := executeRequest(h.Login, req)
+
+	assertStatus(t, rr, http.StatusOK)
+
+	// 驗證回應設定了 HttpOnly cookie
+	cookies := rr.Result().Cookies()
+	var hasAccess, hasRefresh bool
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			hasAccess = true
+			assert.True(t, c.HttpOnly, "access_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+		if c.Name == "refresh_token" {
+			hasRefresh = true
+			assert.True(t, c.HttpOnly, "refresh_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/api/auth/refresh", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+	}
+	assert.True(t, hasAccess, "回應應設定 access_token cookie")
+	assert.True(t, hasRefresh, "回應應設定 refresh_token cookie")
+
+	// 驗證回應 body 不包含明文 token
+	var body map[string]interface{}
+	err := json.NewDecoder(rr.Body).Decode(&body)
+	require.NoError(t, err)
+	assert.Nil(t, body["accessToken"], "body 不應包含 accessToken")
+	assert.Nil(t, body["refreshToken"], "body 不應包含 refreshToken")
+}
+
 func TestLogin_NonJSONBody(t *testing.T) {
 	jwtMgr := newTestJWTManager()
 	mock := &mockUserService{}
@@ -211,11 +253,52 @@ func TestRegister_Success(t *testing.T) {
 	rr := executeRequest(h.Register, req)
 
 	assertStatus(t, rr, http.StatusCreated)
-	var resp dto.AuthResponse
+	var resp dto.AuthCookieResponse
 	decodeJSON(t, rr, &resp)
-	assert.NotEmpty(t, resp.AccessToken)
-	assert.NotEmpty(t, resp.RefreshToken)
+	assert.False(t, resp.ExpiresAt.IsZero(), "expiresAt 不應為零值")
 	assert.Equal(t, user.Email, resp.User.Email)
+}
+
+func TestRegister_SetsCookies(t *testing.T) {
+	jwtMgr := newTestJWTManager()
+	user := newTestUser()
+	mock := &mockUserService{createUser: user}
+	h := makeHandler(mock, jwtMgr)
+
+	req := newRequest(t, "POST", "/api/auth/register", dto.RegisterRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+	})
+	rr := executeRequest(h.Register, req)
+
+	assertStatus(t, rr, http.StatusCreated)
+
+	// 驗證回應設定了 HttpOnly cookie
+	cookies := rr.Result().Cookies()
+	var hasAccess, hasRefresh bool
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			hasAccess = true
+			assert.True(t, c.HttpOnly, "access_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+		if c.Name == "refresh_token" {
+			hasRefresh = true
+			assert.True(t, c.HttpOnly, "refresh_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/api/auth/refresh", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+	}
+	assert.True(t, hasAccess, "回應應設定 access_token cookie")
+	assert.True(t, hasRefresh, "回應應設定 refresh_token cookie")
+
+	// 驗證回應 body 不包含明文 token
+	var body map[string]interface{}
+	err := json.NewDecoder(rr.Body).Decode(&body)
+	require.NoError(t, err)
+	assert.Nil(t, body["accessToken"], "body 不應包含 accessToken")
+	assert.Nil(t, body["refreshToken"], "body 不應包含 refreshToken")
 }
 
 func TestRegister_DuplicateEmail(t *testing.T) {
@@ -279,7 +362,7 @@ func TestRegister_WithName(t *testing.T) {
 	rr := executeRequest(h.Register, req)
 
 	assertStatus(t, rr, http.StatusCreated)
-	var resp dto.AuthResponse
+	var resp dto.AuthCookieResponse
 	decodeJSON(t, rr, &resp)
 	require.NotNil(t, resp.User.Name, "回應應包含 name 欄位")
 	assert.Equal(t, name, *resp.User.Name)
@@ -403,10 +486,54 @@ func TestRefresh_ValidToken(t *testing.T) {
 	rr := executeRequest(h.Refresh, req)
 
 	assertStatus(t, rr, http.StatusOK)
-	var resp dto.AuthResponse
+	var resp dto.AuthCookieResponse
 	decodeJSON(t, rr, &resp)
-	assert.NotEmpty(t, resp.AccessToken)
-	assert.NotEmpty(t, resp.RefreshToken)
+	assert.False(t, resp.ExpiresAt.IsZero(), "expiresAt 不應為零值")
+	assert.Equal(t, user.Email, resp.User.Email)
+}
+
+func TestRefresh_SetsCookies(t *testing.T) {
+	jwtMgr := newTestJWTManager()
+	user := newTestUser()
+	mock := &mockUserService{getUser: user}
+	h := makeHandler(mock, jwtMgr)
+
+	refreshToken, err := jwtMgr.GenerateRefreshToken(user.ID)
+	require.NoError(t, err)
+
+	req := newRequest(t, "POST", "/api/auth/refresh", dto.RefreshRequest{
+		RefreshToken: refreshToken,
+	})
+	rr := executeRequest(h.Refresh, req)
+
+	assertStatus(t, rr, http.StatusOK)
+
+	// 驗證回應設定了 HttpOnly cookie
+	cookies := rr.Result().Cookies()
+	var hasAccess, hasRefresh bool
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			hasAccess = true
+			assert.True(t, c.HttpOnly, "access_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+		if c.Name == "refresh_token" {
+			hasRefresh = true
+			assert.True(t, c.HttpOnly, "refresh_token cookie 應為 HttpOnly")
+			assert.Equal(t, "/api/auth/refresh", c.Path)
+			assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
+		}
+	}
+	assert.True(t, hasAccess, "回應應設定 access_token cookie")
+	assert.True(t, hasRefresh, "回應應設定 refresh_token cookie")
+
+	// 驗證回應 body 不包含明文 token
+	var body map[string]interface{}
+	err = json.NewDecoder(rr.Body).Decode(&body)
+	require.NoError(t, err)
+	assert.Nil(t, body["accessToken"], "body 不應包含 accessToken")
+	assert.Nil(t, body["refreshToken"], "body 不應包含 refreshToken")
 }
 
 func TestRefresh_ExpiredToken(t *testing.T) {
