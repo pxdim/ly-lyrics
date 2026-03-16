@@ -198,6 +198,14 @@
   box-shadow: 0 0 0 3px hsl(var(--color-glow-primary) / 0.1);
 }
 
+/* 交錯入場動畫延遲 */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+
+/* animation-fill-mode: forwards（Tailwind v3 無內建）*/
+.fill-mode-forwards { animation-fill-mode: forwards; }
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

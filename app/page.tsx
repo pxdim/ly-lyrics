@@ -18,7 +18,7 @@ export default function HomePage() {
         {/* Logo/Title */}
         <div className="space-y-6">
           {/* 標題響應式：手機 text-4xl → sm text-6xl → md text-8xl */}
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-heading font-bold tracking-wider">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-heading font-bold tracking-wider focus-glow">
             <span className="inline-block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-glow">
               LY
             </span>
@@ -37,43 +37,49 @@ export default function HomePage() {
           <span className="text-primary">即時聽歌辨識</span> · <span className="text-secondary">多裝置同步</span> · <span className="text-accent">NDI 輸出</span>
         </p>
 
-        {/* Features Grid */}
+        {/* Features Grid — 交錯入場動畫 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
-          <FeatureCard
-            icon={<Mic className="w-8 h-8" strokeWidth={1.5} />}
-            title="AI 聽歌辨識"
-            description="即時識別播放中的歌詞並自動跳轉"
-            color="primary"
-          />
-          <FeatureCard
-            icon={<Smartphone className="w-8 h-8" strokeWidth={1.5} />}
-            title="多裝置同步"
-            description="控制端與多個顯示端即時同步"
-            color="secondary"
-          />
-          <FeatureCard
-            icon={<Video className="w-8 h-8" strokeWidth={1.5} />}
-            title="NDI 輸出"
-            description="直接輸出到 Resolume Arena"
-            color="accent"
-          />
+          <div className="animate-slide-in stagger-1 opacity-0 fill-mode-forwards">
+            <FeatureCard
+              icon={<Mic className="w-8 h-8" strokeWidth={1.5} />}
+              title="AI 聽歌辨識"
+              description="即時識別播放中的歌詞並自動跳轉"
+              color="primary"
+            />
+          </div>
+          <div className="animate-slide-in stagger-2 opacity-0 fill-mode-forwards">
+            <FeatureCard
+              icon={<Smartphone className="w-8 h-8" strokeWidth={1.5} />}
+              title="多裝置同步"
+              description="控制端與多個顯示端即時同步"
+              color="secondary"
+            />
+          </div>
+          <div className="animate-slide-in stagger-3 opacity-0 fill-mode-forwards">
+            <FeatureCard
+              icon={<Video className="w-8 h-8" strokeWidth={1.5} />}
+              title="NDI 輸出"
+              description="直接輸出到 Resolume Arena"
+              color="accent"
+            />
+          </div>
         </div>
 
         {/* Mode Selection */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center mt-16">
           <Link
             href="/controller"
-            className="group relative px-10 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-300 hover:shadow-glow-lg hover:-translate-y-1"
+            className="group relative px-10 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-[var(--duration-fast)] hover:shadow-glow-lg hover:-translate-y-1"
           >
             控制端
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
           </Link>
           <Link
             href="/display"
-            className="group relative px-10 py-4 bg-gradient-accent text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-300 hover:shadow-glow-accent hover:-translate-y-1"
+            className="group relative px-10 py-4 bg-gradient-accent text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-[var(--duration-fast)] hover:shadow-glow-accent hover:-translate-y-1"
           >
             顯示端
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
           </Link>
         </div>
 
