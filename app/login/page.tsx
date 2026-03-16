@@ -2,7 +2,7 @@
  * 登入頁面
  *
  * Dark Tech 風格的使用者登入表單。
- * 呼叫 Go backend API 進行認證，JWT token 存入 cookie。
+ * 透過 proxy 呼叫 Go backend 認證，token 由後端設定 HttpOnly cookie。
  */
 
 "use client";
@@ -25,15 +25,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await login(email, password);
-
-      // 儲存 access token 到 cookie
-      document.cookie = `access_token=${result.accessToken}; path=/; SameSite=Lax`;
-
-      // 儲存 refresh token 到 localStorage
-      localStorage.setItem("refresh_token", result.refreshToken);
-
-      // 導向控制台
+      await login(email, password);
+      // Token 由後端透過 Set-Cookie 設定，前端不碰
       router.push("/controller");
     } catch (err) {
       setError(err instanceof Error ? err.message : "登入失敗，請稍後再試");

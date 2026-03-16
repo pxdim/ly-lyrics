@@ -2,7 +2,7 @@
  * 註冊頁面
  *
  * Dark Tech 風格的使用者註冊表單。
- * 呼叫 Go backend API 進行註冊，JWT token 存入 cookie。
+ * 透過 proxy 呼叫 Go backend 註冊，token 由後端設定 HttpOnly cookie。
  */
 
 "use client";
@@ -33,15 +33,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const result = await register(email, password, name);
-
-      // 儲存 access token 到 cookie
-      document.cookie = `access_token=${result.accessToken}; path=/; SameSite=Lax`;
-
-      // 儲存 refresh token 到 localStorage
-      localStorage.setItem("refresh_token", result.refreshToken);
-
-      // 導向控制台
+      await register(email, password, name);
+      // Token 由後端透過 Set-Cookie 設定，前端不碰
       router.push("/controller");
     } catch (err) {
       setError(err instanceof Error ? err.message : "註冊失敗，請稍後再試");
