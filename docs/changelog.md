@@ -2,37 +2,33 @@
 
 ## 版本歷史
 
-### v0.7.0 - 2026-03-17
+### v0.8.0 - 2026-03-17
 
-**P0 UI 重新設計 — Controller 頁面拆分**
+**P0 UI/UX 全面重設計 — Token 安全 + 設計系統統一 + Controller 拆分 + 動效升級**
 
-#### 新功能
-- **Display Clean Output 模式** (`?mode=clean`) — 供 OBS/Resolume/VJ 軟體擷取
-  - 純黑 `#000000` 背景（適用 luma key 合成）
-  - 只渲染歌詞文字，無任何 UI chrome（無 ConnectionStatusBar、ConnectionIndicator、LyricsControl、Song Info Overlay）
-  - 未連線時顯示純黑等待畫面（不顯示同步碼輸入 UI）
-  - 斷線時歌詞凍結、不降低透明度、不顯示重連 UI
+#### 安全
+- **Token 安全修復** — access_token / refresh_token 改為 HttpOnly + SameSite=Strict cookie，前端不再碰觸 token 明文
+- Refresh handler 從 cookie 讀取 token（原 request body → HttpOnly cookie）
+- 前端 auth API 改走 Next.js rewrite proxy，移除直連 Go backend
 
-#### 修復
-- **Song Info Overlay fade-out 動畫** — 改用 Tailwind config 定義的 `animate-fade-out-slow` 取代 inline `animate-[fade-out_3s_ease-out_forwards]`
-
-#### 重構
-- **Controller page.tsx 從 1707 行拆分為 172 行組裝層 + 9 個子元件**
-  - `ToggleRow` — 純展示開關列元件（role="switch" 無障礙支援）
-  - `MobileTabBar` — 手機版底部分頁導航列
-  - `ControllerHeader` — 桌面/平板版 StatusBar + 手機版 MobileStatusBar + MobileQRTab
-  - `QuickSettings` — 顯示端設定面板（行數/字體/行距/高亮色/主題/開關）
-  - `LivePreview` — 16:9 即時預覽面板（使用共用 calcVisibleLines）
-  - `CueGrid` — 歌詞 Cue List（鍵盤快捷鍵/自動滾動/Transport）
-  - `SongLibrary` — 歌曲庫 CRUD（搜尋/新增/刪除/匯出 LRC）
-  - `PlaylistPanel` — 播放清單管理（建立/重命名/刪除/拖曳排序）
-  - `LibraryPanel` — Songs/Playlists Tab 切換容器
+#### 新增
+- **Display Clean Output 模式** — `?mode=clean` URL 參數，純黑 `#000000` 背景供 OBS/VJ 軟體截取去背
+- **共用元件庫** — GlowButton、GlowInput、Spinner、ConfirmDialog、AuthLayout
+- **共用 Hooks** — useMediaQuery、useIsMobile、useIsTablet
+- **calcVisibleLines** 共用工具（look-ahead bias 算法）
+- **Motion Token 系統** — 三層動效（micro、page、ambient），CSS 變數定義 duration + easing
 
 #### 改善
-- **替換所有 `confirm()` 為 ConfirmDialog**（SongLibrary + PlaylistPanel）
-- **提取 `useIsTablet` hook**（lib/hooks/useIsTablet.ts，含 3 個測試）
-- **使用共用 `useIsMobile` / `useIsTablet` hook** 取代頁面內嵌的 matchMedia 邏輯
-- **LivePreview 改用 `calcVisibleLines`** 取代重複的行範圍計算
+- **設計系統統一** — CSS 變數作為唯一 token 來源，Tailwind config DEFAULT 指向 CSS 變數
+- **Controller 頁面拆分** — 1707 行 → 172 行 shell + 9 個獨立元件
+- **Login/Register 頁面重設計** — 使用 AuthLayout + GlowInput + GlowButton
+- **Home 頁面動效** — staggered entrance + neon breathing
+- **Toast 解耦** — 移除 useLyricsStore 依賴，改用 CSS 變數
+
+#### 移除
+- `app/styles/tokens.ts` — 零消費者，CSS 變數取代
+- `.scanlines::before` CSS — 重複，保留 `bg-scanlines` Tailwind utility
+- 前端手動 token 操作（`document.cookie`、`localStorage`）
 
 ---
 
@@ -235,5 +231,5 @@
 
 ---
 
-**文件版本:** 2.0
-**最後更新:** 2026-03-13
+**文件版本:** 3.0
+**最後更新:** 2026-03-17
