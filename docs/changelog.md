@@ -2,6 +2,40 @@
 
 ## 版本歷史
 
+### v0.7.0 - 2026-03-17
+
+**P0 UI 重新設計 — Controller 頁面拆分**
+
+#### 新功能
+- **Display Clean Output 模式** (`?mode=clean`) — 供 OBS/Resolume/VJ 軟體擷取
+  - 純黑 `#000000` 背景（適用 luma key 合成）
+  - 只渲染歌詞文字，無任何 UI chrome（無 ConnectionStatusBar、ConnectionIndicator、LyricsControl、Song Info Overlay）
+  - 未連線時顯示純黑等待畫面（不顯示同步碼輸入 UI）
+  - 斷線時歌詞凍結、不降低透明度、不顯示重連 UI
+
+#### 修復
+- **Song Info Overlay fade-out 動畫** — 改用 Tailwind config 定義的 `animate-fade-out-slow` 取代 inline `animate-[fade-out_3s_ease-out_forwards]`
+
+#### 重構
+- **Controller page.tsx 從 1707 行拆分為 172 行組裝層 + 9 個子元件**
+  - `ToggleRow` — 純展示開關列元件（role="switch" 無障礙支援）
+  - `MobileTabBar` — 手機版底部分頁導航列
+  - `ControllerHeader` — 桌面/平板版 StatusBar + 手機版 MobileStatusBar + MobileQRTab
+  - `QuickSettings` — 顯示端設定面板（行數/字體/行距/高亮色/主題/開關）
+  - `LivePreview` — 16:9 即時預覽面板（使用共用 calcVisibleLines）
+  - `CueGrid` — 歌詞 Cue List（鍵盤快捷鍵/自動滾動/Transport）
+  - `SongLibrary` — 歌曲庫 CRUD（搜尋/新增/刪除/匯出 LRC）
+  - `PlaylistPanel` — 播放清單管理（建立/重命名/刪除/拖曳排序）
+  - `LibraryPanel` — Songs/Playlists Tab 切換容器
+
+#### 改善
+- **替換所有 `confirm()` 為 ConfirmDialog**（SongLibrary + PlaylistPanel）
+- **提取 `useIsTablet` hook**（lib/hooks/useIsTablet.ts，含 3 個測試）
+- **使用共用 `useIsMobile` / `useIsTablet` hook** 取代頁面內嵌的 matchMedia 邏輯
+- **LivePreview 改用 `calcVisibleLines`** 取代重複的行範圍計算
+
+---
+
 ### v0.6.1 - 2026-03-14
 
 **P0 品質鞏固 — 測試覆蓋補齊**
