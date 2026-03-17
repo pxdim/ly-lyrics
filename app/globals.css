@@ -4,25 +4,43 @@
 
 @layer base {
   :root {
-    /* Dark Tech Theme Variables */
-    --color-void: 3 3 4;
-    --color-surface: 220 20% 4%;
-    --color-elevated: 220 15% 7%;
-    --color-primary: 190 100% 50%;
-    --color-secondary: 270 100% 65%;
-    --color-accent: 150 100% 50%;
+    /* === 背景層次 === */
+    --color-void: 0 0% 4%;
+    --color-surface: 0 0% 7%;
+    --color-elevated: 0 0% 10%;
+
+    /* === 品牌色 === */
+    --color-primary: 25 100% 50%;
+    --color-secondary: 186 100% 50%;
+    --color-accent: 145 80% 45%;
+
+    /* === 文字 === */
     --color-text-primary: 0 0% 100%;
-    --color-text-muted: 220 10% 55%;
+    --color-text-muted: 0 0% 50%;
+
+    /* === 邊框 === */
     --color-border-dim: 0 0% 100% / 0.08;
 
-    /* Animation timing */
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    /* === 語意色 === */
+    --color-success: 145 80% 45%;
+    --color-warning: 35 95% 55%;
+    --color-error: 0 85% 55%;
 
-    /* Duration */
+    /* === 發光專用 === */
+    --color-glow-primary: 25 100% 50%;
+    --color-glow-secondary: 186 100% 50%;
+    --color-glow-accent: 145 80% 45%;
+
+    /* === 動效 timing（更新 + 新增）=== */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* === 動效 duration（更新 + 新增）=== */
     --duration-fast: 150ms;
-    --duration-base: 200ms;
-    --duration-normal: 300ms;
+    --duration-normal: 250ms;       /* 原 300ms 微調；原 --duration-base 合併至此 */
+    --duration-slow: 400ms;         /* 新增 */
+    --duration-dramatic: 600ms;     /* 新增 */
   }
 }
 
@@ -51,7 +69,11 @@
 @layer components {
   /* Glass morphism card */
   .glass-card {
-    @apply bg-elevated/80 backdrop-blur-xl border border-border-dim rounded-2xl;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid hsl(var(--color-primary) / 0.3);
+    border-radius: 16px;
   }
 
   /* Neon button */
@@ -59,11 +81,11 @@
     @apply bg-gradient-to-br from-primary to-primary-600 text-void
            px-6 py-3 rounded-xl font-heading font-semibold uppercase tracking-wider
            transition-all duration-200 ease-out;
-    box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+    box-shadow: 0 0 10px hsl(var(--color-glow-primary) / 0.3);
   }
 
   .btn-neon:hover {
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+    box-shadow: 0 0 20px hsl(var(--color-glow-primary) / 0.5);
     transform: translateY(-2px);
   }
 
@@ -108,6 +130,54 @@
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
+
+  .glass-secondary {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid hsl(var(--color-secondary) / 0.2);
+    border-radius: 16px;
+  }
+
+  .glass-subtle {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+  }
+
+  .glass-elevated {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid hsl(var(--color-primary) / 0.4);
+    border-radius: 16px;
+  }
+
+  .glow-orb-primary {
+    position: fixed;
+    width: 300px;
+    height: 300px;
+    background: hsl(var(--color-glow-primary));
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-orb-secondary {
+    position: fixed;
+    width: 250px;
+    height: 250px;
+    background: hsl(var(--color-glow-secondary));
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.10;
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 /* Display Mode: Full screen, minimal UI */
@@ -136,22 +206,6 @@
 
 .focus-glow {
   animation: neon-pulse 2s ease-in-out infinite;
-}
-
-/* Scanlines effect (optional) */
-.scanlines::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
 }
 
 /* Fade in animation */
@@ -193,8 +247,16 @@
 
 .input-tech:focus {
   @apply outline-none border-primary;
-  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+  box-shadow: 0 0 0 3px hsl(var(--color-glow-primary) / 0.1);
 }
+
+/* 交錯入場動畫延遲 */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+
+/* animation-fill-mode: forwards（Tailwind v3 無內建）*/
+.fill-mode-forwards { animation-fill-mode: forwards; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

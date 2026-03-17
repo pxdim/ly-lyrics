@@ -35,9 +35,9 @@ interface StatusConfig {
 const STATUS_CONFIG: Record<AiTrackingStatus, StatusConfig> = {
   idle: {
     label: "待機",
-    dotClass: "bg-[#6B7280]",
-    textClass: "text-[#6B7280]",
-    badgeClass: "border-[#2A2D35] bg-[#090A0C] text-[#6B7280]",
+    dotClass: "bg-text-muted",
+    textClass: "text-text-muted",
+    badgeClass: "border-border-dim bg-surface text-text-muted",
   },
   listening: {
     label: "監聽中",
@@ -141,7 +141,7 @@ export function AiStatusIndicator({
       {/* 次要資訊列（matched 狀態顯示行號） */}
       {status === "matched" && lastMatchedLine !== null && (
         <div className="flex items-center gap-2 px-2.5">
-          <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+          <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
             Line
           </span>
           <span className="text-[10px] font-mono text-emerald-400 tabular-nums">

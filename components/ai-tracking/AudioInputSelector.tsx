@@ -112,12 +112,12 @@ export function AudioInputSelector({
     <div className="flex flex-col gap-2.5">
       {/* 裝置選擇 */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+        <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
           Input Device
         </label>
 
         {permissionDenied ? (
-          <div className="px-2.5 py-1.5 border border-[#2A2D35] bg-[#090A0C] text-[11px] font-mono text-red-400">
+          <div className="px-2.5 py-1.5 border border-border-dim bg-surface text-[11px] font-mono text-red-400">
             麥克風存取被拒絕
           </div>
         ) : (
@@ -127,8 +127,8 @@ export function AudioInputSelector({
               if (e.target.value) onDeviceChange(e.target.value);
             }}
             disabled={isCapturing}
-            className={`w-full px-2.5 py-1.5 bg-[#090A0C] border border-[#2A2D35] text-[12px] font-mono text-[#E4E7EB] focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors appearance-none truncate ${
-              isCapturing ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-[#6B7280]"
+            className={`w-full px-2.5 py-1.5 bg-surface border border-border-dim text-[12px] font-mono text-text-primary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors appearance-none truncate ${
+              isCapturing ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-text-muted"
             }`}
             aria-label="音訊輸入裝置"
           >
@@ -148,10 +148,10 @@ export function AudioInputSelector({
       {/* 增益滑桿 */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <label className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+          <label className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
             Gain
           </label>
-          <span className="text-[10px] font-mono text-[#E4E7EB] tabular-nums">
+          <span className="text-[10px] font-mono text-text-primary tabular-nums">
             +{gain} dB
           </span>
         </div>
@@ -162,7 +162,7 @@ export function AudioInputSelector({
           step={1}
           value={gain}
           onChange={(e) => onGainChange(Number(e.target.value))}
-          className="w-full h-1.5 appearance-none bg-[#2A2D35] rounded-none cursor-pointer
+          className="w-full h-1.5 appearance-none bg-border-dim rounded-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none
             [&::-webkit-slider-thumb]:w-3
             [&::-webkit-slider-thumb]:h-3
@@ -178,7 +178,7 @@ export function AudioInputSelector({
             [&::-moz-range-thumb]:cursor-pointer"
           aria-label="增益調整"
         />
-        <div className="flex justify-between text-[9px] font-mono text-[#6B7280]">
+        <div className="flex justify-between text-[9px] font-mono text-text-muted">
           <span>0</span>
           <span>+10</span>
           <span>+20 dB</span>
@@ -191,9 +191,9 @@ export function AudioInputSelector({
           <div className="flex items-center gap-1.5">
             <Volume2
               size={10}
-              className={isCapturing ? "text-[#E4E7EB]" : "text-[#6B7280]"}
+              className={isCapturing ? "text-text-primary" : "text-text-muted"}
             />
-            <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
               Level
             </span>
           </div>
@@ -202,14 +202,14 @@ export function AudioInputSelector({
               ? "text-red-400"
               : dbfs >= YELLOW_THRESHOLD
                 ? "text-amber-400"
-                : "text-[#6B7280]"
+                : "text-text-muted"
           }`}>
             {dbfsDisplay} dBFS
           </span>
         </div>
 
         {/* 分段式 LED 音量條 */}
-        <div className="relative h-2 w-full bg-[#1A1D24] border border-[#2A2D35] overflow-hidden">
+        <div className="relative h-2 w-full bg-elevated border border-border-dim overflow-hidden">
           {/* 填充條 */}
           <div
             className={`absolute inset-y-0 left-0 transition-[width] duration-75 ${meterColor}`}
@@ -224,12 +224,12 @@ export function AudioInputSelector({
           />
           {/* 色區參考線：-18 dBFS */}
           <div
-            className="absolute inset-y-0 w-px bg-[#2A2D35]"
+            className="absolute inset-y-0 w-px bg-border-dim"
             style={{ left: `${dbfsToPercent(YELLOW_THRESHOLD)}%` }}
           />
           {/* 色區參考線：-6 dBFS */}
           <div
-            className="absolute inset-y-0 w-px bg-[#2A2D35]"
+            className="absolute inset-y-0 w-px bg-border-dim"
             style={{ left: `${dbfsToPercent(RED_THRESHOLD)}%` }}
           />
         </div>

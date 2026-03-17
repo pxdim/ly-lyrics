@@ -126,7 +126,7 @@ export function LrcDropZone({ onImportSuccess }: LrcDropZoneProps) {
       className={`border-2 border-dashed rounded p-3 text-center transition-colors cursor-pointer ${
         isDragging
           ? "border-cyan-400 bg-cyan-900/20"
-          : "border-[#2A2D35] hover:border-[#6B7280]"
+          : "border-border-dim hover:border-text-muted"
       }`}
       data-testid="lrc-drop-zone"
     >
@@ -142,7 +142,7 @@ export function LrcDropZone({ onImportSuccess }: LrcDropZoneProps) {
 
       {/* idle 狀態：上傳提示 */}
       {status === "idle" && (
-        <div className="flex items-center justify-center gap-2 text-[#6B7280]">
+        <div className="flex items-center justify-center gap-2 text-text-muted">
           <Upload className="w-4 h-4" />
           <span className="text-[11px] font-mono">拖放 .lrc 匯入</span>
         </div>

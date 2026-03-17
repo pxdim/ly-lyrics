@@ -1,14 +1,14 @@
 /**
  * 認證 API 客戶端封裝
  *
- * 直接呼叫 Go backend 的認證端點。
- * 用於客戶端元件（登入/註冊頁面）。
+ * 透過 Next.js rewrite proxy 呼叫 Go backend。
+ * Token 由 Go 後端透過 Set-Cookie header 設定，前端不碰 token。
  *
  * @module lib/api/auth
  */
 
 // ============================================================================
-// Types（對齊 Go backend dto/auth.go）
+// Types（對齊 Go backend dto/auth.go AuthCookieResponse）
 // ============================================================================
 
 /** 認證使用者資訊 */
@@ -21,10 +21,8 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-/** 認證成功回應 */
+/** 認證成功回應（Token 透過 HttpOnly cookie 傳遞，body 不含 token） */
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
   expiresAt: string;
   user: AuthUser;
 }
@@ -38,38 +36,21 @@ export interface AuthErrorResponse {
 }
 
 // ============================================================================
-// API Base URL
-// ============================================================================
-
-/**
- * Go backend API 基礎 URL
- * 優先使用環境變數，否則從瀏覽器位置推斷（開發環境）
- */
-const API_BASE =
-  process.env["NEXT_PUBLIC_GO_BACKEND_URL"] ||
-  (typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:8080`
-    : "http://localhost:8080");
-
-// ============================================================================
 // API 呼叫
 // ============================================================================
 
 /**
  * 使用者登入
- *
- * @param email - 使用者 email
- * @param password - 使用者密碼
- * @returns 認證回應（含 token 及使用者資訊）
- * @throws Error 登入失敗時拋出錯誤
+ * Token 由後端設定為 HttpOnly cookie，前端不處理 token。
  */
 export async function login(
   email: string,
   password: string
 ): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE}/api/auth/login`, {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ email, password }),
   });
 
@@ -85,12 +66,7 @@ export async function login(
 
 /**
  * 使用者註冊
- *
- * @param email - 使用者 email
- * @param password - 使用者密碼（最少 6 字元）
- * @param name - 使用者名稱（可選）
- * @returns 認證回應（含 token 及使用者資訊）
- * @throws Error 註冊失敗時拋出錯誤
+ * Token 由後端設定為 HttpOnly cookie，前端不處理 token。
  */
 export async function register(
   email: string,
@@ -103,9 +79,10 @@ export async function register(
     body["name"] = name;
   }
 
-  const response = await fetch(`${API_BASE}/api/auth/register`, {
+  const response = await fetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
 

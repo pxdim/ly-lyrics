@@ -17,7 +17,7 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8 text-[#6B7280] text-[13px] font-mono">
+      <div className="flex items-center justify-center py-8 text-text-muted text-[13px] font-mono">
         搜尋中...
       </div>
     );
@@ -27,7 +27,7 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
 
   if (response.totalResults === 0) {
     return (
-      <div className="text-center py-8 text-[#6B7280] text-[13px] font-mono">
+      <div className="text-center py-8 text-text-muted text-[13px] font-mono">
         找不到結果，請嘗試其他關鍵字
       </div>
     );
@@ -41,7 +41,7 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
   return (
     <div>
       <div className="flex items-center justify-between px-1 py-2">
-        <span className="text-[11px] text-[#6B7280] font-mono">
+        <span className="text-[11px] text-text-muted font-mono">
           搜尋結果（{response.totalResults} 筆）
         </span>
         {pendingSources.length > 0 && (

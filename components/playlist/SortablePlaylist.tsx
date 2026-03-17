@@ -65,7 +65,7 @@ export function SortablePlaylist({
 
   if (songs.length === 0) {
     return (
-      <div className="p-4 text-center text-[12px] text-[#6B7280] font-mono">
+      <div className="p-4 text-center text-[12px] text-text-muted font-mono">
         NO SONGS FOUND
       </div>
     );

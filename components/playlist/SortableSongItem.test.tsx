@@ -103,7 +103,7 @@ describe("SortableSongItem", () => {
     );
 
     const container = screen.getByTestId("sortable-song-item");
-    expect(container.className).toContain("bg-[#16181D]");
+    expect(container.className).toContain("bg-elevated");
     expect(container.className).toContain("border-l-primary");
   });
 

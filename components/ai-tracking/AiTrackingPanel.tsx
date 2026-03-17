@@ -39,8 +39,8 @@ function ToggleSwitch({ checked, onChange, label }: ToggleSwitchProps) {
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex items-center h-5 w-9 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#090A0C] ${
-        checked ? "bg-primary" : "bg-[#2A2D35]"
+      className={`relative inline-flex items-center h-5 w-9 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+        checked ? "bg-primary" : "bg-border-dim"
       }`}
     >
       <span
@@ -64,11 +64,11 @@ function AdvancedSettings() {
     <div className="flex flex-col gap-2.5 text-[11px]">
       {/* 辨識引擎 */}
       <div className="flex items-center justify-between">
-        <span className="text-[#6B7280]">辨識引擎</span>
+        <span className="text-text-muted">辨識引擎</span>
         <select
           value={aiSettings.sttProvider}
           onChange={(e) => updateAiSettings({ sttProvider: e.target.value as "google-cloud" | "web-speech" | "deepgram" })}
-          className="bg-[#1A1D24] border border-[#2A2D35] text-[#E4E7EB] text-[10px] font-mono rounded px-1.5 py-0.5 focus:outline-none focus:border-primary"
+          className="bg-elevated border border-border-dim text-text-primary text-[10px] font-mono rounded px-1.5 py-0.5 focus:outline-none focus:border-primary"
         >
           <option value="google-cloud">Google Cloud STT</option>
           <option value="web-speech">Web Speech (免費)</option>
@@ -78,7 +78,7 @@ function AdvancedSettings() {
 
       {/* 信心門檻 */}
       <div className="flex items-center justify-between">
-        <span className="text-[#6B7280]">比對門檻</span>
+        <span className="text-text-muted">比對門檻</span>
         <div className="flex items-center gap-1.5">
           <input
             type="range"
@@ -87,9 +87,9 @@ function AdvancedSettings() {
             step={0.05}
             value={aiSettings.confidenceThreshold}
             onChange={(e) => updateAiSettings({ confidenceThreshold: Number(e.target.value) })}
-            className="w-16 h-1 accent-primary bg-[#2A2D35] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+            className="w-16 h-1 accent-primary bg-border-dim rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
           />
-          <span className="text-[#E4E7EB] font-mono w-7 text-right">
+          <span className="text-text-primary font-mono w-7 text-right">
             {(aiSettings.confidenceThreshold * 100).toFixed(0)}%
           </span>
         </div>
@@ -97,15 +97,15 @@ function AdvancedSettings() {
 
       {/* 搜尋視窗 */}
       <div className="flex items-center justify-between">
-        <span className="text-[#6B7280]">搜尋範圍</span>
-        <span className="text-[#E4E7EB] font-mono">
+        <span className="text-text-muted">搜尋範圍</span>
+        <span className="text-text-primary font-mono">
           前{aiSettings.windowBefore} / 後{aiSettings.windowAfter}行
         </span>
       </div>
 
       {/* 冷卻時間 */}
       <div className="flex items-center justify-between">
-        <span className="text-[#6B7280]">手動冷卻</span>
+        <span className="text-text-muted">手動冷卻</span>
         <div className="flex items-center gap-1.5">
           <input
             type="range"
@@ -114,9 +114,9 @@ function AdvancedSettings() {
             step={500}
             value={aiSettings.manualOverrideCooldown}
             onChange={(e) => updateAiSettings({ manualOverrideCooldown: Number(e.target.value) })}
-            className="w-16 h-1 accent-primary bg-[#2A2D35] rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+            className="w-16 h-1 accent-primary bg-border-dim rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
           />
-          <span className="text-[#E4E7EB] font-mono w-7 text-right">
+          <span className="text-text-primary font-mono w-7 text-right">
             {(aiSettings.manualOverrideCooldown / 1000).toFixed(1)}s
           </span>
         </div>
@@ -154,7 +154,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
   );
 
   return (
-    <div className="border border-[#2A2D35] rounded-lg p-3 bg-[#16181D]/50">
+    <div className="border border-border-dim rounded-lg p-3 bg-elevated/50">
       {/* 標題列：標籤 + 開關 + 設定 */}
       <div className="flex items-center justify-between gap-2">
         {/* 左：標籤 + 狀態點（激活時） */}
@@ -162,7 +162,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           {isActive && (
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
           )}
-          <span className="text-[11px] font-mono uppercase tracking-wider text-[#6B7280]">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
             AI 自動跟歌
           </span>
         </div>
@@ -173,7 +173,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             type="button"
             onClick={() => setShowSettings((prev) => !prev)}
             className={`p-1 transition-colors ${
-              showSettings ? "text-primary" : "text-[#6B7280] hover:text-[#E4E7EB]"
+              showSettings ? "text-primary" : "text-text-muted hover:text-text-primary"
             }`}
             title="AI 自動跟歌設定"
             aria-label="展開 AI 自動跟歌設定"
@@ -199,10 +199,10 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
 
       {/* 進階設定（齒輪展開） */}
       {showSettings && (
-        <div className="mt-3 border-t border-[#2A2D35] pt-3">
+        <div className="mt-3 border-t border-border-dim pt-3">
           <div className="flex items-center gap-1 mb-2">
-            <ChevronDown size={10} className="text-[#6B7280]" />
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#6B7280]">
+            <ChevronDown size={10} className="text-text-muted" />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
               進階設定
             </span>
           </div>
@@ -212,7 +212,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
 
       {/* 展開內容：只在激活時顯示 */}
       {isActive && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-[#2A2D35] pt-3">
+        <div className="mt-3 flex flex-col gap-3 border-t border-border-dim pt-3">
           {/* 音訊輸入選擇器 */}
           <AudioInputSelector
             deviceId={audioInput.deviceId}
@@ -224,7 +224,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           />
 
           {/* 分隔線 */}
-          <div className="h-px bg-[#2A2D35]" />
+          <div className="h-px bg-border-dim" />
 
           {/* 狀態指示器 */}
           <AiStatusIndicator
@@ -237,22 +237,22 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           {/* 即時逐字稿 */}
           {aiTracking.lastTranscript && (
             <>
-              <div className="h-px bg-[#2A2D35]" />
+              <div className="h-px bg-border-dim" />
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#6B7280]">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
                     STT 辨識
                   </span>
                   <span className={`text-[9px] font-mono px-1 rounded ${
                     aiTracking.lastTranscriptFinal
                       ? "bg-primary/20 text-primary"
-                      : "bg-[#2A2D35] text-[#6B7280]"
+                      : "bg-border-dim text-text-muted"
                   }`}>
                     {aiTracking.lastTranscriptFinal ? "FINAL" : "INTERIM"}
                   </span>
                 </div>
                 <p className={`text-[11px] font-mono leading-relaxed break-all ${
-                  aiTracking.lastTranscriptFinal ? "text-[#E4E7EB]" : "text-[#6B7280] italic"
+                  aiTracking.lastTranscriptFinal ? "text-text-primary" : "text-text-muted italic"
                 }`}>
                   {aiTracking.lastTranscript}
                 </p>

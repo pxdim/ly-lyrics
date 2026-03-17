@@ -17,7 +17,6 @@ import {
   type ReactNode,
 } from "react";
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
-import { useLyricsStore } from "@/lib/store";
 
 // ============================================================================
 // Types
@@ -62,14 +61,14 @@ const ToastIcons = {
 };
 
 const IconColors: Record<ToastType, string> = {
-  success: "text-accent",
+  success: "text-success",
   error: "text-red-500",
   warning: "text-amber-500",
   info: "text-primary",
 };
 
 const BorderColors: Record<ToastType, string> = {
-  success: "border-accent/50 shadow-glow-accent",
+  success: "border-success/50 shadow-glow-secondary",
   error: "border-red-500/50 shadow-glow-red",
   warning: "border-amber-500/50 shadow-glow-amber",
   info: "border-primary/50 shadow-glow-md",
@@ -85,8 +84,6 @@ interface ToastItemProps {
 }
 
 const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
-  const displaySettings = useLyricsStore((state) => state.displaySettings);
-
   useEffect(() => {
     if (toast.duration === 0) {
       return;
@@ -112,7 +109,7 @@ const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
       style={{
         minWidth: "320px",
         maxWidth: "400px",
-        boxShadow: `0 4px 20px ${displaySettings.highlightColor}20`,
+        boxShadow: "0 4px 20px hsl(var(--color-glow-primary) / 0.12)",
       }}
     >
       {/* Icon */}
@@ -122,10 +119,7 @@ const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p
-          className="font-heading font-semibold text-sm text-text-primary"
-          style={{ color: displaySettings.highlightColor }}
-        >
+        <p className="font-heading font-semibold text-sm text-text-primary">
           {toast.title}
         </p>
         {toast.message && (

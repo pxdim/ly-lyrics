@@ -72,7 +72,7 @@ export function QRCodePanel({ sessionCode, size = 160, className = "" }: QRCodeP
       </p>
 
       {/* 說明 */}
-      <p className="text-[10px] text-[#6B7280] text-center">
+      <p className="text-[10px] text-text-muted text-center">
         掃描後自動連接顯示端
       </p>
 

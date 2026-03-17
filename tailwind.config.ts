@@ -10,44 +10,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Dark Tech Color Palette
-        void: '#030304',
-        surface: '#0A0A0C',
-        elevated: '#0F1115',
+        // 背景層次（指向 CSS 變數）
+        void: 'hsl(var(--color-void) / <alpha-value>)',
+        surface: 'hsl(var(--color-surface) / <alpha-value>)',
+        elevated: 'hsl(var(--color-elevated) / <alpha-value>)',
 
-        // Primary Electric Blue
+        // Primary Neon Orange
         primary: {
-          DEFAULT: '#00D9FF',
-          50: '#E6FAFF',
-          100: '#CCF5FF',
-          200: '#99EBFF',
-          300: '#66E0FF',
-          400: '#33D6FF',
-          500: '#00D9FF',
-          600: '#00AECC',
-          700: '#008299',
-          800: '#005566',
-          900: '#002933',
+          DEFAULT: 'hsl(var(--color-primary) / <alpha-value>)',
+          50: '#FFF3E6',
+          100: '#FFE0BF',
+          200: '#FFC285',
+          300: '#FFA34A',
+          400: '#FF8A1F',
+          500: '#FF6A00',
+          600: '#CC5500',
+          700: '#993F00',
+          800: '#662A00',
+          900: '#331500',
         },
 
-        // Secondary Neon Purple
+        // Secondary Neon Cyan
         secondary: {
-          DEFAULT: '#A855F7',
-          50: '#FAF5FF',
-          100: '#F3E8FF',
-          200: '#E9D5FF',
-          300: '#D8B4FE',
-          400: '#C084FC',
-          500: '#A855F7',
-          600: '#9333EA',
-          700: '#7E22CE',
-          800: '#6B21A8',
-          900: '#581C87',
+          DEFAULT: 'hsl(var(--color-secondary) / <alpha-value>)',
+          50: '#E6FDFF',
+          100: '#B3F8FF',
+          200: '#80F3FF',
+          300: '#4DEEFF',
+          400: '#1AE9FF',
+          500: '#00E5FF',
+          600: '#00B8CC',
+          700: '#008A99',
+          800: '#005C66',
+          900: '#002E33',
         },
 
         // Accent Neon Green
         accent: {
-          DEFAULT: '#00FF88',
+          DEFAULT: 'hsl(var(--color-accent) / <alpha-value>)',
           50: '#E6FFF3',
           100: '#CCFFE7',
           200: '#99FFCE',
@@ -60,24 +60,29 @@ const config: Config = {
           900: '#00331B',
         },
 
-        // Text colors
+        // 文字色（僅 nested object，避免重複）
         text: {
-          primary: '#FFFFFF',
-          muted: '#8A8F98',
-          dim: '#6B7280',
+          primary: 'hsl(var(--color-text-primary) / <alpha-value>)',
+          muted: 'hsl(var(--color-text-muted) / <alpha-value>)',
+          dim: 'hsl(var(--color-text-muted) / 0.7)',
         },
 
-        // Border colors
+        // 邊框色
         border: {
-          dim: 'rgba(255, 255, 255, 0.08)',
-          primary: 'rgba(0, 217, 255, 0.3)',
+          dim: 'hsl(var(--color-border-dim))',
+          primary: 'hsl(var(--color-primary) / 0.3)',
         },
+
+        // 語意色
+        success: 'hsl(var(--color-success) / <alpha-value>)',
+        warning: 'hsl(var(--color-warning) / <alpha-value>)',
+        error: 'hsl(var(--color-error) / <alpha-value>)',
       },
 
       fontFamily: {
-        heading: ['Orbitron', 'sans-serif'],
-        body: ['Exo 2', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        heading: ['"Archivo Black"', '"Noto Sans TC"', 'sans-serif'],
+        body: ['"Noto Sans TC"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
 
       fontSize: {
@@ -115,11 +120,12 @@ const config: Config = {
       },
 
       boxShadow: {
-        'glow-sm': '0 0 5px rgba(0, 217, 255, 0.5)',
-        'glow-md': '0 0 10px rgba(0, 217, 255, 0.6)',
-        'glow-lg': '0 0 20px rgba(0, 217, 255, 0.7), 0 0 40px rgba(0, 217, 255, 0.4)',
-        'glow-accent': '0 0 10px rgba(0, 255, 136, 0.5)',
-        'inner-glow': 'inset 0 0 20px rgba(0, 217, 255, 0.1)',
+        'glow-sm': '0 0 10px hsl(var(--color-glow-primary) / 0.3)',
+        'glow-md': '0 0 20px hsl(var(--color-glow-primary) / 0.4)',
+        'glow-lg': '0 0 30px hsl(var(--color-glow-primary) / 0.5), 0 0 60px hsl(var(--color-glow-primary) / 0.2)',
+        'glow-accent': '0 0 10px hsl(var(--color-glow-accent) / 0.5)',
+        'glow-secondary': '0 0 15px hsl(var(--color-glow-secondary) / 0.3)',
+        'inner-glow': 'inset 0 0 30px hsl(var(--color-glow-primary) / 0.08)',
       },
 
       animation: {
@@ -129,6 +135,9 @@ const config: Config = {
         'fade-in': 'fadeIn 200ms ease-out',
         'slide-in': 'slideIn 300ms ease-out',
         'fade-out': 'fadeOut 300ms ease-in forwards',
+        'fade-out-slow': 'fadeOut 3s ease-out forwards',
+        'scale-in': 'scaleIn 400ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'shake': 'shake 250ms cubic-bezier(0.16, 1, 0.3, 1)',
       },
 
       keyframes: {
@@ -137,8 +146,8 @@ const config: Config = {
           '100%': { transform: 'translateY(-100%)' },
         },
         glow: {
-          '0%': { boxShadow: '0 0 5px #00D9FF' },
-          '100%': { boxShadow: '0 0 20px #00D9FF, 0 0 40px #00D9FF' },
+          '0%': { boxShadow: '0 0 5px hsl(var(--color-glow-primary))' },
+          '100%': { boxShadow: '0 0 20px hsl(var(--color-glow-primary)), 0 0 40px hsl(var(--color-glow-primary))' },
         },
         fadeIn: {
           '0%': { opacity: '0' },
@@ -152,13 +161,22 @@ const config: Config = {
           '0%': { opacity: '1' },
           '100%': { opacity: '0' },
         },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-4px)' },
+          '40%, 80%': { transform: 'translateX(4px)' },
+        },
       },
 
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #00D9FF, #00B8FF)',
-        'gradient-secondary': 'linear-gradient(135deg, #A855F7, #9333EA)',
-        'gradient-accent': 'linear-gradient(135deg, #00FF88, #00CC6D)',
+        'gradient-primary': 'linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-primary) / 0.7))',
+        'gradient-secondary': 'linear-gradient(135deg, hsl(var(--color-secondary)), hsl(var(--color-secondary) / 0.7))',
+        'gradient-accent': 'linear-gradient(135deg, hsl(var(--color-accent)), hsl(var(--color-accent) / 0.7))',
         'scanlines': 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.1) 2px, rgba(0, 0, 0, 0.1) 4px)',
       },
     },

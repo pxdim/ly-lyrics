@@ -2,7 +2,7 @@
  * 認證 API 客戶端單元測試
  *
  * 覆蓋範圍：login / register 函式的成功與失敗路徑、
- * 型別 export 正確性、API_BASE 環境變數回退邏輯
+ * proxy 路徑與 credentials 設定、型別 export 正確性
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -21,11 +21,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** 建立模擬成功回應 */
+/** 建立模擬成功回應（Cookie 模式：body 不含 token） */
 function createMockAuthResponse(): AuthResponse {
   return {
-    accessToken: "mock-access-token",
-    refreshToken: "mock-refresh-token",
     expiresAt: "2026-03-15T00:00:00Z",
     user: {
       id: "user-123",
@@ -148,11 +146,55 @@ describe("register", () => {
   });
 });
 
+describe("proxy 路徑與 credentials", () => {
+  it("login 呼叫 /api/auth/login（proxy 路徑，非直連 Go backend）", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(createMockAuthResponse()),
+    });
+
+    await login("a@b.com", "password");
+
+    const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    // 應為相對路徑 /api/auth/login，不含 localhost:8080 或其他 host
+    expect(url).toBe("/api/auth/login");
+    expect(options.credentials).toBe("include");
+  });
+
+  it("login 回應不包含 accessToken 或 refreshToken", async () => {
+    // 模擬 Go backend cookie 模式回應：body 不含 token
+    const cookieResponse = {
+      expiresAt: "2026-04-01T00:00:00Z",
+      user: { id: "1", email: "a@b.com", name: null, emailVerified: false, createdAt: "", updatedAt: "" },
+    };
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(cookieResponse),
+    });
+
+    const result = await login("a@b.com", "password");
+    expect(result).not.toHaveProperty("accessToken");
+    expect(result).not.toHaveProperty("refreshToken");
+  });
+
+  it("register 呼叫 /api/auth/register（proxy 路徑）且帶 credentials: include", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(createMockAuthResponse()),
+    });
+
+    await register("a@b.com", "password", "Test");
+
+    const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/auth/register");
+    expect(options.credentials).toBe("include");
+  });
+});
+
 describe("型別 export", () => {
-  it("AuthResponse 型別包含必要欄位", () => {
+  it("AuthResponse 型別不含 token 欄位，僅含 expiresAt 和 user", () => {
     const response: AuthResponse = createMockAuthResponse();
-    expect(response.accessToken).toBeDefined();
-    expect(response.refreshToken).toBeDefined();
+    expect(response.expiresAt).toBeDefined();
     expect(response.user.id).toBeDefined();
     expect(response.user.email).toBeDefined();
   });

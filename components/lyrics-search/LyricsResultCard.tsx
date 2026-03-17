@@ -33,42 +33,42 @@ export const LyricsResultCard: FC<LyricsResultCardProps> = ({ result, onClick })
     <button
       type="button"
       onClick={() => onClick(result)}
-      className="w-full text-left px-4 py-3 border border-[#2A2D35] hover:bg-[#1E2028] hover:border-primary/30 transition-colors group"
+      className="w-full text-left px-4 py-3 border border-border-dim hover:bg-elevated hover:border-primary/30 transition-colors group"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           {/* 歌名 + 歌手 */}
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${confidenceDots[result.confidence]}`} />
-            <span className="text-[13px] text-[#E4E7EB] font-medium truncate">
+            <span className="text-[13px] text-text-primary font-medium truncate">
               {result.title}
             </span>
-            <span className="text-[12px] text-[#6B7280]">—</span>
-            <span className="text-[12px] text-[#9CA3AF] truncate">
+            <span className="text-[12px] text-text-muted">—</span>
+            <span className="text-[12px] text-text-muted truncate">
               {result.artist}
             </span>
           </div>
           {/* 來源 + 標記 */}
           <div className="flex items-center gap-2 mt-1 ml-4">
-            <span className="text-[11px] text-[#6B7280] font-mono">
+            <span className="text-[11px] text-text-muted font-mono">
               {sourceLabel(result.source)}
             </span>
             {result.hasSyncedLyrics && (
               <span className="text-[11px] text-primary/70">⏱ 有時間戳</span>
             )}
             {!result.hasSyncedLyrics && result.hasPlainLyrics && (
-              <span className="text-[11px] text-[#6B7280]">📝 純文字</span>
+              <span className="text-[11px] text-text-muted">📝 純文字</span>
             )}
             {!result.hasSyncedLyrics && !result.hasPlainLyrics && (
-              <span className="text-[11px] text-[#6B7280]/60">ℹ️ 僅資訊</span>
+              <span className="text-[11px] text-text-muted/60">ℹ️ 僅資訊</span>
             )}
             {result.duration && (
-              <span className="text-[11px] text-[#6B7280]">
+              <span className="text-[11px] text-text-muted">
                 {Math.floor(result.duration / 60)}:{String(result.duration % 60).padStart(2, "0")}
               </span>
             )}
             {result.ratio != null && (
-              <span className="text-[11px] text-[#6B7280]">
+              <span className="text-[11px] text-text-muted">
                 相似度 {Math.round(result.ratio * 100)}%
               </span>
             )}

@@ -39,6 +39,8 @@ function DisplayLoading() {
 function DisplayPage() {
   const searchParams = useSearchParams();
   const urlCode = searchParams.get("code")?.toUpperCase().slice(0, 6) ?? "";
+  // Clean Output 模式：供 OBS/Resolume/VJ 軟體擷取，純黑背景 + 歌詞文字，無 UI chrome
+  const isCleanOutput = searchParams.get("mode") === "clean";
 
   // 優先 URL 參數，其次 sessionStorage 記住的上次房間碼
   const initialCode = urlCode || (typeof sessionStorage !== "undefined"
@@ -152,7 +154,22 @@ function DisplayPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Connection Screen
+  // Clean Output 未連線：純黑等待畫面，不顯示同步碼輸入 UI（觀眾不應看到技術介面）
+  if (!isConnected && isCleanOutput) {
+    return <div className="fixed inset-0" style={{ background: "#000000" }} />;
+  }
+
+  // Clean Output 已連線：純黑背景 + LyricsDisplay，無任何 UI chrome
+  if (isConnected && isCleanOutput) {
+    return (
+      <div className="fixed inset-0 w-full h-full" style={{ background: "#000000" }}>
+        {/* Clean Output: 純黑背景 + 歌詞文字 + glow，無任何 UI chrome */}
+        <LyricsDisplay />
+      </div>
+    );
+  }
+
+  // 一般模式 — 連線畫面
   if (!isConnected) {
     return (
       <div className="fixed inset-0 bg-void flex items-center justify-center relative overflow-hidden">
@@ -245,8 +262,12 @@ function DisplayPage() {
   // Connected - Display Lyrics
   return (
     <div className="relative min-h-screen w-full bg-void">
-      {/* Background Effects */}
+      {/* 背景效果 */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-20 pointer-events-none" />
+
+      {/* 背景光暈 */}
+      <div className="glow-orb-primary" style={{ top: '-10%', left: '-5%' }} />
+      <div className="glow-orb-secondary" style={{ bottom: '-10%', right: '-5%' }} />
 
       {/* Disconnect/Reconnect Status Banner */}
       <ConnectionStatusBar />
@@ -271,7 +292,7 @@ function DisplayPage() {
 
       {/* Song Info Overlay (top left, fades out) */}
       {currentSong && (
-        <div className="fixed top-6 left-6 animate-[fade-out_3s_ease-out_forwards] z-40">
+        <div className="fixed top-6 left-6 animate-fade-out-slow z-40">
           <div className="bg-elevated/80 backdrop-blur-md rounded-xl px-6 py-3 border border-border-dim shadow-glow-sm">
             <p className="font-heading font-semibold text-primary">{currentSong.title}</p>
             {currentSong.artist && (

@@ -39,6 +39,12 @@ type UserResponse struct {
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
+// AuthCookieResponse 認證回應（token 透過 Set-Cookie 傳遞，body 不含明文 token）
+type AuthCookieResponse struct {
+	ExpiresAt time.Time    `json:"expiresAt"`
+	User      UserResponse `json:"user"`
+}
+
 // RefreshRequest 更新 token 請求
 type RefreshRequest struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`

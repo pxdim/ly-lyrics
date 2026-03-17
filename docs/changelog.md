@@ -2,6 +2,41 @@
 
 ## 版本歷史
 
+### v0.8.0 - 2026-03-17
+
+**P0 UI/UX 全面重設計 — Token 安全 + 設計系統統一 + Controller 拆分 + 動效升級**
+
+#### 安全
+- **Token 安全修復** — access_token / refresh_token 改為 HttpOnly + SameSite=Strict cookie，前端不再碰觸 token 明文
+- Refresh handler 從 cookie 讀取 token（原 request body → HttpOnly cookie）
+- 前端 auth API 改走 Next.js rewrite proxy，移除直連 Go backend
+
+#### 新增
+- **Neon Brutalist Glass 主題** — 全站視覺風格更換
+  - 色盤：烈焰橘 (#FF6A00) + 冰藍 (#00E5FF) 取代原 Dark Tech 青/紫
+  - 字體：Archivo Black（英文標題）+ Noto Sans TC（中文全站）
+  - 毛玻璃質感：backdrop-filter blur + 粗邊框 (2px) + 背景光暈
+  - Glass 變體系統：glass-primary / glass-secondary / glass-subtle / glass-elevated
+- **Display Clean Output 模式** — `?mode=clean` URL 參數，純黑 `#000000` 背景供 OBS/VJ 軟體截取去背
+- **共用元件庫** — GlowButton、GlowInput、Spinner、ConfirmDialog、AuthLayout
+- **共用 Hooks** — useMediaQuery、useIsMobile、useIsTablet
+- **calcVisibleLines** 共用工具（look-ahead bias 算法）
+- **Motion Token 系統** — 三層動效（micro、page、ambient），CSS 變數定義 duration + easing
+
+#### 改善
+- **設計系統統一** — CSS 變數作為唯一 token 來源，Tailwind config DEFAULT 指向 CSS 變數
+- **Controller 頁面拆分** — 1707 行 → 172 行 shell + 9 個獨立元件
+- **Login/Register 頁面重設計** — 使用 AuthLayout + GlowInput + GlowButton
+- **Home 頁面動效** — staggered entrance + neon breathing
+- **Toast 解耦** — 移除 useLyricsStore 依賴，改用 CSS 變數
+
+#### 移除
+- `app/styles/tokens.ts` — 零消費者，CSS 變數取代
+- `.scanlines::before` CSS — 重複，保留 `bg-scanlines` Tailwind utility
+- 前端手動 token 操作（`document.cookie`、`localStorage`）
+
+---
+
 ### v0.6.1 - 2026-03-14
 
 **P0 品質鞏固 — 測試覆蓋補齊**
@@ -201,5 +236,5 @@
 
 ---
 
-**文件版本:** 2.0
-**最後更新:** 2026-03-13
+**文件版本:** 3.0
+**最後更新:** 2026-03-17
