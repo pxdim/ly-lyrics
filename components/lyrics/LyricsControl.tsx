@@ -17,6 +17,7 @@ import { type FC, useCallback } from "react";
 import { ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { useDebouncedCallback } from "@/lib/hooks/useDebounce";
+import { ControlModeToggle } from "./ControlModeToggle";
 
 export interface LyricsControlProps {
   /** 自訂 CSS class */
@@ -77,6 +78,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   const nextLine = useLyricsStore((state) => state.nextLine);
   const prevLine = useLyricsStore((state) => state.prevLine);
   const jumpToLine = useLyricsStore((state) => state.jumpToLine);
+  const controlMode = useLyricsStore((state) => state.controlMode);
+  const setControlMode = useLyricsStore((state) => state.setControlMode);
 
   const totalLines = lyrics.length;
   const canGoNext = currentIndex < totalLines - 1;
@@ -202,6 +205,15 @@ export const LyricsControl: FC<LyricsControlProps> = ({
           className="transition-transform duration-200 group-hover:translate-y-0.5"
         />
       </button>
+
+      {/* 分隔線 — Toggle 前 */}
+      <div className="w-px h-7 bg-[hsl(var(--color-glow-primary)/0.3)] mx-1" />
+
+      {/* 自動／手動模式切換 */}
+      <ControlModeToggle
+        mode={controlMode}
+        onToggle={setControlMode}
+      />
 
       {/* 全螢幕切換（僅在有回呼時顯示） */}
       {onToggleFullscreen && (

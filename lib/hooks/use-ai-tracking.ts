@@ -85,7 +85,12 @@ export function useAiTracking() {
       const engine = new TrackingEngine({
         sttProvider,
         audioCapture,
-        jumpToLine: useLyricsStore.getState().jumpToLine,
+        jumpToLine: (index: number) => {
+          // FR6.4: 手動模式封鎖 AI 自動跳行；手動按鈕透過 store.jumpToLine() 直接呼叫，不受影響
+          const { controlMode, jumpToLine } = useLyricsStore.getState();
+          if (controlMode === "manual") return;
+          jumpToLine(index);
+        },
         getCurrentIndex: () => useLyricsStore.getState().currentIndex,
         getLyrics: () => useLyricsStore.getState().lyrics,
         getLrcTimestamps: () => useLyricsStore.getState().currentSong?.lrcTimestamps,

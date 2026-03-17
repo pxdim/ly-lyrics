@@ -48,6 +48,9 @@ export interface LyricsState {
   // Playback state
   isPlaying: boolean;
 
+  // Control mode (FR6.4)
+  controlMode: "auto" | "manual";
+
   // UI state
   isLoading: boolean;
   error: string | null;
@@ -85,6 +88,9 @@ export interface LyricsActions {
   // Playback actions
   setPlaying: (playing: boolean) => void;
   togglePlaying: () => void;
+
+  // Control mode actions (FR6.4)
+  setControlMode: (mode: "auto" | "manual") => void;
 
   // UI state actions
   setLoading: (loading: boolean) => void;
@@ -145,6 +151,7 @@ export const useLyricsStore = create<LyricsStore>()(
         displayCount: 0,
         displaySettings: defaultDisplaySettings,
         isPlaying: false,
+        controlMode: "manual" as const,
         isLoading: false,
         error: null,
 
@@ -415,6 +422,10 @@ export const useLyricsStore = create<LyricsStore>()(
           }
         },
 
+        setControlMode: (mode) => {
+          set({ controlMode: mode });
+        },
+
         // ========================================
         // AI Tracking Actions
         // ========================================
@@ -527,6 +538,7 @@ export const useLyricsStore = create<LyricsStore>()(
           role: state.role,
           userId: state.userId,
           aiSettings: { ...state.aiSettings, apiKey: null },
+          controlMode: state.controlMode,
         }),
         // Required for Next.js App Router: prevents persist from calling set()
         // during SSR (server-side rendering), which causes React error #185.

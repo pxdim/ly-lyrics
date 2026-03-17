@@ -261,4 +261,30 @@ describe("LyricsControl", () => {
       expect(screen.getByText("3/5")).toBeInTheDocument();
     });
   });
+
+  // --------------------------------------------------------------------------
+  // ControlModeToggle 整合
+  // --------------------------------------------------------------------------
+
+  describe("ControlModeToggle integration", () => {
+    it("renders MANUAL toggle button when controlMode is manual", () => {
+      resetStore({ controlMode: "manual", setControlMode: vi.fn() });
+      render(<LyricsControl />);
+      expect(screen.getByText(/manual/i)).toBeInTheDocument();
+    });
+
+    it("renders AUTO toggle button when controlMode is auto", () => {
+      resetStore({ controlMode: "auto", setControlMode: vi.fn() });
+      render(<LyricsControl />);
+      expect(screen.getByText(/auto/i)).toBeInTheDocument();
+    });
+
+    it("calls setControlMode when toggle is clicked", () => {
+      const mockSetControlMode = vi.fn();
+      resetStore({ controlMode: "manual", setControlMode: mockSetControlMode });
+      render(<LyricsControl />);
+      screen.getByText(/manual/i).click();
+      expect(mockSetControlMode).toHaveBeenCalledWith("auto");
+    });
+  });
 });
