@@ -9,9 +9,13 @@ import { Mic, Smartphone, Video } from "lucide-react";
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-void text-text-primary relative overflow-hidden">
-      {/* Background gradient effect */}
+      {/* 背景效果 */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-50" />
       <div className="absolute inset-0 bg-scanlines opacity-30 pointer-events-none" />
+
+      {/* 背景光暈 */}
+      <div className="glow-orb-primary" style={{ top: '-10%', left: '-5%' }} />
+      <div className="glow-orb-secondary" style={{ bottom: '-10%', right: '-5%' }} />
 
       {/* 主內容區間距響應式 */}
       <div className="max-w-5xl w-full text-center space-y-8 sm:space-y-10 md:space-y-12 relative z-10">
@@ -19,7 +23,7 @@ export default function HomePage() {
         <div className="space-y-6">
           {/* 標題響應式：手機 text-4xl → sm text-6xl → md text-8xl */}
           <h1 className="text-4xl sm:text-6xl md:text-8xl font-heading font-bold tracking-wider focus-glow">
-            <span className="inline-block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-glow">
+            <span className="inline-block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-glow">
               LY
             </span>
           </h1>
@@ -28,13 +32,13 @@ export default function HomePage() {
             歌詞顯示系統
           </p>
           {/* Logo 裝飾線響應式：手機縮短 */}
-          <div className="w-20 sm:w-28 md:w-32 h-1 mx-auto bg-gradient-to-r from-primary to-accent rounded-full shadow-glow-md" />
+          <div className="w-20 sm:w-28 md:w-32 h-1 mx-auto bg-gradient-to-r from-primary to-secondary rounded-full shadow-glow-md" />
         </div>
 
         {/* Tagline */}
         <p className="text-lg text-text-muted max-w-2xl mx-auto font-body leading-relaxed">
           市場首創的 AI 驅動歌詞顯示系統<br />
-          <span className="text-primary">即時聽歌辨識</span> · <span className="text-secondary">多裝置同步</span> · <span className="text-accent">NDI 輸出</span>
+          <span className="text-primary">即時聽歌辨識</span> · <span className="text-secondary">多裝置同步</span> · <span className="text-secondary">NDI 輸出</span>
         </p>
 
         {/* Features Grid — 交錯入場動畫 */}
@@ -60,7 +64,7 @@ export default function HomePage() {
               icon={<Video className="w-8 h-8" strokeWidth={1.5} />}
               title="NDI 輸出"
               description="直接輸出到 Resolume Arena"
-              color="accent"
+              color="secondary"
             />
           </div>
         </div>
@@ -72,24 +76,24 @@ export default function HomePage() {
             className="group relative px-10 py-4 bg-gradient-primary text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-[var(--duration-fast)] hover:shadow-glow-lg hover:-translate-y-1"
           >
             控制端
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
           </Link>
           <Link
             href="/display"
-            className="group relative px-10 py-4 bg-gradient-accent text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-[var(--duration-fast)] hover:shadow-glow-accent hover:-translate-y-1"
+            className="group relative px-10 py-4 bg-gradient-secondary text-void rounded-xl font-heading font-semibold text-lg tracking-wider uppercase transition-all duration-[var(--duration-fast)] hover:shadow-glow-secondary hover:-translate-y-1"
           >
             顯示端
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-secondary via-primary to-secondary opacity-0 group-hover:opacity-20 transition-opacity duration-[var(--duration-fast)]" />
           </Link>
         </div>
 
         {/* Status Badge */}
         <div className="mt-12 inline-flex items-center gap-3 px-6 py-3 bg-elevated border border-border-dim rounded-full shadow-inner-glow">
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-accent shadow-glow-accent"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-success shadow-glow-secondary"></span>
           </span>
-          <span className="font-body font-medium text-accent">系統準備就緒</span>
+          <span className="font-body font-medium text-success">系統準備就緒</span>
         </div>
       </div>
     </main>
@@ -103,20 +107,18 @@ interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: "primary" | "secondary" | "accent";
+  color: "primary" | "secondary";
 }
 
 function FeatureCard({ icon, title, description, color }: FeatureCardProps) {
   const colorStyles = {
     primary: "group-hover:border-primary/50 group-hover:shadow-glow-md",
-    secondary: "group-hover:border-secondary/50 group-hover:shadow-glow-md",
-    accent: "group-hover:border-accent/50 group-hover:shadow-glow-accent",
+    secondary: "group-hover:border-secondary/50 group-hover:shadow-glow-secondary",
   };
 
   const iconColors = {
     primary: "text-primary",
     secondary: "text-secondary",
-    accent: "text-accent",
   };
 
   return (
