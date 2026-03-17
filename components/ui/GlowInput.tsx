@@ -40,7 +40,7 @@ export const GlowInput: FC<GlowInputProps> = ({
       ref={ref}
       id={id}
       className={`
-        w-full px-4 py-3 bg-surface border rounded-xl
+        w-full px-4 py-3 bg-white/[0.03] border-2 rounded-xl
         text-text-primary placeholder-text-muted
         transition-all duration-[var(--duration-fast)] ease-[var(--ease-out)]
         focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--color-glow-primary)/0.1)]

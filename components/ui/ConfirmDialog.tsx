@@ -61,12 +61,12 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
       {/* 背景遮罩 */}
       <div
         data-testid="confirm-backdrop"
-        className="absolute inset-0 bg-void/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/85 backdrop-blur-sm"
         onClick={onCancel}
       />
 
       {/* 對話框主體 */}
-      <div className="relative glass-card p-6 max-w-sm w-full mx-4 animate-scale-in">
+      <div className="relative glass-elevated p-6 max-w-sm w-full mx-4 animate-scale-in">
         <h3 className="font-heading font-semibold text-lg text-text-primary mb-2">
           {title}
         </h3>

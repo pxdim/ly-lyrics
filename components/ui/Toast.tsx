@@ -61,14 +61,14 @@ const ToastIcons = {
 };
 
 const IconColors: Record<ToastType, string> = {
-  success: "text-accent",
+  success: "text-success",
   error: "text-red-500",
   warning: "text-amber-500",
   info: "text-primary",
 };
 
 const BorderColors: Record<ToastType, string> = {
-  success: "border-accent/50 shadow-glow-accent",
+  success: "border-success/50 shadow-glow-accent",
   error: "border-red-500/50 shadow-glow-red",
   warning: "border-amber-500/50 shadow-glow-amber",
   info: "border-primary/50 shadow-glow-md",

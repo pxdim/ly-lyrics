@@ -61,21 +61,21 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-void p-8">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-radial from-accent/5 via-transparent to-transparent opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-30 pointer-events-none" />
       <div className="absolute inset-0 bg-scanlines opacity-20 pointer-events-none" />
 
       <div className="max-w-md w-full relative z-10">
         {/* Error Card */}
-        <div className="bg-elevated border-2 border-accent/30 rounded-2xl p-8 shadow-glow-accent">
+        <div className="bg-elevated border-2 border-primary/30 rounded-2xl p-8 shadow-glow-primary">
           {/* Icon */}
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-accent/10 rounded-full">
-              <AlertTriangle className="w-12 h-12 text-accent" strokeWidth={2} />
+            <div className="p-4 bg-primary/10 rounded-full">
+              <AlertTriangle className="w-12 h-12 text-primary" strokeWidth={2} />
             </div>
           </div>
 
           {/* Title */}
-          <h1 className="font-heading text-2xl font-bold text-center text-accent mb-4">
+          <h1 className="font-heading text-2xl font-bold text-center text-primary mb-4">
             哎呀，出了點問題
           </h1>
 
@@ -90,7 +90,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           <div className="space-y-3">
             <button
               onClick={resetError}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-accent text-void rounded-xl font-heading font-semibold tracking-wider uppercase transition-all duration-300 hover:shadow-glow-accent hover:-translate-y-0.5"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-primary text-void rounded-xl font-heading font-semibold tracking-wider uppercase transition-all duration-300 hover:shadow-glow-primary hover:-translate-y-0.5"
               type="button"
             >
               <RefreshCw className="w-5 h-5" strokeWidth={2} />
@@ -112,7 +112,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
               <summary className="font-body text-xs text-text-muted cursor-pointer hover:text-primary transition-colors">
                 技術細節 (開發模式)
               </summary>
-              <pre className="mt-2 p-3 bg-void/80 rounded-lg text-xs font-mono text-accent/70 overflow-auto max-h-40">
+              <pre className="mt-2 p-3 bg-void/80 rounded-lg text-xs font-mono text-primary/70 overflow-auto max-h-40">
                 {error.stack}
               </pre>
             </details>
