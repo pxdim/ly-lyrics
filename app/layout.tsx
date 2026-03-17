@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Orbitron, Exo_2, JetBrains_Mono } from "next/font/google";
+import { Archivo_Black, Noto_Sans_TC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 // Error Handling Components
@@ -7,19 +7,19 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ToastProvider } from "@/components/ui/Toast";
 import { StoreHydration } from "@/components/StoreHydration";
 
-// Dark Tech Theme Fonts
-const orbitron = Orbitron({
+// Neon Brutalist Glass 主題字體
+const archivoBlack = Archivo_Black({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-heading",
   display: "swap",
-  weight: ["500", "600", "700"],
 });
 
-const exo2 = Exo_2({
+const notoSansTC = Noto_Sans_TC({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "700", "900"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -52,11 +52,11 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" className="dark" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#06b6d4" />
+        <meta name="theme-color" content="#0a0a0a" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body
-        className={`${orbitron.variable} ${exo2.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
+        className={`${archivoBlack.variable} ${notoSansTC.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
       >
         <StoreHydration />
         <ErrorBoundary>
