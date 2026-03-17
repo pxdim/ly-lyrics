@@ -11,14 +11,17 @@ import type { FC } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { ToggleRow } from "./ToggleRow";
 
-/** 高亮色選項 */
+/**
+ * 高亮色選項
+ * 前兩項對應主題主色（primary=#FF6B00, secondary=#00D9FF）
+ */
 const HIGHLIGHT_COLORS = [
-  { value: "#00D9FF", label: "Cyan" },
-  { value: "#A855F7", label: "Purple" },
+  { value: "#FF6B00", label: "Primary" },
+  { value: "#00D9FF", label: "Secondary" },
   { value: "#00FF88", label: "Green" },
   { value: "#FF3366", label: "Pink" },
   { value: "#FFB800", label: "Gold" },
-  { value: "#FF6B00", label: "Orange" },
+  { value: "#FF6B35", label: "Orange" },
 ] as const;
 
 export const QuickSettings: FC = () => {

@@ -68,7 +68,7 @@ const IconColors: Record<ToastType, string> = {
 };
 
 const BorderColors: Record<ToastType, string> = {
-  success: "border-success/50 shadow-glow-accent",
+  success: "border-success/50 shadow-glow-secondary",
   error: "border-red-500/50 shadow-glow-red",
   warning: "border-amber-500/50 shadow-glow-amber",
   info: "border-primary/50 shadow-glow-md",

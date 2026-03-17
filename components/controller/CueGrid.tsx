@@ -145,7 +145,7 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
                 className="flex items-center px-4 py-3.5 bg-elevated border-y border-primary/30 relative cursor-pointer"
                 style={{
                   boxShadow:
-                    "inset 4px 0 0 0 var(--color-primary, #00D9FF)",
+                    "inset 4px 0 0 0 hsl(var(--color-primary))",
                 }}
               >
                 <div className="absolute inset-0 bg-primary/5 pointer-events-none" />

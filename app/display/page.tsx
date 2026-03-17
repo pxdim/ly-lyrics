@@ -262,8 +262,12 @@ function DisplayPage() {
   // Connected - Display Lyrics
   return (
     <div className="relative min-h-screen w-full bg-void">
-      {/* Background Effects */}
+      {/* 背景效果 */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-20 pointer-events-none" />
+
+      {/* 背景光暈 */}
+      <div className="glow-orb-primary" style={{ top: '-10%', left: '-5%' }} />
+      <div className="glow-orb-secondary" style={{ bottom: '-10%', right: '-5%' }} />
 
       {/* Disconnect/Reconnect Status Banner */}
       <ConnectionStatusBar />

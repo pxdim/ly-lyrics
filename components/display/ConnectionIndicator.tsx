@@ -15,7 +15,7 @@ const stateConfig = {
   connected: {
     color: "#00FF88",
     borderColor: "rgba(0,255,136,0.3)",
-    shadowClass: "shadow-glow-accent",
+    shadowClass: "shadow-glow-secondary",
     label: "已連接",
     pulse: true,
   },
