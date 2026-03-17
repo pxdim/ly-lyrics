@@ -13,11 +13,21 @@ import { Spinner } from "./Spinner";
 /** 各變體對應 Tailwind class */
 const variantClasses = {
   primary:
-    "bg-gradient-to-br from-primary to-primary-600 text-void shadow-glow-sm hover:shadow-glow-md hover:-translate-y-0.5 active:scale-[0.97]",
+    "bg-primary text-white font-heading uppercase tracking-wider " +
+    "border-2 border-primary/50 " +
+    "shadow-[0_0_20px_hsl(var(--color-glow-primary)/0.4)] " +
+    "hover:shadow-[0_0_30px_hsl(var(--color-glow-primary)/0.6)] " +
+    "hover:-translate-y-0.5 active:scale-[0.97]",
   secondary:
-    "bg-gradient-to-br from-secondary to-secondary-600 text-white shadow-[0_0_10px_hsl(var(--color-glow-secondary)/0.3)] hover:shadow-[0_0_20px_hsl(var(--color-glow-secondary)/0.5)] hover:-translate-y-0.5 active:scale-[0.97]",
+    "bg-transparent text-secondary font-heading uppercase tracking-wider " +
+    "border-2 border-secondary/50 " +
+    "shadow-[0_0_10px_hsl(var(--color-glow-secondary)/0.2)] " +
+    "hover:shadow-[0_0_20px_hsl(var(--color-glow-secondary)/0.4)] " +
+    "hover:-translate-y-0.5 active:scale-[0.97]",
   ghost:
-    "bg-transparent border border-border-dim text-text-primary hover:border-primary hover:shadow-glow-sm active:scale-[0.97]",
+    "bg-transparent text-text-primary border-2 border-white/10 " +
+    "hover:border-primary/30 hover:shadow-[0_0_10px_hsl(var(--color-glow-primary)/0.15)] " +
+    "active:scale-[0.97]",
 } as const;
 
 interface GlowButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
