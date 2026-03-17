@@ -105,8 +105,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     backgroundColor: "rgba(3, 3, 4, 0.9)",
     backdropFilter: "blur(12px)",
     borderRadius: "9999px",
-    boxShadow: "0 0 10px rgba(0, 217, 255, 0.2)",
-    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
+    boxShadow: "0 0 10px hsl(var(--color-glow-primary) / 0.2)",
+    border: "1px solid " + "hsl(var(--color-glow-primary) / 0.3)",
     transition: "all 200ms ease-out",
     ...positionStyles[position],
   };
@@ -118,8 +118,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
     width: isMobile ? "2.25rem" : "2.75rem",
     height: isMobile ? "2.25rem" : "2.75rem",
     borderRadius: "9999px",
-    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
-    backgroundColor: "rgba(0, 217, 255, 0.1)",
+    border: "1px solid " + "hsl(var(--color-glow-primary) / 0.3)",
+    backgroundColor: "hsl(var(--color-glow-primary) / 0.1)",
     color: "hsl(var(--color-primary))",
     cursor: "pointer",
     transition: "all 200ms ease-out",
@@ -137,14 +137,14 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   const selectStyle: React.CSSProperties = {
     padding: isMobile ? "0.5rem 2rem 0.5rem 0.75rem" : "0.625rem 2.5rem 0.625rem 1rem",
     borderRadius: "0.5rem",
-    border: "1px solid " + "rgba(0, 217, 255, 0.3)",
+    border: "1px solid " + "hsl(var(--color-glow-primary) / 0.3)",
     backgroundColor: "rgba(3, 3, 4, 0.8)",
     color: "hsl(var(--color-text-primary))",
     fontSize: isMobile ? "0.75rem" : "0.875rem",
     fontFamily: "'Exo 2', sans-serif",
     cursor: "pointer",
     appearance: "none",
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300D9FF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FF6B00'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "right 0.625rem center",
     backgroundSize: "1rem",
@@ -169,12 +169,12 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         type="button"
         onMouseEnter={(e) => {
           if (canGoPrev) {
-            e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
-            e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
+            e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.2)";
+            e.currentTarget.style.boxShadow = "0 0 10px hsl(var(--color-glow-primary) / 0.4)";
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+          e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.1)";
           e.currentTarget.style.boxShadow = "none";
         }}
         className="group"
@@ -229,12 +229,12 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         type="button"
         onMouseEnter={(e) => {
           if (canGoNext) {
-            e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
-            e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
+            e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.2)";
+            e.currentTarget.style.boxShadow = "0 0 10px hsl(var(--color-glow-primary) / 0.4)";
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+          e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.1)";
           e.currentTarget.style.boxShadow = "none";
         }}
         className="group"
@@ -250,7 +250,7 @@ export const LyricsControl: FC<LyricsControlProps> = ({
       {onToggleFullscreen && (
         <>
           {/* Separator */}
-          <div style={{ width: "1px", height: "1.75rem", backgroundColor: "rgba(0, 217, 255, 0.3)", margin: "0 0.25rem" }} />
+          <div style={{ width: "1px", height: "1.75rem", backgroundColor: "hsl(var(--color-glow-primary) / 0.3)", margin: "0 0.25rem" }} />
 
           <button
             style={buttonStyle}
@@ -259,11 +259,11 @@ export const LyricsControl: FC<LyricsControlProps> = ({
             title={isFullscreen ? "退出全螢幕 (F)" : "全螢幕 (F)"}
             type="button"
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.2)";
-              e.currentTarget.style.boxShadow = "0 0 10px rgba(0, 217, 255, 0.4)";
+              e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.2)";
+              e.currentTarget.style.boxShadow = "0 0 10px hsl(var(--color-glow-primary) / 0.4)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(0, 217, 255, 0.1)";
+              e.currentTarget.style.backgroundColor = "hsl(var(--color-glow-primary) / 0.1)";
               e.currentTarget.style.boxShadow = "none";
             }}
             className="group"
