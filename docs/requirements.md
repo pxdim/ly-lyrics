@@ -19,11 +19,11 @@
 | FR1.2 | 用戶可以編輯現有歌曲資訊 | P0 | ✅ 完成 |
 | FR1.3 | 用戶可以刪除歌曲 | P0 | ✅ 完成 |
 | FR1.4 | 歌詞輸入支援一行一句格式 | P0 | ✅ 完成 |
-| FR1.5 | 支援 LRC 時間戳格式匯入 | P1 | 🔴 Not Started |
+| FR1.5 | 支援 LRC 時間戳格式匯入 | P1 | ✅ 完成 |
 | FR1.6 | 用戶可以搜索歌詞庫中的歌曲 | P1 | ✅ 完成 |
 | FR1.7 | 用戶可以按歌名或歌手排序 | P2 | 🔴 Not Started |
 
-> **FR1.5 備註**：LRC parser 已實作（`components/lrc/`），但尚無 UI 入口。
+> **FR1.5 備註**：UI 已在 AddSongModal 第三 tab（LrcDropZone），parser 在 lib/lrc/。
 > **FR1.7 備註**：尚未實作排序功能。
 
 ### FR2: 播放列表
@@ -74,7 +74,9 @@
 | FR6.1 | 支援上一句/下一句按鈕 | P0 | ✅ 完成 |
 | FR6.2 | 支援鍵盤快捷鍵控制 | P1 | ✅ 完成 |
 | FR6.3 | 支援點擊歌詞行跳轉 | P1 | ✅ 完成 |
-| FR6.4 | 支援自動/手動模式切換 | P1 | 🔴 Not Started |
+| FR6.4 | 支援自動/手動模式切換 | P1 | ✅ 完成 |
+
+> **FR6.4 備註**：auto = AI 追蹤控制自動跳行；manual = 封鎖 AI 自動跳行（手動按鈕仍可用）。controlMode 存於 Zustand store 並持久化。
 
 ### FR7: AI 聽歌辨識 (Phase 3)
 
@@ -143,7 +145,7 @@
 | NFR4.2 | API 文檔完整 | 🔴 Not Started |
 | NFR4.3 | 錯誤日誌記錄 | 🔴 Not Started |
 
-> **NFR4.1 備註**：已有 31 個測試檔案、285 個測試案例，但尚未計算覆蓋率百分比。
+> **NFR4.1 備註**：已有 358 個測試案例通過。覆蓋率量測結果（2026-03-17）：Lines 40.38% / Statements 39.53% / Functions 33.23% / Branches 32.71%。核心功能模組（ai-tracking、audio、playlist、hooks）已達 80%+，整體偏低主因是大量 UI 元件（controller/、lyrics-search/）尚無測試。
 
 ### NFR5: 相容性
 
