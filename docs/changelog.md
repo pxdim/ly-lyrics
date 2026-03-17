@@ -12,6 +12,11 @@
 - 前端 auth API 改走 Next.js rewrite proxy，移除直連 Go backend
 
 #### 新增
+- **Neon Brutalist Glass 主題** — 全站視覺風格更換
+  - 色盤：烈焰橘 (#FF6A00) + 冰藍 (#00E5FF) 取代原 Dark Tech 青/紫
+  - 字體：Archivo Black（英文標題）+ Noto Sans TC（中文全站）
+  - 毛玻璃質感：backdrop-filter blur + 粗邊框 (2px) + 背景光暈
+  - Glass 變體系統：glass-primary / glass-secondary / glass-subtle / glass-elevated
 - **Display Clean Output 模式** — `?mode=clean` URL 參數，純黑 `#000000` 背景供 OBS/VJ 軟體截取去背
 - **共用元件庫** — GlowButton、GlowInput、Spinner、ConfirmDialog、AuthLayout
 - **共用 Hooks** — useMediaQuery、useIsMobile、useIsTablet

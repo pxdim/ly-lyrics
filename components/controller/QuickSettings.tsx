@@ -13,11 +13,11 @@ import { ToggleRow } from "./ToggleRow";
 
 /**
  * 高亮色選項
- * 前兩項對應主題主色（primary=#FF6B00, secondary=#00D9FF）
+ * 前兩項對應主題主色（primary=#FF6A00, secondary=#00E5FF）
  */
 const HIGHLIGHT_COLORS = [
-  { value: "#FF6B00", label: "Primary" },
-  { value: "#00D9FF", label: "Secondary" },
+  { value: "#FF6A00", label: "Primary" },
+  { value: "#00E5FF", label: "Secondary" },
   { value: "#00FF88", label: "Green" },
   { value: "#FF3366", label: "Pink" },
   { value: "#FFB800", label: "Gold" },
