@@ -20,12 +20,15 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
   <main className="min-h-screen flex items-center justify-center p-4 bg-void text-text-primary relative overflow-hidden">
     {/* 背景漸層效果 */}
     <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-50" />
+    {/* 背景光暈 */}
+    <div className="glow-orb-primary" style={{ top: '-10%', left: '-5%' }} />
+    <div className="glow-orb-secondary" style={{ bottom: '-15%', right: '-10%' }} />
 
     <div className="w-full max-w-md relative z-10">
       {/* Logo 與標題 */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-heading font-bold tracking-wider">
-          <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             LY
           </span>
         </h1>
