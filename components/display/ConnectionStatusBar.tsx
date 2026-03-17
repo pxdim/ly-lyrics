@@ -40,8 +40,8 @@ export function ConnectionStatusBar() {
   // 恢復連線提示（淡出中）
   if (connectionState === "connected" && showConnected) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-50 animate-[fadeOut_2s_ease-out_forwards]">
-        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-[#00FF8818] to-[#00FF8808] border-b border-[#00FF8830]">
+      <div className="fixed top-0 left-0 right-0 z-50 animate-fade-out-slow">
+        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-accent/10 border-b border-accent/20">
           <span className="inline-block w-2 h-2 rounded-full bg-accent" />
           <span className="text-accent text-xs font-medium">連線已恢復</span>
         </div>
@@ -53,7 +53,7 @@ export function ConnectionStatusBar() {
   if (connectionState === "reconnecting") {
     return (
       <div className="fixed top-0 left-0 right-0 z-50">
-        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-[#FF6B3520] to-[#FF6B3510] border-b border-[#FF6B3530]">
+        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-warning/10 border-b border-warning/20">
           <span className="inline-block w-2 h-2 rounded-full bg-warning animate-pulse" />
           <span className="text-warning text-xs font-medium">
             連線中斷 · 重新連接中 ({reconnectAttempt}/5)
@@ -66,13 +66,13 @@ export function ConnectionStatusBar() {
   // 連線失敗（重連耗盡）
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      <div className="flex items-center justify-center gap-3 py-2 px-4 bg-gradient-to-r from-[#EF444425] to-[#EF444410] border-b border-[#EF444440]">
+      <div className="flex items-center justify-center gap-3 py-2 px-4 bg-error/10 border-b border-error/25">
         <span className="text-error text-sm">✕</span>
         <span className="text-error text-xs font-medium">無法連線</span>
         <button
           type="button"
           onClick={retryConnection}
-          className="ml-2 px-3 py-1 bg-[#EF444420] border border-[#EF444440] rounded-md text-[10px] text-error hover:bg-[#EF444430] transition-colors cursor-pointer"
+          className="ml-2 px-3 py-1 bg-error/10 border border-error/25 rounded-md text-[10px] text-error hover:bg-error/20 transition-colors cursor-pointer"
         >
           重試
         </button>

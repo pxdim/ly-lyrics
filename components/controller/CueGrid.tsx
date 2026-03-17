@@ -157,7 +157,7 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
                   className="flex-1 pl-3 text-[16px] font-bold tracking-wide relative z-10"
                   style={{
                     color: displaySettings.highlightColor,
-                    fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif",
+                    fontFamily: "'Noto Sans TC', sans-serif",
                   }}
                 >
                   {line || "(空行)"}
@@ -192,7 +192,7 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
               <div
                 className={`flex-1 pl-3 text-[14px] ${isPast ? "text-text-muted" : isNext ? "text-text-primary" : "text-text-muted"}`}
                 style={{
-                  fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif",
+                  fontFamily: "'Noto Sans TC', sans-serif",
                 }}
               >
                 {line || "(空行)"}

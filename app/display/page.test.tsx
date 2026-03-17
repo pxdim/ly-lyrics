@@ -214,6 +214,55 @@ describe("Display Page — Clean Output 模式", () => {
     expect(screen.getByTestId("connection-indicator")).toBeInTheDocument();
     expect(screen.getByTestId("lyrics-control")).toBeInTheDocument();
   });
+
+  // --------------------------------------------------------------------------
+  // Bug 修正：isConnected vs connectionState 語意分離
+  // --------------------------------------------------------------------------
+
+  it("Clean Output + 連線失敗：輸入 6 碼但 connectionState 為 disconnected 時仍顯示 LyricsDisplay，不顯示重連 UI", () => {
+    // 模擬：已輸入 6 碼（觸發連線嘗試），但 WebSocket 連線失敗（connectionState 仍為 disconnected）
+    setup({ code: "ABC123", mode: "clean" });
+    mockStoreState.set("connectionState", "disconnected");
+
+    render(<DisplayPageWrapper />);
+
+    // Clean Output 規格：已嘗試連線後，即使斷線也應顯示 LyricsDisplay（靜止在最後同步位置）
+    expect(screen.getByTestId("lyrics-display")).toBeInTheDocument();
+
+    // 不應顯示任何重連 UI
+    expect(screen.queryByTestId("connection-status-bar")).toBeNull();
+    expect(screen.queryByTestId("connection-indicator")).toBeNull();
+    expect(screen.queryByTestId("lyrics-control")).toBeNull();
+  });
+
+  it("一般模式 + 連線中（reconnecting）：已嘗試連線時顯示歌詞畫面與 ConnectionStatusBar", () => {
+    // 模擬：已輸入 6 碼，WebSocket 正在重連
+    setup({ code: "ABC123" });
+    mockStoreState.set("connectionState", "reconnecting");
+
+    render(<DisplayPageWrapper />);
+
+    // 應顯示歌詞畫面（不應回到輸入碼畫面）
+    expect(screen.getByTestId("lyrics-display")).toBeInTheDocument();
+    // 應顯示 ConnectionStatusBar 讓使用者知道重連中
+    expect(screen.getByTestId("connection-status-bar")).toBeInTheDocument();
+    // 不應顯示同步碼輸入框
+    expect(screen.queryByPlaceholderText("______")).toBeNull();
+  });
+
+  it("一般模式 + 未嘗試連線（未輸入碼）：顯示同步碼輸入畫面", () => {
+    // 未輸入任何碼，未嘗試連線
+    setup({});
+    mockStoreState.set("connectionState", "disconnected");
+
+    render(<DisplayPageWrapper />);
+
+    // 應顯示同步碼輸入畫面
+    expect(screen.getByPlaceholderText("______")).toBeInTheDocument();
+    // 不應顯示歌詞相關元件
+    expect(screen.queryByTestId("lyrics-display")).toBeNull();
+    expect(screen.queryByTestId("connection-status-bar")).toBeNull();
+  });
 });
 
 describe("Display Page — Song Info Overlay fade-out 動畫", () => {

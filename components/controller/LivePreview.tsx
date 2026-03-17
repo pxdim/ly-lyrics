@@ -79,7 +79,7 @@ export const LivePreview: FC = () => {
                     textShadow: item.isActive
                       ? `0 0 12px ${displaySettings.highlightColor}40, 0 0 24px ${displaySettings.highlightColor}20`
                       : "none",
-                    fontFamily: "'Noto Sans TC', 'Exo 2', sans-serif",
+                    fontFamily: "'Noto Sans TC', sans-serif",
                   }}
                 >
                   {item.text || "\u00A0"}

@@ -219,7 +219,7 @@ export function AudioInputSelector({
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `repeating-linear-gradient(to right, transparent, transparent 3px, #1A1D24 3px, #1A1D24 4px)`,
+              backgroundImage: `repeating-linear-gradient(to right, transparent, transparent 3px, hsl(var(--color-elevated)) 3px, hsl(var(--color-elevated)) 4px)`,
             }}
           />
           {/* 色區參考線：-18 dBFS */}
@@ -235,9 +235,9 @@ export function AudioInputSelector({
         </div>
 
         {/* dBFS 刻度 */}
-        <div className="flex justify-between text-[8px] font-mono text-[#3A3D45]">
+        <div className="flex justify-between text-[8px] font-mono text-text-dim">
           <span>-48</span>
-          <span className="text-[#4A4D55]">-24</span>
+          <span className="text-text-muted">-24</span>
           <span className="text-amber-900/80">-12</span>
           <span className="text-red-900/80">-6</span>
           <span className="text-red-900">0</span>

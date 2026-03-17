@@ -13,22 +13,25 @@ import { useLyricsStore } from "@/lib/store";
 
 const stateConfig = {
   connected: {
-    color: "#00FF88",
-    borderColor: "rgba(0,255,136,0.3)",
-    shadowClass: "shadow-glow-secondary",
+    dotClass: "bg-accent",
+    textClass: "text-accent",
+    borderClass: "border-accent/30",
+    shadowClass: "shadow-glow-accent",
     label: "已連接",
     pulse: true,
   },
   reconnecting: {
-    color: "#FF6B35",
-    borderColor: "rgba(255,107,53,0.3)",
+    dotClass: "bg-warning",
+    textClass: "text-warning",
+    borderClass: "border-warning/30",
     shadowClass: "",
     label: "重連中",
     pulse: true,
   },
   disconnected: {
-    color: "#EF4444",
-    borderColor: "rgba(239,68,68,0.3)",
+    dotClass: "bg-error",
+    textClass: "text-error",
+    borderClass: "border-error/30",
     shadowClass: "",
     label: "已離線",
     pulse: false,
@@ -41,22 +44,19 @@ export function ConnectionIndicator({ className = "" }: { className?: string }) 
 
   return (
     <div
-      className={`flex items-center gap-3 bg-elevated/80 backdrop-blur-md rounded-full px-5 py-2 border ${config.shadowClass} ${className}`}
-      style={{ borderColor: config.borderColor }}
+      className={`flex items-center gap-3 bg-elevated/80 backdrop-blur-md rounded-full px-5 py-2 border ${config.borderClass} ${config.shadowClass} ${className}`}
     >
       <span className="relative flex h-2.5 w-2.5">
         {config.pulse && (
           <span
-            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-            style={{ backgroundColor: config.color }}
+            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${config.dotClass}`}
           />
         )}
         <span
-          className="relative inline-flex rounded-full h-2.5 w-2.5"
-          style={{ backgroundColor: config.color }}
+          className={`relative inline-flex rounded-full h-2.5 w-2.5 ${config.dotClass}`}
         />
       </span>
-      <span className="font-body text-xs font-medium" style={{ color: config.color }}>
+      <span className={`font-body text-xs font-medium ${config.textClass}`}>
         {config.label}
       </span>
     </div>

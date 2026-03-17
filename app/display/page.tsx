@@ -47,7 +47,9 @@ function DisplayPage() {
     ? sessionStorage.getItem("ly_display_code") ?? ""
     : "");
   const [connectionCode, setConnectionCode] = useState(initialCode);
-  const [isConnected, setIsConnected] = useState(false);
+  // 語意：是否已嘗試連線（輸入了 6 碼同步碼）。不代表 WebSocket 真正 connected，
+  // 真正的連線狀態由 Zustand store 的 connectionState 管理。
+  const [hasAttemptedConnection, setHasAttemptedConnection] = useState(false);
   const connect = useLyricsStore((state) => state.connect);
   const disconnect = useLyricsStore((state) => state.disconnect);
   const joinSession = useLyricsStore((state) => state.joinSession);
@@ -140,7 +142,7 @@ function DisplayPage() {
       connect();
       // 使用同步碼作為 sessionId，以 display 角色加入
       joinSession(connectionCode, "display");
-      setIsConnected(true);
+      setHasAttemptedConnection(true);
     }
     // connect/joinSession 是穩定的 Zustand action
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,23 +156,24 @@ function DisplayPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Clean Output 未連線：純黑等待畫面，不顯示同步碼輸入 UI（觀眾不應看到技術介面）
-  if (!isConnected && isCleanOutput) {
+  // Clean Output 未嘗試連線：純黑等待畫面，不顯示同步碼輸入 UI（觀眾不應看到技術介面）
+  if (!hasAttemptedConnection && isCleanOutput) {
     return <div className="fixed inset-0" style={{ background: "#000000" }} />;
   }
 
-  // Clean Output 已連線：純黑背景 + LyricsDisplay，無任何 UI chrome
-  if (isConnected && isCleanOutput) {
+  // Clean Output 已嘗試連線：純黑背景 + LyricsDisplay，無任何 UI chrome
+  // 規格：即使 connectionState 為 disconnected / reconnecting，
+  // Clean Output 模式仍只顯示歌詞（靜止在最後一次同步位置），不顯示任何重連 UI
+  if (hasAttemptedConnection && isCleanOutput) {
     return (
       <div className="fixed inset-0 w-full h-full" style={{ background: "#000000" }}>
-        {/* Clean Output: 純黑背景 + 歌詞文字 + glow，無任何 UI chrome */}
         <LyricsDisplay />
       </div>
     );
   }
 
-  // 一般模式 — 連線畫面
-  if (!isConnected) {
+  // 一般模式 — 尚未嘗試連線：顯示同步碼輸入畫面
+  if (!hasAttemptedConnection) {
     return (
       <div className="fixed inset-0 bg-void flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}
