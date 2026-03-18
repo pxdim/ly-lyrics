@@ -116,4 +116,124 @@ describe("LrcDropZone", () => {
       expect(screen.getByText("請上傳 .lrc 格式的檔案")).toBeTruthy();
     });
   });
+
+  it("displays generic Error message for non-LrcImportError failures", async () => {
+    mockProcessLrcFile.mockRejectedValue(new Error("網路異常"));
+
+    render(<LrcDropZone />);
+    selectFile("test.lrc");
+
+    await waitFor(() => {
+      expect(screen.getByText("網路異常")).toBeTruthy();
+    });
+  });
+
+  it("displays fallback message for non-Error exceptions", async () => {
+    mockProcessLrcFile.mockRejectedValue("unknown error");
+
+    render(<LrcDropZone />);
+    selectFile("test.lrc");
+
+    await waitFor(() => {
+      expect(screen.getByText("匯入失敗")).toBeTruthy();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 載入中狀態
+  // --------------------------------------------------------------------------
+
+  it("shows parsing state while processing file", async () => {
+    // 使用一個永不 resolve 的 Promise 來觀察 parsing 狀態
+    let resolvePromise: (value: LrcImportResult) => void;
+    mockProcessLrcFile.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePromise = resolve;
+      })
+    );
+
+    render(<LrcDropZone />);
+    selectFile("test.lrc");
+
+    expect(screen.getByText("解析中...")).toBeTruthy();
+
+    // 完成以避免懸掛
+    resolvePromise!(createSuccessResult("test", 1));
+    await waitFor(() => {
+      expect(screen.getByText(/已成功匯入/)).toBeTruthy();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 拖放事件
+  // --------------------------------------------------------------------------
+
+  it("applies drag-over styling on dragEnter and removes on dragLeave", () => {
+    render(<LrcDropZone />);
+    const zone = screen.getByTestId("lrc-drop-zone");
+
+    fireEvent.dragEnter(zone, { dataTransfer: { files: [] } });
+    expect(zone.className).toContain("border-cyan-400");
+
+    fireEvent.dragLeave(zone, { dataTransfer: { files: [] } });
+    expect(zone.className).not.toContain("border-cyan-400");
+  });
+
+  it("handles file drop event", async () => {
+    mockProcessLrcFile.mockResolvedValue(createSuccessResult("拖放歌", 10));
+
+    render(<LrcDropZone />);
+    const zone = screen.getByTestId("lrc-drop-zone");
+
+    const file = new File(["content"], "drag.lrc", { type: "text/plain" });
+    fireEvent.drop(zone, { dataTransfer: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/已成功匯入「拖放歌」/)).toBeTruthy();
+    });
+    expect(mockProcessLrcFile).toHaveBeenCalledWith(file);
+  });
+
+  // --------------------------------------------------------------------------
+  // 點擊與鍵盤
+  // --------------------------------------------------------------------------
+
+  it("has role=button and tabIndex for keyboard access", () => {
+    render(<LrcDropZone />);
+    const zone = screen.getByTestId("lrc-drop-zone");
+    expect(zone.getAttribute("role")).toBe("button");
+    expect(zone.getAttribute("tabindex")).toBe("0");
+  });
+
+  it("triggers file input click on Enter key", () => {
+    render(<LrcDropZone />);
+    const zone = screen.getByTestId("lrc-drop-zone");
+    const input = screen.getByTestId("lrc-file-input") as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click");
+
+    fireEvent.keyDown(zone, { key: "Enter" });
+    // keyDown 觸發 handleClick + jsdom 的 button role 預設行為可能額外觸發 click
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("triggers file input click on Space key", () => {
+    render(<LrcDropZone />);
+    const zone = screen.getByTestId("lrc-drop-zone");
+    const input = screen.getByTestId("lrc-file-input") as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click");
+
+    fireEvent.keyDown(zone, { key: " " });
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("displays success message with lyrics count", async () => {
+    mockProcessLrcFile.mockResolvedValue(createSuccessResult("歌曲X", 42));
+
+    render(<LrcDropZone />);
+    selectFile("test.lrc");
+
+    await waitFor(() => {
+      expect(screen.getByText(/42 行/)).toBeTruthy();
+    });
+  });
 });
