@@ -52,13 +52,14 @@ export function useAiTracking() {
       const settings = store.aiSettings;
 
       // Google Cloud 和 Web Speech 不需要前端 API key（後端代理 / 瀏覽器內建）
+      // Deepgram API key 一律從後端取得，不在客戶端暴露
       let apiKey = "";
       if (settings.sttProvider === "deepgram") {
-        apiKey = settings.apiKey ?? process.env["NEXT_PUBLIC_DEEPGRAM_API_KEY"] ?? "";
+        apiKey = settings.apiKey ?? "";
         if (!apiKey) {
           const resp = await fetch("/api/stt/token");
           if (!resp.ok) {
-            updateAiStatus("error", undefined, undefined, "無法取得 STT API 金鑰");
+            updateAiStatus("error", undefined, undefined, "無法取得 STT API 金鑰，請確認已登入");
             return;
           }
           const data = await resp.json() as { token: string };

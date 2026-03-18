@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/handler"
+	"github.com/raymondchen/ly-backend/internal/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,11 +45,11 @@ func (m *mockPlaylistService) Create(_ context.Context, _ dto.CreatePlaylistRequ
 	return m.createResp, m.createErr
 }
 
-func (m *mockPlaylistService) Update(_ context.Context, _ uuid.UUID, _ dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error) {
+func (m *mockPlaylistService) Update(_ context.Context, _ uuid.UUID, _ dto.UpdatePlaylistRequest, _ uuid.UUID) (*dto.PlaylistResponse, error) {
 	return m.updateResp, m.updateErr
 }
 
-func (m *mockPlaylistService) Delete(_ context.Context, _ uuid.UUID) error {
+func (m *mockPlaylistService) Delete(_ context.Context, _ uuid.UUID, _ uuid.UUID) error {
 	return m.deleteErr
 }
 
@@ -139,4 +140,37 @@ func TestPlaylistCreate_MissingSongIDs(t *testing.T) {
 
 	assertStatus(t, rr, http.StatusBadRequest)
 	assertErrorCode(t, rr, "PLAYLIST_INVALID_FORMAT")
+}
+
+// ────────────────────────────────────────────────────────────
+// IDOR 防護測試：驗證操作他人播放清單時回傳 403 Forbidden
+// ────────────────────────────────────────────────────────────
+
+func TestPlaylistUpdate_ForbiddenWhenNotOwner(t *testing.T) {
+	// service 回傳 forbidden 錯誤，模擬操作者非資源擁有者
+	mock := &mockPlaylistService{updateErr: service.ErrForbidden}
+	h := handler.NewPlaylistWithService(mock)
+
+	newName := "Hacked Playlist"
+	playlistID := uuid.New().String()
+	req := newRequest(t, "PUT", "/api/playlists/"+playlistID, dto.UpdatePlaylistRequest{
+		Name: &newName,
+	})
+	rr := executeWithChi(t, "PUT", "/api/playlists/{id}", "/api/playlists/"+playlistID, h.Update, req)
+
+	assertStatus(t, rr, http.StatusForbidden)
+	assertErrorCode(t, rr, "PLAYLIST_FORBIDDEN")
+}
+
+func TestPlaylistDelete_ForbiddenWhenNotOwner(t *testing.T) {
+	// service 回傳 forbidden 錯誤，模擬操作者非資源擁有者
+	mock := &mockPlaylistService{deleteErr: service.ErrForbidden}
+	h := handler.NewPlaylistWithService(mock)
+
+	playlistID := uuid.New().String()
+	req := httptest.NewRequest("DELETE", "/api/playlists/"+playlistID, nil)
+	rr := executeWithChi(t, "DELETE", "/api/playlists/{id}", "/api/playlists/"+playlistID, h.Delete, req)
+
+	assertStatus(t, rr, http.StatusForbidden)
+	assertErrorCode(t, rr, "PLAYLIST_FORBIDDEN")
 }

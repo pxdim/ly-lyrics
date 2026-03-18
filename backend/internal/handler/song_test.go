@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/handler"
+	"github.com/raymondchen/ly-backend/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,11 +55,11 @@ func (m *mockSongService) Create(_ context.Context, _ dto.CreateSongRequest, _ u
 	return m.createResp, m.createErr
 }
 
-func (m *mockSongService) Update(_ context.Context, _ uuid.UUID, _ dto.UpdateSongRequest) (*dto.SongResponse, error) {
+func (m *mockSongService) Update(_ context.Context, _ uuid.UUID, _ dto.UpdateSongRequest, _ uuid.UUID) (*dto.SongResponse, error) {
 	return m.updateResp, m.updateErr
 }
 
-func (m *mockSongService) Delete(_ context.Context, _ uuid.UUID) error {
+func (m *mockSongService) Delete(_ context.Context, _ uuid.UUID, _ uuid.UUID) error {
 	return m.deleteErr
 }
 
@@ -381,4 +382,38 @@ func TestSongDelete_InvalidUUID(t *testing.T) {
 
 	assertStatus(t, rr, http.StatusBadRequest)
 	assertErrorCode(t, rr, "SONG_INVALID_FORMAT")
+}
+
+// ────────────────────────────────────────────────────────────
+// IDOR 防護測試：驗證操作他人資源時回傳 403 Forbidden
+// ────────────────────────────────────────────────────────────
+
+func TestSongUpdate_ForbiddenWhenNotOwner(t *testing.T) {
+	// service 回傳 forbidden 錯誤，模擬操作者非資源擁有者
+	mock := &mockSongService{updateErr: service.ErrForbidden}
+	h := handler.NewSongWithService(mock)
+
+	newTitle := "Hacked Title"
+	songID := "22222222-2222-2222-2222-222222222222"
+	req := newRequest(t, "PUT", "/api/songs/"+songID, dto.UpdateSongRequest{
+		Title: &newTitle,
+	})
+	rr := executeWithChi(t, "PUT", "/api/songs/{id}", "/api/songs/"+songID, h.Update, req)
+
+	assertStatus(t, rr, http.StatusForbidden)
+	assertErrorCode(t, rr, "SONG_FORBIDDEN")
+}
+
+func TestSongDelete_ForbiddenWhenNotOwner(t *testing.T) {
+	song := newTestSong()
+	// GetByID 回傳歌曲（存在），但 Delete 回傳 forbidden
+	mock := &mockSongService{getResp: song, deleteErr: service.ErrForbidden}
+	h := handler.NewSongWithService(mock)
+
+	songID := "22222222-2222-2222-2222-222222222222"
+	req := httptest.NewRequest("DELETE", "/api/songs/"+songID, nil)
+	rr := executeWithChi(t, "DELETE", "/api/songs/{id}", "/api/songs/"+songID, h.Delete, req)
+
+	assertStatus(t, rr, http.StatusForbidden)
+	assertErrorCode(t, rr, "SONG_FORBIDDEN")
 }

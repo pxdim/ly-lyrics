@@ -28,15 +28,18 @@ func (s *Server) setupRoutes() {
 		r.Get("/api/auth/me", authHandler.Me)
 	})
 
-	// STT（OptionalAuth — demo 使用者也需要 STT 功能）
+	// STT（RequireAuth — API key 僅限認證使用者取得，防止未授權洩漏）
 	sttHandler := handler.NewSTT(s.cfg.DeepgramAPIKey, s.cfg.GoogleSTTAPIKey)
 	s.router.Group(func(r chi.Router) {
-		r.Use(auth.OptionalAuth(s.jwtManager))
+		r.Use(auth.RequireAuth(s.jwtManager))
 		r.Get("/api/stt/token", sttHandler.GetToken)
 	})
 
-	// STT WebSocket 串流代理（Google Cloud STT）
-	s.router.Get("/api/stt/stream", sttHandler.StreamSTT)
+	// STT WebSocket 串流代理（Google Cloud STT）— 需認證防止未授權使用者濫用 API 配額
+	s.router.Group(func(r chi.Router) {
+		r.Use(auth.RequireAuth(s.jwtManager))
+		r.Get("/api/stt/stream", sttHandler.StreamSTT)
+	})
 
 	// CRUD 路由（OptionalAuth — 未認證使用 demo user）
 	s.router.Group(func(r chi.Router) {

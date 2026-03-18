@@ -38,3 +38,33 @@ func TestSTTHandler_GetToken(t *testing.T) {
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	})
 }
+
+// ────────────────────────────────────────────────────────────
+// audioBuffer 大小保護測試（漏洞 3：OOM 防護）
+// ────────────────────────────────────────────────────────────
+
+func TestGuardAudioBuffer_UnderLimit(t *testing.T) {
+	// 小於上限的 buffer 應原樣回傳，不被清空
+	buf := make([]byte, 1024)
+	for i := range buf {
+		buf[i] = 0xFF
+	}
+
+	result := handler.GuardAudioBuffer(buf)
+	assert.Equal(t, 1024, len(result), "低於上限的 buffer 不應被清空")
+	assert.Equal(t, byte(0xFF), result[0], "buffer 內容應保持不變")
+}
+
+func TestGuardAudioBuffer_ExceedsLimit(t *testing.T) {
+	// 超過 10MB 的 buffer 應被清空
+	buf := make([]byte, handler.MaxAudioBufferSize+1)
+	result := handler.GuardAudioBuffer(buf)
+	assert.Equal(t, 0, len(result), "超過上限的 buffer 應被清空")
+}
+
+func TestGuardAudioBuffer_ExactlyAtLimit(t *testing.T) {
+	// 剛好等於上限的 buffer 不應被清空
+	buf := make([]byte, handler.MaxAudioBufferSize)
+	result := handler.GuardAudioBuffer(buf)
+	assert.Equal(t, handler.MaxAudioBufferSize, len(result), "等於上限的 buffer 不應被清空")
+}

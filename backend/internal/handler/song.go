@@ -4,6 +4,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -19,8 +20,8 @@ type SongServicer interface {
 	List(ctx context.Context, params dto.SongListParams) (*dto.SongListResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*dto.SongResponse, error)
 	Create(ctx context.Context, req dto.CreateSongRequest, userID uuid.UUID) (*dto.SongResponse, error)
-	Update(ctx context.Context, id uuid.UUID, req dto.UpdateSongRequest) (*dto.SongResponse, error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdateSongRequest, userID uuid.UUID) (*dto.SongResponse, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 }
 
 // Song 歌曲 HTTP handler
@@ -135,8 +136,18 @@ func (h *Song) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songResp, err := h.svc.Update(r.Context(), id, req)
+	// 取得操作者 ID，未認證時使用 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	songResp, err := h.svc.Update(r.Context(), id, req, userID)
 	if err != nil {
+		if errors.Is(err, service.ErrForbidden) {
+			writeError(w, "SONG_FORBIDDEN", "You do not have permission to update this song", http.StatusForbidden)
+			return
+		}
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to update song", http.StatusInternalServerError)
 		return
 	}
@@ -156,6 +167,12 @@ func (h *Song) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 取得操作者 ID，未認證時使用 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
 	// 先取得歌曲資料以便回傳
 	songResp, err := h.svc.GetByID(r.Context(), id)
 	if err != nil {
@@ -167,7 +184,11 @@ func (h *Song) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	if err := h.svc.Delete(r.Context(), id, userID); err != nil {
+		if errors.Is(err, service.ErrForbidden) {
+			writeError(w, "SONG_FORBIDDEN", "You do not have permission to delete this song", http.StatusForbidden)
+			return
+		}
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to delete song", http.StatusInternalServerError)
 		return
 	}

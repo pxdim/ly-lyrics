@@ -424,7 +424,6 @@ describe("getUserMessage", () => {
 
 describe("logError", () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  const originalEnv = process.env["NODE_ENV"];
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -432,7 +431,7 @@ describe("logError", () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
-    Object.defineProperty(process.env, "NODE_ENV", { value: originalEnv, writable: true });
+    vi.unstubAllEnvs();
   });
 
   it("logs AppError with code prefix", () => {
@@ -461,7 +460,7 @@ describe("logError", () => {
   });
 
   it("includes technical details in development mode", () => {
-    Object.defineProperty(process.env, "NODE_ENV", { value: "development", writable: true });
+    vi.stubEnv("NODE_ENV", "development");
 
     const error = new AppError(
       "SYS_INTERNAL_ERROR",
@@ -481,7 +480,7 @@ describe("logError", () => {
   });
 
   it("omits technical details in production mode", () => {
-    Object.defineProperty(process.env, "NODE_ENV", { value: "production", writable: true });
+    vi.stubEnv("NODE_ENV", "production");
 
     const error = new AppError(
       "SYS_INTERNAL_ERROR",
@@ -501,7 +500,7 @@ describe("logError", () => {
   });
 
   it("passes external context for plain Error in development", () => {
-    Object.defineProperty(process.env, "NODE_ENV", { value: "development", writable: true });
+    vi.stubEnv("NODE_ENV", "development");
     const ctx: ErrorContext = { location: "handler" };
 
     logError(new Error("fail"), ctx);

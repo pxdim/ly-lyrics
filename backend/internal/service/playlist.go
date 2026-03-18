@@ -122,8 +122,8 @@ func (s *PlaylistService) Create(ctx context.Context, req dto.CreatePlaylistRequ
 	return &resp, nil
 }
 
-// Update 更新播放清單（名稱及/或歌曲列表）
-func (s *PlaylistService) Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error) {
+// Update 更新播放清單（名稱及/或歌曲列表），先驗證擁有權
+func (s *PlaylistService) Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error) {
 	// 確認播放清單存在
 	p, err := s.client.Playlist.Get(ctx, id)
 	if err != nil {
@@ -131,6 +131,10 @@ func (s *PlaylistService) Update(ctx context.Context, id uuid.UUID, req dto.Upda
 			return nil, nil
 		}
 		return nil, fmt.Errorf("getting playlist: %w", err)
+	}
+	// 驗證資源擁有權
+	if p.UserID != userID {
+		return nil, ErrForbidden
 	}
 
 	tx, err := s.client.Tx(ctx)
@@ -185,15 +189,18 @@ func (s *PlaylistService) Update(ctx context.Context, id uuid.UUID, req dto.Upda
 	return &resp, nil
 }
 
-// Delete 刪除播放清單及其歌曲關聯
-func (s *PlaylistService) Delete(ctx context.Context, id uuid.UUID) error {
-	// 確認播放清單存在
-	exists, err := s.client.Playlist.Query().Where(playlist.ID(id)).Exist(ctx)
+// Delete 刪除播放清單及其歌曲關聯，先驗證擁有權
+func (s *PlaylistService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+	// 確認播放清單存在並驗證擁有權
+	p, err := s.client.Playlist.Get(ctx, id)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("playlist not found")
+		}
 		return fmt.Errorf("checking playlist: %w", err)
 	}
-	if !exists {
-		return fmt.Errorf("playlist not found")
+	if p.UserID != userID {
+		return ErrForbidden
 	}
 
 	tx, err := s.client.Tx(ctx)

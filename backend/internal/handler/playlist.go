@@ -5,6 +5,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -19,8 +20,8 @@ import (
 type PlaylistServicer interface {
 	List(ctx context.Context, params dto.PlaylistListParams) (*dto.PlaylistListResponse, error)
 	Create(ctx context.Context, req dto.CreatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error)
-	Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest) (*dto.PlaylistResponse, error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdatePlaylistRequest, userID uuid.UUID) (*dto.PlaylistResponse, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 }
 
 // Playlist 播放清單 HTTP handler
@@ -129,8 +130,18 @@ func (h *Playlist) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlistResp, err := h.svc.Update(r.Context(), id, req)
+	// 取得操作者 ID，未認證時使用 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	playlistResp, err := h.svc.Update(r.Context(), id, req, userID)
 	if err != nil {
+		if errors.Is(err, service.ErrForbidden) {
+			writeError(w, "PLAYLIST_FORBIDDEN", "You do not have permission to update this playlist", http.StatusForbidden)
+			return
+		}
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to update playlist", http.StatusInternalServerError)
 		return
 	}
@@ -150,9 +161,19 @@ func (h *Playlist) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	// 取得操作者 ID，未認證時使用 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	if err := h.svc.Delete(r.Context(), id, userID); err != nil {
 		if err.Error() == "playlist not found" {
 			writeError(w, "PLAYLIST_NOT_FOUND", "Playlist not found", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			writeError(w, "PLAYLIST_FORBIDDEN", "You do not have permission to delete this playlist", http.StatusForbidden)
 			return
 		}
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to delete playlist", http.StatusInternalServerError)

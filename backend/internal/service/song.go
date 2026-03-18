@@ -130,8 +130,25 @@ func (s *SongService) Create(ctx context.Context, req dto.CreateSongRequest, use
 	return &resp, nil
 }
 
-// Update 更新歌曲，找不到時回傳 nil
-func (s *SongService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateSongRequest) (*dto.SongResponse, error) {
+// ErrForbidden 表示操作者無權操作該資源
+var ErrForbidden = fmt.Errorf("forbidden")
+
+// Update 更新歌曲，先驗證擁有權，找不到時回傳 nil，非擁有者回傳 ErrForbidden
+func (s *SongService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateSongRequest, userID uuid.UUID) (*dto.SongResponse, error) {
+	// 驗證資源擁有權：確認歌曲存在且屬於當前使用者
+	existing, err := s.client.Song.Query().
+		Where(song.ID(id)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("getting song %s: %w", id, err)
+	}
+	if existing.UserID != userID {
+		return nil, ErrForbidden
+	}
+
 	builder := s.client.Song.UpdateOneID(id)
 
 	if req.Title != nil {
@@ -174,13 +191,24 @@ func (s *SongService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateSo
 	return &resp, nil
 }
 
-// Delete 刪除歌曲
-func (s *SongService) Delete(ctx context.Context, id uuid.UUID) error {
-	err := s.client.Song.DeleteOneID(id).Exec(ctx)
+// Delete 刪除歌曲，先驗證擁有權，非擁有者回傳 ErrForbidden
+func (s *SongService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+	// 驗證資源擁有權：確認歌曲存在且屬於當前使用者
+	existing, err := s.client.Song.Query().
+		Where(song.ID(id)).
+		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return err
 		}
+		return fmt.Errorf("getting song %s: %w", id, err)
+	}
+	if existing.UserID != userID {
+		return ErrForbidden
+	}
+
+	err = s.client.Song.DeleteOneID(id).Exec(ctx)
+	if err != nil {
 		return fmt.Errorf("deleting song %s: %w", id, err)
 	}
 	return nil

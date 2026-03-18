@@ -4,12 +4,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/raymondchen/ly-backend/internal/auth"
 	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/service"
 )
@@ -122,8 +124,18 @@ func (h *LRC) Import(w http.ResponseWriter, r *http.Request) {
 		updateReq.Artist = &lrc.Metadata.Artist
 	}
 
-	songResp, err := h.songSvc.Update(r.Context(), id, updateReq)
+	// 取得操作者 ID，未認證時使用 DemoUserID
+	userID := service.DemoUserID
+	if uid := auth.UserIDFromContext(r.Context()); uid != nil {
+		userID = *uid
+	}
+
+	songResp, err := h.songSvc.Update(r.Context(), id, updateReq, userID)
 	if err != nil {
+		if errors.Is(err, service.ErrForbidden) {
+			writeError(w, "SONG_FORBIDDEN", "You do not have permission to update this song", http.StatusForbidden)
+			return
+		}
 		writeError(w, "SYS_INTERNAL_ERROR", "Failed to update song", http.StatusInternalServerError)
 		return
 	}

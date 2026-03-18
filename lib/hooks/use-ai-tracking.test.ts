@@ -257,7 +257,7 @@ describe("useAiTracking", () => {
         "error",
         undefined,
         undefined,
-        "無法取得 STT API 金鑰"
+        "無法取得 STT API 金鑰，請確認已登入"
       );
       // 不應建立 engine
       expect(TrackingEngine).not.toHaveBeenCalled();

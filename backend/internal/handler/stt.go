@@ -16,6 +16,18 @@ import (
 	"github.com/coder/websocket"
 )
 
+// MaxAudioBufferSize 音訊緩衝區最大大小（10MB），超過此大小將清空 buffer 防止 OOM
+const MaxAudioBufferSize = 10 * 1024 * 1024
+
+// GuardAudioBuffer 檢查 audioBuffer 大小，超過上限時清空並記錄警告
+func GuardAudioBuffer(buf []byte) []byte {
+	if len(buf) > MaxAudioBufferSize {
+		slog.Warn("[STT] 音訊緩衝區超過上限，已清空", "size_bytes", len(buf), "max_bytes", MaxAudioBufferSize)
+		return buf[:0]
+	}
+	return buf
+}
+
 // STT 語音辨識 handler
 type STT struct {
 	deepgramAPIKey string
@@ -129,6 +141,7 @@ func (h *STT) StreamSTT(w http.ResponseWriter, r *http.Request) {
 			}
 			mu.Lock()
 			audioBuffer = append(audioBuffer, data...)
+			audioBuffer = GuardAudioBuffer(audioBuffer)
 			mu.Unlock()
 		}
 	}()

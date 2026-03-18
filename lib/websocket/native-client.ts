@@ -70,7 +70,7 @@ export class NativeWSClient {
     this.shouldReconnect = true;
 
     this.ws.onopen = () => {
-      console.log("[NativeWS] Connected to server");
+      console.debug("[NativeWS] Connected to server");
       this.reconnectAttempts = 0;
       this.emit("_connected", undefined);
       // 重新連線後自動重新加入先前的 session
@@ -80,7 +80,7 @@ export class NativeWSClient {
     };
 
     this.ws.onclose = () => {
-      console.log("[NativeWS] Disconnected");
+      console.debug("[NativeWS] Disconnected");
       this.emit("_disconnected", undefined);
       if (this.shouldReconnect) {
         this.attemptReconnect();
@@ -265,7 +265,7 @@ export class NativeWSClient {
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectAttempts++;
-      console.log(
+      console.debug(
         `[NativeWS] Reconnecting (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       );
       this.emit("_reconnecting", {
