@@ -2,6 +2,24 @@
 
 ## 版本歷史
 
+### v0.8.1 - 2026-03-18
+
+#### 新增
+- **FR1.7 歌曲排序** — 歌曲庫支援按歌名/歌手升降冪排序，搜尋欄旁新增排序切換按鈕
+  - 排序邏輯抽離為 `lib/utils/song-sort.ts` 純函式，支援泛型與 locale-aware 比較
+  - 5 種模式循環：關閉 → 歌名 A-Z → 歌名 Z-A → 歌手 A-Z → 歌手 Z-A → 關閉
+  - 使用 `useMemo` 避免不必要的排序運算
+
+#### 修復
+- 修正 `SongLibrary.test.tsx` 中 `displays NO RESULTS` 測試在 `shouldAdvanceTime` 模式下的 mock 消耗時序問題
+
+#### 測試
+- 新增 `song-sort.test.ts`（10 個測試案例）：升降冪、邊界情況、大小寫不敏感、中文 locale、不修改原陣列
+- 新增 `SongLibrary.test.tsx` 排序相關測試（3 個）：排序按鈕渲染、歌名排序、循環切換
+- 全部測試：51 檔案、610 個測試通過
+
+---
+
 ### v0.8.0 - 2026-03-17
 
 **P0 UI/UX 全面重設計 — Token 安全 + 設計系統統一 + Controller 拆分 + 動效升級**

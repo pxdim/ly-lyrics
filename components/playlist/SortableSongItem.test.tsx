@@ -151,7 +151,7 @@ describe("SortableSongItem", () => {
   });
 
   it("renders without artist when artist is undefined", () => {
-    const { artist: _removed, ...songWithoutArtist } = baseSong;
+    const { artist: _, ...songWithoutArtist } = baseSong;
     const onSelect = vi.fn();
     render(
       <SortableSongItem song={songWithoutArtist} index={0} isActive={false} onSelect={onSelect} />

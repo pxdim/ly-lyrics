@@ -1,14 +1,14 @@
 /**
  * SongLibrary — 歌曲庫面板
  *
- * 包含歌曲搜尋、新增（搜尋歌詞/手動輸入/匯入 LRC）、
+ * 包含歌曲搜尋、排序（FR1.7）、新增（搜尋歌詞/手動輸入/匯入 LRC）、
  * 歌曲列表（選曲/刪除/匯出 LRC）。
  * 使用 ConfirmDialog 取代原生 confirm() 呼叫。
  */
 
 "use client";
 
-import { useEffect, useState, useCallback, type FC } from "react";
+import { useEffect, useState, useCallback, useMemo, type FC } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
 import {
@@ -17,8 +17,49 @@ import {
 } from "@/components/controller/AddSongModal";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 import { generateLrcContent, downloadLrcFile } from "@/lib/lrc/export";
-import { Download } from "lucide-react";
+import { Download, ArrowUpDown } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  sortSongs,
+  type SortField,
+  type SortOrder,
+} from "@/lib/utils/song-sort";
+
+/**
+ * 排序模式循環：關閉 → 歌名升冪 → 歌名降冪 → 歌手升冪 → 歌手降冪 → 關閉
+ */
+type SortMode =
+  | "off"
+  | "title-asc"
+  | "title-desc"
+  | "artist-asc"
+  | "artist-desc";
+
+const SORT_CYCLE: SortMode[] = [
+  "off",
+  "title-asc",
+  "title-desc",
+  "artist-asc",
+  "artist-desc",
+];
+
+/** 排序模式對應的顯示文字 */
+const SORT_LABELS: Record<SortMode, string> = {
+  off: "",
+  "title-asc": "歌名 A-Z",
+  "title-desc": "歌名 Z-A",
+  "artist-asc": "歌手 A-Z",
+  "artist-desc": "歌手 Z-A",
+};
+
+/** 解析排序模式為 field + order */
+function parseSortMode(
+  mode: SortMode,
+): { field: SortField; order: SortOrder } | null {
+  if (mode === "off") return null;
+  const [field, order] = mode.split("-") as [SortField, SortOrder];
+  return { field, order };
+}
 
 export const SongLibrary: FC = () => {
   const [songs, setSongs] = useState<ClientSong[]>([]);
@@ -27,6 +68,7 @@ export const SongLibrary: FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalTab, setAddModalTab] = useState<AddSongTab>("search");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>("off");
 
   // ConfirmDialog 狀態（取代原生 confirm()）
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -62,6 +104,22 @@ export const SongLibrary: FC = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [search, loadSongs]);
+
+  // 排序後的歌曲列表（memoized）
+  const displaySongs = useMemo(() => {
+    const parsed = parseSortMode(sortMode);
+    if (!parsed) return songs;
+    return sortSongs(songs, parsed.field, parsed.order);
+  }, [songs, sortMode]);
+
+  // 循環切換排序模式
+  const handleCycleSort = useCallback(() => {
+    setSortMode((prev) => {
+      const currentIdx = SORT_CYCLE.indexOf(prev);
+      const nextIdx = (currentIdx + 1) % SORT_CYCLE.length;
+      return SORT_CYCLE[nextIdx] ?? "off";
+    });
+  }, []);
 
   const handleSelectSong = (song: ClientSong) => {
     setCurrentSong(song as Parameters<typeof setCurrentSong>[0]);
@@ -136,28 +194,46 @@ export const SongLibrary: FC = () => {
         </div>
       </div>
 
-      {/* 搜尋 */}
+      {/* 搜尋 + 排序 */}
       <div className="px-3 py-2 border-b border-border-dim shrink-0">
-        <div className="relative">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+        <div className="flex gap-1.5 items-center">
+          <div className="relative flex-1">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜尋歌曲..."
+              className="w-full pl-8 pr-3 py-1.5 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
+            />
+          </div>
+          {/* 排序切換按鈕（FR1.7） */}
+          <button
+            type="button"
+            aria-label="排序方式"
+            onClick={handleCycleSort}
+            className={`flex items-center gap-1 px-2 py-1.5 border text-[11px] font-mono transition-colors shrink-0 ${
+              sortMode === "off"
+                ? "border-border-dim text-text-muted hover:text-primary hover:border-primary/40"
+                : "border-primary/40 text-primary bg-primary/5"
+            }`}
           >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜尋歌曲..."
-            className="w-full pl-8 pr-3 py-1.5 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
-          />
+            <ArrowUpDown className="w-3 h-3" />
+            {sortMode !== "off" && (
+              <span>{SORT_LABELS[sortMode]}</span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -177,7 +253,7 @@ export const SongLibrary: FC = () => {
             {search ? "NO RESULTS" : "EMPTY"}
           </div>
         ) : (
-          songs.map((song, idx) => {
+          displaySongs.map((song, idx) => {
             const isActive = currentSong?.id === song.id;
             return (
               <div
@@ -222,6 +298,7 @@ export const SongLibrary: FC = () => {
                 )}
                 <div className="flex-1 min-w-0 relative z-10">
                   <p
+                    data-testid="song-title"
                     className={`truncate text-[13px] ${isActive ? "font-semibold" : ""}`}
                   >
                     {song.title}

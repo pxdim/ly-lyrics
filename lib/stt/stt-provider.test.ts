@@ -36,7 +36,7 @@ class MockWebSocket {
 
 let mockWsInstance: MockWebSocket;
 
-const MockWebSocketFactory = vi.fn(function MockWebSocketConstructor(_url: string, _protocols?: string | string[]) {
+const MockWebSocketFactory = vi.fn(function MockWebSocketConstructor(_: string, __?: string | string[]) {
   mockWsInstance = new MockWebSocket();
   return mockWsInstance;
 }) as unknown as typeof WebSocket;

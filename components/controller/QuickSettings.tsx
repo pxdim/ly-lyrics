@@ -140,6 +140,30 @@ export const QuickSettings: FC = () => {
           </div>
         </div>
 
+        {/* 背景色 */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-mono text-text-muted uppercase">
+              BG Color
+            </span>
+            <span
+              className="inline-block w-4 h-4 border border-border-dim"
+              style={{ backgroundColor: displaySettings.backgroundColor }}
+            />
+          </div>
+          <input
+            type="color"
+            aria-label="背景色"
+            value={displaySettings.backgroundColor}
+            onInput={(e) =>
+              updateDisplaySettings({
+                backgroundColor: (e.target as HTMLInputElement).value,
+              })
+            }
+            className="w-full h-8 cursor-pointer bg-transparent border border-border-dim rounded appearance-none [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-sm"
+          />
+        </div>
+
         {/* 主題 */}
         <div>
           <span className="block text-[11px] font-mono text-text-muted uppercase mb-1.5">

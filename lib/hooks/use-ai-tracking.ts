@@ -124,7 +124,7 @@ export function useAiTracking() {
       const message = error instanceof Error ? error.message : "啟動 AI 追蹤失敗";
       updateAiStatus("error", undefined, undefined, message);
     }
-  }, [startAiTracking, updateAiStatus, updateAudioInput, startVolumePolling]);
+  }, [startAiTracking, updateAiStatus, updateAudioInput, updateAiTranscript, startVolumePolling]);
 
   const stop = useCallback(() => {
     engineRef.current?.stop();

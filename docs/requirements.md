@@ -21,10 +21,10 @@
 | FR1.4 | 歌詞輸入支援一行一句格式 | P0 | ✅ 完成 |
 | FR1.5 | 支援 LRC 時間戳格式匯入 | P1 | ✅ 完成 |
 | FR1.6 | 用戶可以搜索歌詞庫中的歌曲 | P1 | ✅ 完成 |
-| FR1.7 | 用戶可以按歌名或歌手排序 | P2 | 🔴 Not Started |
+| FR1.7 | 用戶可以按歌名或歌手排序 | P2 | ✅ 完成 |
 
 > **FR1.5 備註**：UI 已在 AddSongModal 第三 tab（LrcDropZone），parser 在 lib/lrc/。
-> **FR1.7 備註**：尚未實作排序功能。
+> **FR1.7 備註**：前端排序，支援歌名/歌手升降冪循環切換。排序邏輯在 `lib/utils/song-sort.ts`，UI 在 `SongLibrary.tsx` 搜尋欄旁的排序按鈕。
 
 ### FR2: 播放列表
 

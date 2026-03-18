@@ -127,7 +127,7 @@ export class WebSpeechProvider implements STTProvider {
   }
 
   // Web Speech API 自行管理麥克風，不需要外部音訊
-  sendAudio(_chunk: Float32Array): void {
+  sendAudio(_: Float32Array): void {
     // no-op
   }
 

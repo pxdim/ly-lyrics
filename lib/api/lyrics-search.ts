@@ -60,7 +60,6 @@ export async function searchLyrics(
   signal?: AbortSignal
 ): Promise<LyricsSearchResponse> {
   // signal 為 undefined 時保留 key 以符合呼叫方預期，使用型別斷言繞過 exactOptionalPropertyTypes
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const init = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
