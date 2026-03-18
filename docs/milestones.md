@@ -91,7 +91,7 @@
 - [x] 基礎視覺效果
 - [x] 響應式設計
 
-> **進度備註:** 核心功能已大部分完成（歌詞 CRUD、播放列表、WebSocket 同步、Neon Brutalist Glass 主題、RWD），目前處於品質鞏固階段。
+> **進度備註:** 功能完成、品質鞏固中。測試從 285 增至 610（51 個測試檔案）。核心功能全數完成（歌詞 CRUD、播放列表、WebSocket 同步、Neon Brutalist Glass 主題、RWD、AI 聽歌追蹤）。
 
 **交付物:**
 - [ ] 可部署的 MVP 版本
@@ -102,7 +102,7 @@
 - [x] 所有核心功能測試通過
 - [x] 同步延遲 < 100ms
 - [x] 支援 3 種裝置尺寸
-- [ ] 測試覆蓋率 > 80%（目前量測：Lines 40.38% / Functions 33.23% / Branches 32.71% — 2026-03-17）
+- [ ] 測試覆蓋率 > 80%（610 個測試案例通過，覆蓋率持續提升中 — 2026-03-18）
 
 ---
 
@@ -138,11 +138,11 @@
 
 **目標:**
 - [x] 麥克風錄音功能
-- [ ] Gemini API 音訊辨識
+- [x] Gemini API 音訊辨識
 - [x] 歌詞比對演算法
-- [ ] 自動捲動同步
+- [x] 自動捲動同步
 
-> **進度備註:** 已實作 AudioInputSelector 元件（`components/ai-tracking/`）與音訊擷取模組（`lib/audio/`），tracking engine 基礎架構已建立，但尚未完整整合至控制台流程，Gemini API 串接尚未開始。
+> **進度備註**：AudioCapture + 3 STT Providers + TrackingEngine + LyricsMatcher 已完整實作並整合至 Controller 頁面。FR6.4 controlMode 已支援 auto/manual 模式。待完成：FR7.4 手動校正 UI。
 
 **交付物:**
 - [ ] AI 聽歌辨識模組
@@ -189,7 +189,7 @@
 **日期:** 持續進行
 
 **功能清單:**
-- [ ] LRC 時間戳匯入（parser 已完成，需建立 UI）
+- [x] LRC 時間戳匯入（AddSongModal 第三 tab + LrcDropZone）
 - [x] 歌詞搜索/篩選
 - [ ] 多國語言支援
 - [ ] 使用者權限管理
@@ -218,5 +218,5 @@
 
 ---
 
-**文件版本:** 2.0
-**最後更新:** 2026-03-17
+**文件版本:** 3.0
+**最後更新:** 2026-03-18

@@ -27,6 +27,7 @@ const defaultDisplaySettings = {
   theme: "dark" as const,
   showBackground: true,
   backgroundColor: "#000000",
+  backgroundImage: "",
   textColor: "#ffffff",
   highlightColor: "#0ea5e9",
   autoScroll: true,
@@ -389,6 +390,77 @@ describe("QuickSettings", () => {
       render(<QuickSettings />);
 
       expect(screen.getByText("1.2x")).toBeInTheDocument();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 背景圖片上傳 (FR4.3)
+  // --------------------------------------------------------------------------
+
+  describe("background image upload (FR4.3)", () => {
+    it("renders BG Image label and upload button", () => {
+      render(<QuickSettings />);
+
+      expect(screen.getByText("BG Image")).toBeInTheDocument();
+      expect(screen.getByText("上傳")).toBeInTheDocument();
+    });
+
+    it("does not render clear button when backgroundImage is empty", () => {
+      render(<QuickSettings />);
+
+      expect(screen.queryByText("清除")).not.toBeInTheDocument();
+    });
+
+    it("renders clear button when backgroundImage has value", () => {
+      resetStore({
+        displaySettings: {
+          ...defaultDisplaySettings,
+          backgroundImage: "data:image/png;base64,abc123",
+        },
+      });
+
+      render(<QuickSettings />);
+
+      expect(screen.getByText("清除")).toBeInTheDocument();
+    });
+
+    it("calls updateDisplaySettings to clear backgroundImage when clear button is clicked", () => {
+      resetStore({
+        displaySettings: {
+          ...defaultDisplaySettings,
+          backgroundImage: "data:image/png;base64,abc123",
+        },
+      });
+
+      render(<QuickSettings />);
+      fireEvent.click(screen.getByText("清除"));
+
+      expect(mockUpdateDisplaySettings).toHaveBeenCalledWith({
+        backgroundImage: "",
+      });
+    });
+
+    it("renders hidden file input with correct accept attribute", () => {
+      render(<QuickSettings />);
+
+      const fileInput = document.getElementById("bg-image-upload") as HTMLInputElement;
+      expect(fileInput).toBeTruthy();
+      expect(fileInput.type).toBe("file");
+      expect(fileInput.accept).toBe("image/jpeg,image/png,image/webp");
+    });
+
+    it("shows image preview thumbnail when backgroundImage has value", () => {
+      resetStore({
+        displaySettings: {
+          ...defaultDisplaySettings,
+          backgroundImage: "data:image/png;base64,abc123",
+        },
+      });
+
+      render(<QuickSettings />);
+
+      const preview = screen.getByRole("img", { name: "背景圖片預覽" });
+      expect(preview).toBeInTheDocument();
     });
   });
 });

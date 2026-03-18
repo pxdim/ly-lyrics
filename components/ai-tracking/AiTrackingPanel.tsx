@@ -192,7 +192,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
 
       {/* 錯誤訊息 */}
       {aiTracking.errorMessage && !isActive && (
-        <div className="mt-2 text-[10px] text-red-400 font-mono">
+        <div className="mt-2 text-[10px] text-error font-mono">
           {aiTracking.errorMessage}
         </div>
       )}
@@ -213,6 +213,11 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
       {/* 展開內容：只在激活時顯示 */}
       {isActive && (
         <div className="mt-3 flex flex-col gap-3 border-t border-border-dim pt-3">
+          {/* 手動校正提示 */}
+          <p className="text-[10px] text-text-muted font-mono leading-relaxed">
+            點擊歌詞行可手動校正 AI 位置，校正後 AI 暫停追蹤數秒後自動恢復
+          </p>
+
           {/* 音訊輸入選擇器 */}
           <AudioInputSelector
             deviceId={audioInput.deviceId}

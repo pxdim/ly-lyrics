@@ -147,6 +147,10 @@ export const updateDisplaySettingsSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format")
     .optional(),
+  backgroundImage: z
+    .string()
+    .max(3 * 1024 * 1024, "Background image data URL too large") // base64 約 1.33x，2MB 圖片 ≈ 2.67MB
+    .optional(),
   textColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format")

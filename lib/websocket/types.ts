@@ -23,6 +23,7 @@ export interface DisplaySettings {
   theme: "light" | "dark" | "transparent";
   showBackground: boolean;
   backgroundColor: string;
+  backgroundImage: string; // data URL 或空字串，FR4.3 背景圖片
   textColor: string;
   highlightColor: string;
   autoScroll: boolean;

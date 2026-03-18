@@ -83,11 +83,22 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
     }
   }, [highlightIndex, displaySettings.autoScroll, displaySettings.enableAnimation]);
 
+  // 判斷是否有背景圖片需要套用
+  const hasBackgroundImage =
+    displaySettings.showBackground && !!displaySettings.backgroundImage;
+
   // Build container style based on settings
   const containerStyle: React.CSSProperties = {
     backgroundColor: displaySettings.showBackground
       ? displaySettings.backgroundColor
       : "transparent",
+    // FR4.3：背景圖片（showBackground 開啟且有 data URL 時套用）
+    ...(hasBackgroundImage && {
+      backgroundImage: `url(${displaySettings.backgroundImage})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    }),
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",

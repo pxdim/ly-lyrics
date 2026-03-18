@@ -7,9 +7,10 @@
 
 "use client";
 
-import type { FC } from "react";
+import { type FC, useCallback } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { ToggleRow } from "./ToggleRow";
+import { validateImageFile, fileToDataUrl } from "@/lib/utils/image-upload";
 
 /**
  * 高亮色選項
@@ -28,6 +29,27 @@ export const QuickSettings: FC = () => {
   const displaySettings = useLyricsStore((state) => state.displaySettings);
   const updateDisplaySettings = useLyricsStore(
     (state) => state.updateDisplaySettings,
+  );
+
+  /** FR4.3：處理背景圖片上傳 */
+  const handleImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        // 重設 input 讓使用者可以重新選擇同一檔案
+        e.target.value = "";
+        return;
+      }
+
+      const dataUrl = await fileToDataUrl(file);
+      updateDisplaySettings({ backgroundImage: dataUrl });
+      // 重設 input 讓使用者可以重新選擇同一檔案
+      e.target.value = "";
+    },
+    [updateDisplaySettings],
   );
 
   return (
@@ -162,6 +184,48 @@ export const QuickSettings: FC = () => {
             }
             className="w-full h-8 cursor-pointer bg-transparent border border-border-dim rounded appearance-none [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-sm"
           />
+        </div>
+
+        {/* 背景圖片 (FR4.3) */}
+        <div>
+          <span className="block text-[11px] font-mono text-text-muted uppercase mb-1.5">
+            BG Image
+          </span>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              id="bg-image-upload"
+              onChange={handleImageUpload}
+            />
+            <label
+              htmlFor="bg-image-upload"
+              className="px-2 py-1 text-[11px] font-mono border border-border-dim bg-surface text-text-muted cursor-pointer hover:bg-elevated hover:text-text-primary transition-colors"
+            >
+              上傳
+            </label>
+            {displaySettings.backgroundImage && (
+              <>
+                {/* 縮圖預覽 — data URL 不需 Next.js Image 最佳化 */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={displaySettings.backgroundImage}
+                  alt="背景圖片預覽"
+                  className="w-8 h-8 object-cover border border-border-dim"
+                />
+                <button
+                  onClick={() =>
+                    updateDisplaySettings({ backgroundImage: "" })
+                  }
+                  className="px-2 py-1 text-[11px] font-mono border border-error/30 text-error hover:bg-error/10 transition-colors"
+                  type="button"
+                >
+                  清除
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* 主題 */}

@@ -52,11 +52,12 @@
 | ID | 需求描述 | 優先級 | 狀態 |
 |----|---------|-------|------|
 | FR4.1 | 支援深色/淺色主題切換 | P0 | ✅ 完成 |
-| FR4.2 | 支援自訂背景顏色 | P1 | 🔴 Not Started |
+| FR4.2 | 支援自訂背景顏色 | P1 | ✅ 完成 |
 | FR4.3 | 支援背景圖片上傳 | P1 | 🔴 Not Started |
 | FR4.4 | 支援背景影片 (Phase 2+) | P2 | 🔴 Not Started |
 
 > **FR4.1 備註**：目前僅實作深色主題（Neon Brutalist Glass），無淺色主題切換。
+> **FR4.2 備註**：QuickSettings 面板新增背景色 color picker，透過 WebSocket 同步至 Display 端。Clean Output mode 強制 #000000。
 
 ### FR5: 多裝置同步
 
@@ -82,12 +83,12 @@
 
 | ID | 需求描述 | 優先級 | 狀態 |
 |----|---------|-------|------|
-| FR7.1 | 系統可以透過麥克風錄音 | P0 | 🟡 部分完成 |
-| FR7.2 | AI 可以識別環境音樂的歌詞 | P0 | 🟡 部分完成 |
-| FR7.3 | AI 自動定位當前歌詞位置 | P0 | 🟡 部分完成 |
+| FR7.1 | 系統可以透過麥克風錄音 | P0 | ✅ 完成 |
+| FR7.2 | AI 可以識別環境音樂的歌詞 | P0 | ✅ 完成 |
+| FR7.3 | AI 自動定位當前歌詞位置 | P0 | ✅ 完成 |
 | FR7.4 | 支援手動校正 AI 辨識結果 | P1 | 🔴 Not Started |
 
-> **FR7.1-7.3 備註**：已實作 AudioInputSelector 元件與 tracking engine（`components/ai-tracking/`、`lib/audio/`），但尚未完整整合至控制台流程。
+> **FR7.1-7.3 備註**：完整實作。3 個 STT Provider（Google Cloud、Deepgram、Web Speech）+ LCS 比對引擎 + AudioInputSelector + AiTrackingPanel + AiStatusIndicator，已整合至 Controller 頁面。
 
 ### FR8: NDI/Spout 輸出 (Phase 2)
 
@@ -145,7 +146,7 @@
 | NFR4.2 | API 文檔完整 | 🔴 Not Started |
 | NFR4.3 | 錯誤日誌記錄 | 🔴 Not Started |
 
-> **NFR4.1 備註**：已有 358 個測試案例通過。覆蓋率量測結果（2026-03-17）：Lines 40.38% / Statements 39.53% / Functions 33.23% / Branches 32.71%。核心功能模組（ai-tracking、audio、playlist、hooks）已達 80%+，整體偏低主因是大量 UI 元件（controller/、lyrics-search/）尚無測試。
+> **NFR4.1 備註**：610 個測試案例（51 個測試檔案）全部通過。
 
 ### NFR5: 相容性
 
@@ -173,6 +174,7 @@
 |------|------|---------|---------|
 | 1.0 | 2026-03-11 | 初始版本 | 專案啟動 |
 | 2.0 | 2026-03-17 | 更新所有需求狀態為實際開發狀態 | 對齊程式碼實作進度 |
+| 3.0 | 2026-03-18 | FR4.2 完成、FR7.1-7.3 完成、測試數更新至 610 | 對齊程式碼實作進度 |
 
 ---
 
@@ -184,5 +186,5 @@
 
 ---
 
-**文件版本:** 2.0
-**最後更新:** 2026-03-17
+**文件版本:** 3.0
+**最後更新:** 2026-03-18

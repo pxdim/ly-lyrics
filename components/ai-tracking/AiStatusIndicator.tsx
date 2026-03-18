@@ -47,21 +47,21 @@ const STATUS_CONFIG: Record<AiTrackingStatus, StatusConfig> = {
   },
   matched: {
     label: "已匹配",
-    dotClass: "bg-emerald-400",
-    textClass: "text-emerald-400",
-    badgeClass: "border-emerald-500/30 bg-emerald-500/5 text-emerald-400",
+    dotClass: "bg-success",
+    textClass: "text-success",
+    badgeClass: "border-success/30 bg-success/5 text-success",
   },
   cooldown: {
     label: "冷卻中",
-    dotClass: "bg-amber-400",
-    textClass: "text-amber-400",
-    badgeClass: "border-amber-500/30 bg-amber-500/5 text-amber-400",
+    dotClass: "bg-warning",
+    textClass: "text-warning",
+    badgeClass: "border-warning/30 bg-warning/5 text-warning",
   },
   error: {
     label: "錯誤",
-    dotClass: "bg-red-500",
-    textClass: "text-red-400",
-    badgeClass: "border-red-500/30 bg-red-500/5 text-red-400",
+    dotClass: "bg-error",
+    textClass: "text-error",
+    badgeClass: "border-error/30 bg-error/5 text-error",
   },
 };
 
@@ -125,7 +125,7 @@ export function AiStatusIndicator({
 
         {/* 信心度 / 行號（matched 狀態） */}
         {status === "matched" && (
-          <span className="ml-auto text-[10px] font-mono text-emerald-400 tabular-nums">
+          <span className="ml-auto text-[10px] font-mono text-success tabular-nums">
             {Math.round(confidence * 100)}%
           </span>
         )}
@@ -144,7 +144,7 @@ export function AiStatusIndicator({
           <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
             Line
           </span>
-          <span className="text-[10px] font-mono text-emerald-400 tabular-nums">
+          <span className="text-[10px] font-mono text-success tabular-nums">
             {String(lastMatchedLine + 1).padStart(2, "0")}
           </span>
         </div>

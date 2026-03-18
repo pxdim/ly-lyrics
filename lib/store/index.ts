@@ -119,6 +119,7 @@ const defaultDisplaySettings: DisplaySettings = {
   theme: "dark",
   showBackground: true,
   backgroundColor: "#000000",
+  backgroundImage: "",
   textColor: "#ffffff",
   highlightColor: "#0ea5e9",
   autoScroll: true,
