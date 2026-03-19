@@ -2,7 +2,7 @@
  * MobileTabBar 元件測試
  *
  * 測試內容：
- * 1. 基本渲染：四個 tab 按鈕都存在
+ * 1. 基本渲染：三個 tab 按鈕都存在（歌曲/歌詞/設定）
  * 2. Tab 切換回呼：點擊 tab 觸發 onTabChange
  * 3. Active tab 視覺狀態區別：啟用分頁有指示線和顏色區分
  * 4. 設計系統合規：無硬編碼 rgba
@@ -31,10 +31,10 @@ describe("MobileTabBar", () => {
   // --------------------------------------------------------------------------
 
   describe("renders all tab buttons", () => {
-    it("renders four tab buttons", () => {
+    it("renders three tab buttons", () => {
       render(<MobileTabBar {...defaultProps} />);
       const buttons = screen.getAllByRole("button");
-      expect(buttons).toHaveLength(4);
+      expect(buttons).toHaveLength(3);
     });
 
     it("renders songs tab label", () => {
@@ -50,11 +50,6 @@ describe("MobileTabBar", () => {
     it("renders settings tab label", () => {
       render(<MobileTabBar {...defaultProps} />);
       expect(screen.getByText("設定")).toBeInTheDocument();
-    });
-
-    it("renders QR tab label", () => {
-      render(<MobileTabBar {...defaultProps} />);
-      expect(screen.getByText("QR")).toBeInTheDocument();
     });
 
     it("renders inside a nav element for semantic HTML", () => {
@@ -87,13 +82,6 @@ describe("MobileTabBar", () => {
       render(<MobileTabBar activeTab="songs" onTabChange={onTabChange} />);
       fireEvent.click(screen.getByText("設定"));
       expect(onTabChange).toHaveBeenCalledWith("settings");
-    });
-
-    it("calls onTabChange with 'qr' when QR tab is clicked", () => {
-      const onTabChange = vi.fn();
-      render(<MobileTabBar activeTab="songs" onTabChange={onTabChange} />);
-      fireEvent.click(screen.getByText("QR"));
-      expect(onTabChange).toHaveBeenCalledWith("qr");
     });
 
     it("calls onTabChange exactly once per click", () => {

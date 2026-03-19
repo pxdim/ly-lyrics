@@ -142,8 +142,7 @@
     "mobileTab": {
       "songs": "Songs",
       "lyrics": "Lyrics",
-      "settings": "Settings",
-      "qr": "QR"
+      "settings": "Settings"
     },
     "controlMode": {
       "auto": "AUTO",

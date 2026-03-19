@@ -15,18 +15,12 @@ import { generateSessionCode } from "@/lib/websocket/session-code";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { useIsTablet } from "@/lib/hooks/useIsTablet";
 import { useAiTracking } from "@/lib/hooks/use-ai-tracking";
-import { StatusBar, MobileStatusBar, MobileQRTab } from "@/components/controller/ControllerHeader";
+import { StatusBar, MobileStatusBar } from "@/components/controller/ControllerHeader";
 import { MobileTabBar, type MobileTab } from "@/components/controller/MobileTabBar";
 import { LibraryPanel } from "@/components/controller/LibraryPanel";
 import { CueGrid } from "@/components/controller/CueGrid";
 
 // 非首屏核心元件 — 懶載入以分割 bundle
-// QRCodePanel：攜帶 qrcode.react，桌面側欄/手機 QR tab
-const QRCodePanel = dynamic(
-  () => import("@/components/controller/QRCodePanel").then((m) => ({ default: m.QRCodePanel })),
-  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-40" /> },
-);
-
 // LivePreview：桌面右欄預覽面板
 const LivePreview = dynamic(
   () => import("@/components/controller/LivePreview").then((m) => ({ default: m.LivePreview })),
@@ -111,7 +105,7 @@ function MobileLayout({ sessionCode, onRegenerate }: LayoutProps) {
   const { start: startAi, stop: stopAi, onManualOverride } = useAiTracking();
   return (
     <div className={shellCls}>
-      <MobileStatusBar sessionCode={sessionCode} isConnected={isConnected} />
+      <MobileStatusBar sessionCode={sessionCode} isConnected={isConnected} onRegenerate={onRegenerate} />
       <div className="flex-1 overflow-y-auto min-h-0">
         {activeTab === "songs" && <div className="h-full flex flex-col"><LibraryPanel /></div>}
         {activeTab === "lyrics" && <div className="h-full"><CueGrid onManualOverride={onManualOverride} /></div>}
@@ -121,7 +115,6 @@ function MobileLayout({ sessionCode, onRegenerate }: LayoutProps) {
             <QuickSettings />
           </div>
         )}
-        {activeTab === "qr" && <MobileQRTab sessionCode={sessionCode} onRegenerate={onRegenerate} />}
       </div>
       <MobileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
@@ -186,9 +179,6 @@ function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
             </Group>
           </Panel>
         </Group>
-        <aside className="flex w-[200px] border-l border-border-dim bg-elevated flex-col items-center justify-center shrink-0">
-          <QRCodePanel sessionCode={sessionCode} size={130} />
-        </aside>
       </div>
     </div>
   );

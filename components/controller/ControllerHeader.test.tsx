@@ -1,13 +1,12 @@
 /**
  * ControllerHeader 元件測試
  *
- * 涵蓋三個匯出元件：StatusBar、MobileStatusBar、MobileQRTab
+ * 涵蓋兩個匯出元件：StatusBar、MobileStatusBar
  *
  * 測試內容：
  * 1. StatusBar：房間碼顯示、連線狀態、裝置計數、複製房間碼、複製連結、重新產生、QR 按鈕
- * 2. MobileStatusBar：房間碼顯示、連線狀態文字、複製房間碼
- * 3. MobileQRTab：QR Code 面板、複製連結、重新產生按鈕
- * 4. 設計系統合規：無硬編碼 rgba
+ * 2. MobileStatusBar：房間碼顯示、連線狀態文字、複製房間碼、QR 按鈕 + Modal
+ * 3. 設計系統合規：無硬編碼 rgba
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -47,7 +46,7 @@ vi.mock("@/components/controller/QRCodePanel", () => ({
   ),
 }));
 
-import { StatusBar, MobileStatusBar, MobileQRTab } from "./ControllerHeader";
+import { StatusBar, MobileStatusBar } from "./ControllerHeader";
 
 // ============================================================================
 // 測試輔助
@@ -301,78 +300,9 @@ describe("StatusBar", () => {
 // ============================================================================
 
 describe("MobileStatusBar", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // 基本渲染
-  // --------------------------------------------------------------------------
-
-  describe("basic rendering", () => {
-    it("renders the session code", () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected />);
-      expect(screen.getByText("XY9999")).toBeInTheDocument();
-    });
-
-    it("renders Room label", () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected />);
-      expect(screen.getByText("Room")).toBeInTheDocument();
-    });
-
-    it("renders inside a header element", () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected />);
-      expect(screen.getByRole("banner")).toBeInTheDocument();
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // 連線狀態
-  // --------------------------------------------------------------------------
-
-  describe("connection status", () => {
-    it("shows ON when connected", () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected />);
-      expect(screen.getByText("ON")).toBeInTheDocument();
-    });
-
-    it("shows OFF when disconnected", () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected={false} />);
-      expect(screen.getByText("OFF")).toBeInTheDocument();
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // 複製房間碼
-  // --------------------------------------------------------------------------
-
-  describe("copy session code", () => {
-    it("copies session code when room button is clicked", async () => {
-      render(<MobileStatusBar sessionCode="XY9999" isConnected />);
-      const copyButton = screen.getByTitle("點擊複製房間碼");
-
-      await act(async () => {
-        fireEvent.click(copyButton);
-      });
-
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("XY9999");
-    });
-  });
-});
-
-// ============================================================================
-// MobileQRTab 測試
-// ============================================================================
-
-describe("MobileQRTab", () => {
-  const defaultProps = {
-    sessionCode: "QR1234",
+  const defaultMobileProps = {
+    sessionCode: "XY9999",
+    isConnected: true,
     onRegenerate: vi.fn(),
   };
 
@@ -391,90 +321,100 @@ describe("MobileQRTab", () => {
   // --------------------------------------------------------------------------
 
   describe("basic rendering", () => {
-    it("renders QRCodePanel with correct session code", () => {
-      render(<MobileQRTab {...defaultProps} />);
-      const panel = screen.getByTestId("qrcode-panel");
-      expect(panel.getAttribute("data-session-code")).toBe("QR1234");
+    it("renders the session code", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      expect(screen.getByText("XY9999")).toBeInTheDocument();
     });
 
-    it("renders QRCodePanel with size 200", () => {
-      render(<MobileQRTab {...defaultProps} />);
-      const panel = screen.getByTestId("qrcode-panel");
-      expect(panel.getAttribute("data-size")).toBe("200");
+    it("renders Room label", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      expect(screen.getByText("Room")).toBeInTheDocument();
     });
 
-    it("renders copy link button", () => {
-      render(<MobileQRTab {...defaultProps} />);
-      expect(screen.getByText("複製顯示端連結")).toBeInTheDocument();
-    });
-
-    it("renders regenerate button", () => {
-      render(<MobileQRTab {...defaultProps} />);
-      expect(screen.getByText("新房間")).toBeInTheDocument();
+    it("renders inside a header element", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      expect(screen.getByRole("banner")).toBeInTheDocument();
     });
   });
 
   // --------------------------------------------------------------------------
-  // 複製顯示端連結
+  // 連線狀態
   // --------------------------------------------------------------------------
 
-  describe("copy display link", () => {
-    it("copies display URL when copy link button is clicked", async () => {
-      render(<MobileQRTab {...defaultProps} />);
-      const copyButton = screen.getByText("複製顯示端連結").closest("button")!;
+  describe("connection status", () => {
+    it("shows ON when connected", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      expect(screen.getByText("ON")).toBeInTheDocument();
+    });
+
+    it("shows OFF when disconnected", () => {
+      render(<MobileStatusBar {...defaultMobileProps} isConnected={false} />);
+      expect(screen.getByText("OFF")).toBeInTheDocument();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 複製房間碼
+  // --------------------------------------------------------------------------
+
+  describe("copy session code", () => {
+    it("copies session code when room button is clicked", async () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      const copyButton = screen.getByTitle("點擊複製房間碼");
 
       await act(async () => {
         fireEvent.click(copyButton);
       });
 
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        `${window.location.origin}/display?code=QR1234`,
-      );
-    });
-
-    it("shows '已複製連結' text after copying", async () => {
-      render(<MobileQRTab {...defaultProps} />);
-      const copyButton = screen.getByText("複製顯示端連結").closest("button")!;
-
-      await act(async () => {
-        fireEvent.click(copyButton);
-      });
-
-      expect(screen.getByText("已複製連結")).toBeInTheDocument();
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("XY9999");
     });
   });
 
   // --------------------------------------------------------------------------
-  // 重新產生房間碼
+  // QR Code 按鈕
   // --------------------------------------------------------------------------
 
-  describe("regenerate session code", () => {
-    it("calls onRegenerate when regenerate button is clicked", () => {
+  describe("QR code button", () => {
+    it("renders QR button in mobile status bar", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      expect(screen.getByTitle("顯示 QR Code")).toBeInTheDocument();
+    });
+
+    it("shows QRCodePanel when QR button is clicked", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      const qrButton = screen.getByTitle("顯示 QR Code");
+      fireEvent.click(qrButton);
+      expect(screen.getByTestId("qrcode-panel")).toBeInTheDocument();
+    });
+
+    it("shows close button in QR modal", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      const qrButton = screen.getByTitle("顯示 QR Code");
+      fireEvent.click(qrButton);
+      expect(screen.getByText("關閉")).toBeInTheDocument();
+    });
+
+    it("hides QR modal when close button is clicked", () => {
+      render(<MobileStatusBar {...defaultMobileProps} />);
+      const qrButton = screen.getByTitle("顯示 QR Code");
+      fireEvent.click(qrButton);
+      expect(screen.getByTestId("qrcode-panel")).toBeInTheDocument();
+
+      const closeButton = screen.getByText("關閉");
+      fireEvent.click(closeButton);
+      expect(screen.queryByTestId("qrcode-panel")).toBeNull();
+    });
+
+    it("calls onRegenerate when new room button is clicked in modal", () => {
       const onRegenerate = vi.fn();
-      render(<MobileQRTab sessionCode="QR1234" onRegenerate={onRegenerate} />);
-      const regenButton = screen.getByText("新房間").closest("button")!;
+      render(<MobileStatusBar {...defaultMobileProps} onRegenerate={onRegenerate} />);
+      const qrButton = screen.getByTitle("顯示 QR Code");
+      fireEvent.click(qrButton);
 
+      const regenButton = screen.getByText("新房間");
       fireEvent.click(regenButton);
-
       expect(onRegenerate).toHaveBeenCalledTimes(1);
     });
   });
-
-  // --------------------------------------------------------------------------
-  // 設計系統合規
-  // --------------------------------------------------------------------------
-
-  describe("design system compliance", () => {
-    it("does not contain hardcoded rgba values in inline styles", () => {
-      const { container } = render(<MobileQRTab {...defaultProps} />);
-      const allElements = container.querySelectorAll("*");
-      const allStyles: string[] = [];
-      allElements.forEach((el) => {
-        const style = el.getAttribute("style");
-        if (style) allStyles.push(style);
-      });
-      const combinedStyles = allStyles.join(" ");
-      expect(combinedStyles).not.toMatch(/rgba\(/i);
-    });
-  });
 });
+

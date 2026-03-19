@@ -142,8 +142,7 @@
     "mobileTab": {
       "songs": "歌曲",
       "lyrics": "歌詞",
-      "settings": "設定",
-      "qr": "QR"
+      "settings": "設定"
     },
     "controlMode": {
       "auto": "AUTO",

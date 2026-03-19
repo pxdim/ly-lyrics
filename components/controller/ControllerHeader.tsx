@@ -159,8 +159,8 @@ export const StatusBar: FC<StatusBarProps> = ({
             {t("newRoom")}
           </button>
 
-          {/* QR Code 按鈕（平板/手機用） */}
-          <div className="relative xl:hidden">
+          {/* QR Code 按鈕（全斷點可見） */}
+          <div className="relative">
             <button
               type="button"
               onClick={() => setShowQR(!showQR)}
@@ -303,14 +303,19 @@ interface MobileStatusBarProps {
   sessionCode: string;
   /** 是否已連線 */
   isConnected: boolean;
+  /** 重新產生房間碼回呼 */
+  onRegenerate: () => void;
 }
 
 export const MobileStatusBar: FC<MobileStatusBarProps> = ({
   sessionCode,
   isConnected,
+  onRegenerate,
 }) => {
   const t = useTranslations("controller.header");
+  const tc = useTranslations("common");
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   const copyCode = useCallback(async () => {
     await navigator.clipboard.writeText(sessionCode);
@@ -363,98 +368,73 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
         </button>
       </div>
 
-      {/* 右：連線狀態指示燈 */}
-      <div className="flex items-center gap-2">
-        <span
-          className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`}
-        />
-        <span
-          className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
+      {/* 右：QR 按鈕 + 連線狀態 */}
+      <div className="flex items-center gap-3">
+        {/* QR 按鈕 */}
+        <button
+          type="button"
+          onClick={() => setShowQR(true)}
+          className="flex items-center justify-center w-8 h-8 bg-surface border border-border-dim rounded-md active:bg-primary/10 active:border-primary/30 transition-all"
+          title={t("showQRCode")}
         >
-          {isConnected ? t("on") : t("off")}
-        </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="3" height="3" />
+            <path d="M21 14h-3v3" />
+            <path d="M21 21h-3v-3" />
+          </svg>
+        </button>
+
+        {/* 連線狀態指示燈 */}
+        <div className="flex items-center gap-2">
+          <span
+            className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`}
+          />
+          <span
+            className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
+          >
+            {isConnected ? t("on") : t("off")}
+          </span>
+        </div>
       </div>
+
+      {/* QR Modal */}
+      {showQR && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowQR(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="bg-elevated border border-border-dim rounded-2xl shadow-xl">
+              <QRCodePanel sessionCode={sessionCode} size={200} />
+              {/* 新房間 + 關閉 */}
+              <div className="px-4 pb-4 flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-dim rounded-lg text-[12px] font-mono text-text-muted active:bg-amber-500/5 active:border-amber-500/40 active:text-amber-400 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 2v6h-6" />
+                    <path d="M3 12a9 9 0 0115.36-6.36L21 8" />
+                    <path d="M3 22v-6h6" />
+                    <path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
+                  </svg>
+                  {t("newRoom")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQR(false)}
+                  className="px-4 py-1.5 text-xs text-text-muted hover:text-white transition-colors cursor-pointer"
+                >
+                  {tc("close")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 };
 
-// ============================================================================
-// 手機版 QR 分頁
-// ============================================================================
-
-interface MobileQRTabProps {
-  /** 房間碼 */
-  sessionCode: string;
-  /** 重新產生房間碼回呼 */
-  onRegenerate: () => void;
-}
-
-export const MobileQRTab: FC<MobileQRTabProps> = ({
-  sessionCode,
-  onRegenerate,
-}) => {
-  const t = useTranslations("controller.header");
-  const [copied, setCopied] = useState(false);
-
-  const copyLink = useCallback(async () => {
-    const link = `${window.location.origin}/display?code=${sessionCode}`;
-    await navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [sessionCode]);
-
-  return (
-    <div className="h-full flex flex-col items-center justify-center gap-6 p-6">
-      <QRCodePanel sessionCode={sessionCode} size={200} />
-
-      {/* 複製顯示端連結 */}
-      <button
-        type="button"
-        onClick={copyLink}
-        className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-[12px] font-mono text-primary active:bg-primary/20 transition-all"
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          {copied ? (
-            <path d="M20 6L9 17l-5-5" />
-          ) : (
-            <>
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-            </>
-          )}
-        </svg>
-        {copied ? t("copiedDisplayLink") : t("copyDisplayLink")}
-      </button>
-
-      {/* 重新產生房間碼 */}
-      <button
-        type="button"
-        onClick={onRegenerate}
-        className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-dim rounded-lg text-[12px] font-mono text-text-muted active:bg-amber-500/5 active:border-amber-500/40 active:text-amber-400 transition-all"
-        title={t("regenerateTooltip")}
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M21 2v6h-6" />
-          <path d="M3 12a9 9 0 0115.36-6.36L21 8" />
-          <path d="M3 22v-6h6" />
-          <path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
-        </svg>
-        {t("newRoom")}
-      </button>
-    </div>
-  );
-};
