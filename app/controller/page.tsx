@@ -188,7 +188,7 @@ function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
     <div className={shellCls}>
       <EnhancedHeader sessionCode={sessionCode} onRegenerate={onRegenerate} />
 
-      <div className="flex-1 overflow-hidden p-3">
+      <div className="flex-1 overflow-auto p-3">
         <ResponsiveGridLayout
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
