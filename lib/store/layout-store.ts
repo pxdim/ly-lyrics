@@ -59,14 +59,14 @@ export interface Layouts {
 /** 標準佈局（作為預設初始值獨立常數，避免 TS index access 產生 undefined） */
 const STANDARD_LAYOUT: Layouts = {
   lg: [
-    { i: "songs", x: 0, y: 0, w: 3, h: 6, minW: 2, minH: 3 },
-    { i: "cues", x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
-    { i: "preview", x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
-    { i: "config", x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-    { i: "ai", x: 0, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: "playlist", x: 3, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: "transport", x: 6, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
-    { i: "connection", x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.SONGS, x: 0, y: 0, w: 3, h: 6, minW: 2, minH: 3 },
+    { i: CARD_IDS.CUES, x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: CARD_IDS.PREVIEW, x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+    { i: CARD_IDS.CONFIG, x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+    { i: CARD_IDS.AI, x: 0, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.PLAYLIST, x: 3, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.TRANSPORT, x: 6, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
+    { i: CARD_IDS.CONNECTION, x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
   ],
 };
 
@@ -76,40 +76,40 @@ const PRESET_LAYOUTS: Record<string, Layouts> = {
   /** 專注佈局：最大化 Cue 格線區域，隱藏輔助面板 */
   focus: {
     lg: [
-      { i: "songs", x: 0, y: 0, w: 2, h: 8, minW: 2, minH: 3 },
-      { i: "cues", x: 2, y: 0, w: 7, h: 8, minW: 4, minH: 4 },
-      { i: "preview", x: 9, y: 0, w: 3, h: 4, minW: 2, minH: 2 },
-      { i: "config", x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
-      { i: "ai", x: 0, y: 0, w: 0, h: 0 },
-      { i: "playlist", x: 0, y: 0, w: 0, h: 0 },
-      { i: "transport", x: 0, y: 0, w: 0, h: 0 },
-      { i: "connection", x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.SONGS, x: 0, y: 0, w: 2, h: 8, minW: 2, minH: 3 },
+      { i: CARD_IDS.CUES, x: 2, y: 0, w: 7, h: 8, minW: 4, minH: 4 },
+      { i: CARD_IDS.PREVIEW, x: 9, y: 0, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: CARD_IDS.CONFIG, x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: CARD_IDS.AI, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.PLAYLIST, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.TRANSPORT, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.CONNECTION, x: 0, y: 0, w: 0, h: 0 },
     ],
   },
   /** 全功能佈局：所有面板均可見且較大 */
   full: {
     lg: [
-      { i: "songs", x: 0, y: 0, w: 3, h: 5, minW: 2, minH: 3 },
-      { i: "cues", x: 3, y: 0, w: 5, h: 5, minW: 4, minH: 4 },
-      { i: "preview", x: 8, y: 0, w: 4, h: 3, minW: 2, minH: 2 },
-      { i: "config", x: 8, y: 3, w: 4, h: 2, minW: 2, minH: 2 },
-      { i: "ai", x: 0, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: "playlist", x: 3, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: "transport", x: 6, y: 5, w: 3, h: 3, minW: 3, minH: 2 },
-      { i: "connection", x: 9, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.SONGS, x: 0, y: 0, w: 3, h: 5, minW: 2, minH: 3 },
+      { i: CARD_IDS.CUES, x: 3, y: 0, w: 5, h: 5, minW: 4, minH: 4 },
+      { i: CARD_IDS.PREVIEW, x: 8, y: 0, w: 4, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.CONFIG, x: 8, y: 3, w: 4, h: 2, minW: 2, minH: 2 },
+      { i: CARD_IDS.AI, x: 0, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.PLAYLIST, x: 3, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.TRANSPORT, x: 6, y: 5, w: 3, h: 3, minW: 3, minH: 2 },
+      { i: CARD_IDS.CONNECTION, x: 9, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
     ],
   },
   /** 極簡佈局：僅歌曲列表 + Cue 格線 */
   minimal: {
     lg: [
-      { i: "songs", x: 0, y: 0, w: 4, h: 8, minW: 2, minH: 3 },
-      { i: "cues", x: 4, y: 0, w: 8, h: 8, minW: 4, minH: 4 },
-      { i: "preview", x: 0, y: 0, w: 0, h: 0 },
-      { i: "config", x: 0, y: 0, w: 0, h: 0 },
-      { i: "ai", x: 0, y: 0, w: 0, h: 0 },
-      { i: "playlist", x: 0, y: 0, w: 0, h: 0 },
-      { i: "transport", x: 0, y: 0, w: 0, h: 0 },
-      { i: "connection", x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.SONGS, x: 0, y: 0, w: 4, h: 8, minW: 2, minH: 3 },
+      { i: CARD_IDS.CUES, x: 4, y: 0, w: 8, h: 8, minW: 4, minH: 4 },
+      { i: CARD_IDS.PREVIEW, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.CONFIG, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.AI, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.PLAYLIST, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.TRANSPORT, x: 0, y: 0, w: 0, h: 0 },
+      { i: CARD_IDS.CONNECTION, x: 0, y: 0, w: 0, h: 0 },
     ],
   },
 };

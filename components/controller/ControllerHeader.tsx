@@ -140,7 +140,7 @@ export const StatusBar: FC<StatusBarProps> = ({
           <button
             type="button"
             onClick={onRegenerate}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-dim rounded-md hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-[11px] font-mono text-text-muted hover:text-amber-400 cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-dim rounded-md hover:border-warning/40 hover:bg-warning/5 transition-all text-[11px] font-mono text-text-muted hover:text-warning cursor-pointer"
             title={t("regenerateTooltip")}
           >
             <svg
@@ -190,7 +190,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               <>
                 {/* 背景遮罩 -- 手機為半透明，平板為透明（僅用於 click-outside） */}
                 <div
-                  className="fixed inset-0 z-40 bg-black/50 md:bg-transparent"
+                  className="fixed inset-0 z-40 bg-void/50 md:bg-transparent"
                   onClick={() => setShowQR(false)}
                 />
 
@@ -231,10 +231,10 @@ export const StatusBar: FC<StatusBarProps> = ({
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <span
-            className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`}
+            className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-error"}`}
           />
           <span
-            className={`text-[12px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
+            className={`text-[12px] font-mono ${isConnected ? "text-primary" : "text-error"}`}
           >
             {isConnected ? t("systemReady") : t("offline")}
           </span>
@@ -390,10 +390,10 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
         {/* 連線狀態指示燈 */}
         <div className="flex items-center gap-2">
           <span
-            className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-red-500"}`}
+            className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-error"}`}
           />
           <span
-            className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
+            className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-error"}`}
           >
             {isConnected ? t("on") : t("off")}
           </span>
@@ -403,7 +403,7 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
       {/* QR Modal */}
       {showQR && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowQR(false)} />
+          <div className="fixed inset-0 z-40 bg-void/50" onClick={() => setShowQR(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="bg-elevated border border-border-dim rounded-2xl shadow-xl">
               <QRCodePanel sessionCode={sessionCode} size={200} />

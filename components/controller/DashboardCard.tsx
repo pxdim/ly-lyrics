@@ -75,8 +75,9 @@ export function DashboardCard({
         )}
         <button
           type="button"
-          title="最大化"
-          className="p-1 hover:bg-surface rounded transition-colors"
+          title="最大化（即將推出）"
+          disabled
+          className="p-1 rounded transition-colors opacity-30 cursor-not-allowed"
         >
           <Maximize2 className="w-3 h-3 text-text-dim" />
         </button>

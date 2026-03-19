@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   Responsive,
@@ -176,13 +176,22 @@ function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
     return visible;
   }, [layouts]);
 
-  // 佈局變更回呼 — 使用者拖曳/調整大小後同步至 store
+  // 用 ref 暫存拖曳中的 layout，只在 drag/resize stop 時寫入 store（避免高頻 localStorage I/O）
+  const pendingLayoutsRef = React.useRef<import("@/lib/store/layout-store").Layouts | null>(null);
+
   const handleLayoutChange = useCallback(
     (_currentLayout: RGLLayout, allLayouts: ResponsiveLayouts) => {
-      setLayouts(allLayouts as import("@/lib/store/layout-store").Layouts);
+      pendingLayoutsRef.current = allLayouts as import("@/lib/store/layout-store").Layouts;
     },
-    [setLayouts],
+    [],
   );
+
+  const handleDragResizeStop = useCallback(() => {
+    if (pendingLayoutsRef.current) {
+      setLayouts(pendingLayoutsRef.current);
+      pendingLayoutsRef.current = null;
+    }
+  }, [setLayouts]);
 
   return (
     <div className={shellCls}>
@@ -192,6 +201,8 @@ function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
         <ResponsiveGridLayout
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
+          onDragStop={handleDragResizeStop}
+          onResizeStop={handleDragResizeStop}
           breakpoints={{ lg: 1200, md: 768 }}
           cols={{ lg: 12, md: 8 }}
           rowHeight={80}
