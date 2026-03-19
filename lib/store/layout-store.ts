@@ -20,7 +20,6 @@ export const CARD_IDS = {
   CONFIG: "config",
   AI: "ai",
   PLAYLIST: "playlist",
-  TRANSPORT: "transport",
   CONNECTION: "connection",
 } as const;
 
@@ -63,10 +62,9 @@ const STANDARD_LAYOUT: Layouts = {
     { i: CARD_IDS.CUES, x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
     { i: CARD_IDS.PREVIEW, x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
     { i: CARD_IDS.CONFIG, x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-    { i: CARD_IDS.AI, x: 0, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: CARD_IDS.PLAYLIST, x: 3, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: CARD_IDS.TRANSPORT, x: 6, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
-    { i: CARD_IDS.CONNECTION, x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.AI, x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.PLAYLIST, x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.CONNECTION, x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
   ],
 };
 
@@ -82,7 +80,6 @@ const PRESET_LAYOUTS: Record<string, Layouts> = {
       { i: CARD_IDS.CONFIG, x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
       { i: CARD_IDS.AI, x: 0, y: 0, w: 0, h: 0 },
       { i: CARD_IDS.PLAYLIST, x: 0, y: 0, w: 0, h: 0 },
-      { i: CARD_IDS.TRANSPORT, x: 0, y: 0, w: 0, h: 0 },
       { i: CARD_IDS.CONNECTION, x: 0, y: 0, w: 0, h: 0 },
     ],
   },
@@ -93,10 +90,9 @@ const PRESET_LAYOUTS: Record<string, Layouts> = {
       { i: CARD_IDS.CUES, x: 3, y: 0, w: 5, h: 5, minW: 4, minH: 4 },
       { i: CARD_IDS.PREVIEW, x: 8, y: 0, w: 4, h: 3, minW: 2, minH: 2 },
       { i: CARD_IDS.CONFIG, x: 8, y: 3, w: 4, h: 2, minW: 2, minH: 2 },
-      { i: CARD_IDS.AI, x: 0, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: CARD_IDS.PLAYLIST, x: 3, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: CARD_IDS.TRANSPORT, x: 6, y: 5, w: 3, h: 3, minW: 3, minH: 2 },
-      { i: CARD_IDS.CONNECTION, x: 9, y: 5, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.AI, x: 0, y: 5, w: 4, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.PLAYLIST, x: 4, y: 5, w: 4, h: 3, minW: 2, minH: 2 },
+      { i: CARD_IDS.CONNECTION, x: 8, y: 5, w: 4, h: 3, minW: 2, minH: 2 },
     ],
   },
   /** 極簡佈局：僅歌曲列表 + Cue 格線 */
@@ -108,7 +104,6 @@ const PRESET_LAYOUTS: Record<string, Layouts> = {
       { i: CARD_IDS.CONFIG, x: 0, y: 0, w: 0, h: 0 },
       { i: CARD_IDS.AI, x: 0, y: 0, w: 0, h: 0 },
       { i: CARD_IDS.PLAYLIST, x: 0, y: 0, w: 0, h: 0 },
-      { i: CARD_IDS.TRANSPORT, x: 0, y: 0, w: 0, h: 0 },
       { i: CARD_IDS.CONNECTION, x: 0, y: 0, w: 0, h: 0 },
     ],
   },

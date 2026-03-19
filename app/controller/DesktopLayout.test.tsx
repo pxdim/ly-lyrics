@@ -169,7 +169,6 @@ vi.mock("@/lib/store/layout-store", () => ({
     CONFIG: "config",
     AI: "ai",
     PLAYLIST: "playlist",
-    TRANSPORT: "transport",
     CONNECTION: "connection",
   },
 }));
@@ -215,10 +214,9 @@ const standardLayout = {
     { i: "cues", x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
     { i: "preview", x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
     { i: "config", x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-    { i: "ai", x: 0, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: "playlist", x: 3, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-    { i: "transport", x: 6, y: 6, w: 3, h: 2, minW: 3, minH: 2 },
-    { i: "connection", x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+    { i: "ai", x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+    { i: "playlist", x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+    { i: "connection", x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
   ],
 };
 
@@ -288,7 +286,7 @@ describe("DesktopLayout — react-grid-layout 整合", () => {
   });
 
   it("hides cards with w=0 or h=0", () => {
-    // focus 佈局：ai, playlist, transport, connection 隱藏
+    // focus 佈局：ai, playlist, connection 隱藏
     const focusLayout = {
       lg: [
         { i: "songs", x: 0, y: 0, w: 2, h: 8, minW: 2, minH: 3 },
@@ -297,7 +295,6 @@ describe("DesktopLayout — react-grid-layout 整合", () => {
         { i: "config", x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
         { i: "ai", x: 0, y: 0, w: 0, h: 0 },
         { i: "playlist", x: 0, y: 0, w: 0, h: 0 },
-        { i: "transport", x: 0, y: 0, w: 0, h: 0 },
         { i: "connection", x: 0, y: 0, w: 0, h: 0 },
       ],
     };
