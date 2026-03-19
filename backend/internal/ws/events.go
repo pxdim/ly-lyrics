@@ -97,7 +97,12 @@ func (h *EventHandler) HandleDisconnect(client *Client) {
 	if state != nil {
 		state.ControllerCount = controllers
 		state.DisplayCount = displays
-		_ = h.redisClient.SetSession(ctx, state)
+		if err := h.redisClient.SetSession(ctx, state); err != nil {
+			slog.Warn("Redis SetSession 失敗（HandleDisconnect 更新計數）",
+				"session", sessionID,
+				"error", err,
+			)
+		}
 	}
 
 	// 廣播 client_left 事件
@@ -195,7 +200,12 @@ func (h *EventHandler) handleLeaveSession(ctx context.Context, client *Client) {
 
 	if !hasClients {
 		// 無其他 client，清理 session
-		_ = h.redisClient.DeleteSession(ctx, sessionID)
+		if err := h.redisClient.DeleteSession(ctx, sessionID); err != nil {
+			slog.Warn("Redis DeleteSession 失敗（handleLeaveSession 清理）",
+				"session", sessionID,
+				"error", err,
+			)
+		}
 	} else {
 		// 取得移除後的正確計數
 		controllers, displays := h.hub.GetSessionCounts(sessionID)
@@ -203,7 +213,12 @@ func (h *EventHandler) handleLeaveSession(ctx context.Context, client *Client) {
 		if state != nil {
 			state.ControllerCount = controllers
 			state.DisplayCount = displays
-			_ = h.redisClient.SetSession(ctx, state)
+			if err := h.redisClient.SetSession(ctx, state); err != nil {
+				slog.Warn("Redis SetSession 失敗（handleLeaveSession 更新計數）",
+					"session", sessionID,
+					"error", err,
+				)
+			}
 		}
 		h.broadcastJSON(sessionID, MsgClientLeft, ClientEventPayload{
 			ClientID:        client.id,
@@ -240,7 +255,12 @@ func (h *EventHandler) handleChangeLine(ctx context.Context, client *Client, pay
 	}
 
 	state.CurrentLineIndex = p.LineIndex
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handleChangeLine）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgLineChanged, LineChangedPayload{
 		LineIndex: p.LineIndex,
@@ -266,7 +286,12 @@ func (h *EventHandler) handleNextLine(ctx context.Context, client *Client) {
 	}
 
 	state.CurrentLineIndex++
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handleNextLine）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgLineChanged, LineChangedPayload{
 		LineIndex: state.CurrentLineIndex,
@@ -289,7 +314,12 @@ func (h *EventHandler) handlePrevLine(ctx context.Context, client *Client) {
 	if state.CurrentLineIndex > 0 {
 		state.CurrentLineIndex--
 	}
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handlePrevLine）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgLineChanged, LineChangedPayload{
 		LineIndex: state.CurrentLineIndex,
@@ -347,7 +377,12 @@ func (h *EventHandler) handleSetSong(ctx context.Context, client *Client, payloa
 
 	state.CurrentSong = sessionSong
 	state.CurrentLineIndex = 0
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handleSetSong）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgSongChanged, SongChangedPayload{
 		SongID:    p.SongID,
@@ -414,7 +449,12 @@ func (h *EventHandler) handleUpdateSettings(ctx context.Context, client *Client,
 		s.EnableAnimation = *p.EnableAnimation
 	}
 
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handleUpdateSettings）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgSettingsUpdated, SettingsUpdatedPayload{
 		Settings:  state.Settings,
@@ -441,7 +481,12 @@ func (h *EventHandler) handleSetPlaying(ctx context.Context, client *Client, pay
 	}
 
 	state.IsPlaying = p.IsPlaying
-	_ = h.redisClient.SetSession(ctx, state)
+	if err := h.redisClient.SetSession(ctx, state); err != nil {
+		slog.Warn("Redis SetSession 失敗（handleSetPlaying）",
+			"session", client.sessionID,
+			"error", err,
+		)
+	}
 
 	h.broadcastJSON(client.sessionID, MsgPlayingChanged, PlayingChangedPayload{
 		IsPlaying: p.IsPlaying,

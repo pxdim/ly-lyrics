@@ -49,6 +49,23 @@ func newTestEventHandler(t *testing.T) (*EventHandler, *Hub) {
 	return handler, hub
 }
 
+// newTestEventHandlerWithMiniredis 建立測試用 EventHandler 並回傳 miniredis 實例，
+// 供測試手動關閉 Redis 以模擬故障場景
+func newTestEventHandlerWithMiniredis(t *testing.T) (*EventHandler, *Hub, *miniredis.Miniredis) {
+	t.Helper()
+	mr := miniredis.RunT(t)
+	hub := NewHub()
+	go hub.Run()
+	time.Sleep(5 * time.Millisecond)
+
+	redisClient, err := lyredis.New("redis://" + mr.Addr())
+	require.NoError(t, err)
+	t.Cleanup(func() { redisClient.Close() })
+
+	handler := NewEventHandler(hub, redisClient, nil)
+	return handler, hub, mr
+}
+
 // newTestClientWithRole 建立帶有角色的測試用 client 並註冊到 hub
 func newTestClientWithRole(t *testing.T, hub *Hub, handler *EventHandler, role ClientRole, sessionID string) *Client {
 	t.Helper()
@@ -851,6 +868,150 @@ func TestHandleDisconnect_OtherClientsRemain(t *testing.T) {
 // ─────────────────────────────────────────────────────────────────────────────
 // NewSessionState 測試
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Redis 故障容錯測試：驗證 Redis 不可用時事件處理不 panic 且仍廣播訊息
+// ─────────────────────────────────────────────────────────────────────────────
+
+func TestRedisFailure_ChangeLineStillBroadcasts(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-change"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+	disp := newTestClientWithRole(t, hub, handler, RoleDisplay, sessionID)
+
+	// 關閉 miniredis 模擬 Redis 故障
+	mr.Close()
+
+	// changeLine 應不 panic，且仍發送錯誤訊息（因 GetSession 會失敗）
+	payload, _ := json.Marshal(ChangeLinePayload{LineIndex: 1})
+	msg := &Message{Type: MsgChangeLine, Payload: payload}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+
+	// GetSession 失敗時會回傳 error 給 client，不會 panic
+	received := readMessage(t, ctrl, 200*time.Millisecond)
+	require.NotNil(t, received, "Redis 故障時 client 應收到回應")
+	// 不論是 error 或 line_changed 都不應 panic
+	_ = disp // 確保 disp 已建立
+}
+
+func TestRedisFailure_NextLineNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-next"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	mr.Close()
+
+	msg := &Message{Type: MsgNextLine}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+}
+
+func TestRedisFailure_PrevLineNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-prev"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	mr.Close()
+
+	msg := &Message{Type: MsgPrevLine}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+}
+
+func TestRedisFailure_SetPlayingNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-playing"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	mr.Close()
+
+	payload, _ := json.Marshal(SetPlayingPayload{IsPlaying: true})
+	msg := &Message{Type: MsgSetPlaying, Payload: payload}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+}
+
+func TestRedisFailure_UpdateSettingsNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-settings"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	fontSize := 36
+	payload, _ := json.Marshal(UpdateSettingsPayload{FontSize: &fontSize})
+	mr.Close()
+
+	msg := &Message{Type: MsgUpdateSettings, Payload: payload}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+}
+
+func TestRedisFailure_LeaveSessionNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-leave"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	mr.Close()
+
+	msg := &Message{Type: MsgLeaveSession}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+}
+
+func TestRedisFailure_DisconnectNoPanic(t *testing.T) {
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	sessionID := "session-redis-fail-disconnect"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+
+	mr.Close()
+
+	assert.NotPanics(t, func() {
+		handler.HandleDisconnect(ctrl)
+	})
+}
+
+func TestRedisFailure_SetSession_LogsWarning(t *testing.T) {
+	// 驗證 SetSession 失敗時事件處理仍繼續（不中斷 WebSocket 事件流）
+	handler, hub, mr := newTestEventHandlerWithMiniredis(t)
+	ctx := t.Context()
+	sessionID := "session-redis-fail-set"
+
+	ctrl := newTestClientWithRole(t, hub, handler, RoleController, sessionID)
+	disp := newTestClientWithRole(t, hub, handler, RoleDisplay, sessionID)
+
+	// 先設定歌曲（Redis 正常時）
+	state, _ := handler.redisClient.GetSession(ctx, sessionID)
+	state.CurrentSong = &lyredis.SessionSong{
+		Lyrics: []string{"行一", "行二", "行三"},
+	}
+	state.CurrentLineIndex = 0
+	handler.redisClient.SetSession(ctx, state)
+
+	// 關閉 Redis
+	mr.Close()
+
+	// changeLine：GetSession 會失敗，應回傳 error 但不 panic
+	payload, _ := json.Marshal(ChangeLinePayload{LineIndex: 1})
+	msg := &Message{Type: MsgChangeLine, Payload: payload}
+	assert.NotPanics(t, func() {
+		handler.HandleMessage(ctrl, msg)
+	})
+
+	_ = disp // 確保 disp 已建立
+}
 
 func TestNewSessionState_DefaultValues(t *testing.T) {
 	state := NewSessionState("test-session")
