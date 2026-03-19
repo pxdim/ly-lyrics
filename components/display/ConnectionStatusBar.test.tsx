@@ -76,7 +76,7 @@ describe("ConnectionStatusBar", () => {
     mockStoreState.set("connectionState", "reconnecting");
     mockStoreState.set("reconnectAttempt", 3);
     render(<ConnectionStatusBar />);
-    expect(screen.getByText(/重新連接中.*3\/5/)).toBeInTheDocument();
+    expect(screen.getByText(/重新連接中.*3/)).toBeInTheDocument();
   });
 
   it("reconnecting 狀態不顯示重試按鈕", () => {

@@ -17,7 +17,7 @@ const path = require('path');
 // 開發模式：設定 ELECTRON_URL=http://localhost:3000
 // 生產模式：連接部署 URL 或本地 server
 const BASE_URL = process.env.ELECTRON_URL || 'http://localhost:3000';
-const IS_DEV = !!process.env.ELECTRON_URL;
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 /** @type {BrowserWindow | null} */
 let controllerWindow = null;

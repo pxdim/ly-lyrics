@@ -22,6 +22,6 @@ contextBridge.exposeInMainWorld('lyDesktop', {
   /** 是否在 Electron 環境中運行 */
   isElectron: true,
 
-  /** 應用版本（對應 package.json） */
-  version: '0.1.0',
+  /** 應用版本（動態讀取 package.json） */
+  version: require('./package.json').version,
 });

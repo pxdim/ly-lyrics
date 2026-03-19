@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { useOnlineStatus } from "@/lib/hooks/useOnlineStatus";
 
@@ -22,18 +22,19 @@ export function ConnectionStatusBar() {
 
   // 連線成功後短暫顯示再淡出
   const [showConnected, setShowConnected] = useState(false);
-  const [prevState, setPrevState] = useState(connectionState);
+  const prevStateRef = useRef(connectionState);
 
   useEffect(() => {
-    if (prevState !== "connected" && connectionState === "connected") {
+    if (prevStateRef.current !== "connected" && connectionState === "connected") {
       // 從非 connected 變成 connected → 短暫顯示 "已恢復連線" 再淡出
       setShowConnected(true);
       const timer = setTimeout(() => setShowConnected(false), 2000);
+      prevStateRef.current = connectionState;
       return () => clearTimeout(timer);
     }
-    setPrevState(connectionState);
+    prevStateRef.current = connectionState;
     return undefined;
-  }, [connectionState, prevState]);
+  }, [connectionState]);
 
   // 離線模式提示 (NFR2.4) — 無論 WebSocket 狀態，瀏覽器離線時顯示
   if (!isOnline) {
@@ -72,7 +73,7 @@ export function ConnectionStatusBar() {
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-warning/10 border-b border-warning/20">
           <span className="inline-block w-2 h-2 rounded-full bg-warning animate-pulse" />
           <span className="text-warning text-xs font-medium">
-            連線中斷 · 重新連接中 ({reconnectAttempt}/5)
+            連線中斷 · 重新連接中 ({reconnectAttempt})
           </span>
         </div>
       </div>
