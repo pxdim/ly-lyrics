@@ -330,3 +330,153 @@
 ::-moz-selection {
   @apply bg-primary/30 text-primary;
 }
+
+/* ============================================================================
+ * react-grid-layout 基礎樣式
+ *
+ * 取代 node_modules 中的 CSS import（Next.js App Router 限制），
+ * 同時覆寫預設的 placeholder 與 resize handle 樣式以適配設計系統。
+ * ============================================================================ */
+
+/* 容器 */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+
+/* 格線項目 */
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item img {
+  pointer-events: none;
+  user-select: none;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item.resizing {
+  transition: none;
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+/* 拖曳/調整大小佔位符 — 使用設計系統 accent 色 */
+.react-grid-item.react-grid-placeholder {
+  background: hsl(var(--color-accent) / 0.15);
+  border: 2px dashed hsl(var(--color-accent) / 0.4);
+  border-radius: 8px;
+  opacity: 1;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+.react-grid-item.react-grid-placeholder.placeholder-resizing {
+  transition: none;
+}
+
+/* 調整大小把手 — 預設隱藏，hover 時顯示 */
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.react-grid-item:hover > .react-resizable-handle {
+  opacity: 1;
+}
+
+/* 調整大小把手指示器 — 使用設計系統色彩 */
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid hsl(var(--color-text-muted));
+  border-bottom: 2px solid hsl(var(--color-text-muted));
+}
+
+.react-resizable-hide > .react-resizable-handle {
+  display: none;
+}
+
+/* 各方向調整大小把手定位 */
+.react-grid-item > .react-resizable-handle.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  transform: rotate(90deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  transform: rotate(180deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  transform: rotate(270deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  top: 50%;
+  margin-top: -10px;
+  cursor: ew-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  left: 0;
+  transform: rotate(135deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  right: 0;
+  transform: rotate(315deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  left: 50%;
+  margin-left: -10px;
+  cursor: ns-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
+  top: 0;
+  transform: rotate(225deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  bottom: 0;
+  transform: rotate(45deg);
+}

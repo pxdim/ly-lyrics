@@ -7,18 +7,30 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Panel, Group, Separator } from "react-resizable-panels";
+import {
+  Responsive,
+  WidthProvider,
+  type Layout as RGLLayout,
+  type ResponsiveLayouts,
+} from "react-grid-layout/legacy";
 import { useLyricsStore } from "@/lib/store";
+import { useLayoutStore } from "@/lib/store/layout-store";
 import { generateSessionCode } from "@/lib/websocket/session-code";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { useIsTablet } from "@/lib/hooks/useIsTablet";
 import { useAiTracking } from "@/lib/hooks/use-ai-tracking";
 import { StatusBar, MobileStatusBar } from "@/components/controller/ControllerHeader";
 import { MobileTabBar, type MobileTab } from "@/components/controller/MobileTabBar";
+import { EnhancedHeader } from "@/components/controller/EnhancedHeader";
+import { DashboardCard } from "@/components/controller/DashboardCard";
 import { LibraryPanel } from "@/components/controller/LibraryPanel";
 import { CueGrid } from "@/components/controller/CueGrid";
+import { QRCodePanel } from "@/components/controller/QRCodePanel";
+
+// react-grid-layout 需要 WidthProvider HOC 自動偵測容器寬度
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // 非首屏核心元件 — 懶載入以分割 bundle
 // LivePreview：桌面右欄預覽面板
@@ -39,13 +51,18 @@ const AiTrackingPanel = dynamic(
   { ssr: false, loading: () => <div className="animate-pulse bg-surface h-16" /> },
 );
 
+// PlaylistPanel：播放清單面板，非首屏必要
+const PlaylistPanel = dynamic(
+  () => import("@/components/controller/PlaylistPanel").then((m) => ({ default: m.PlaylistPanel })),
+  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-20" /> },
+);
+
 /** 共用佈局 props */
 interface LayoutProps {
   sessionCode: string;
   onRegenerate: () => void;
 }
 
-/** 共用外殼 className（桌面/平板/手機三版共用） */
 /** 共用外殼 className — 使用設計系統 token */
 const shellCls = "h-screen flex flex-col bg-surface text-text-primary overflow-hidden font-body text-[13px] antialiased";
 
@@ -140,45 +157,106 @@ function TabletLayout({ sessionCode, onRegenerate }: LayoutProps) {
   );
 }
 
-// 桌面版佈局 (>=1280px) — react-resizable-panels
+// 桌面版佈局 (>=1280px) — react-grid-layout 可拖曳卡片佈局
 function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
   const { start: startAi, stop: stopAi, onManualOverride } = useAiTracking();
+  const layouts = useLayoutStore((s) => s.layouts);
+  const isLocked = useLayoutStore((s) => s.isLocked);
+  const setLayouts = useLayoutStore((s) => s.setLayouts);
+
+  // 過濾掉 w=0 或 h=0 的隱藏卡片
+  const visibleCardIds = useMemo(() => {
+    const lgLayout = layouts.lg ?? [];
+    const visible = new Set<string>();
+    for (const item of lgLayout) {
+      if (item.w > 0 && item.h > 0) {
+        visible.add(item.i);
+      }
+    }
+    return visible;
+  }, [layouts]);
+
+  // 佈局變更回呼 — 使用者拖曳/調整大小後同步至 store
+  const handleLayoutChange = useCallback(
+    (_currentLayout: RGLLayout, allLayouts: ResponsiveLayouts) => {
+      setLayouts(allLayouts as import("@/lib/store/layout-store").Layouts);
+    },
+    [setLayouts],
+  );
+
   return (
     <div className={shellCls}>
-      <StatusBar sessionCode={sessionCode} onRegenerate={onRegenerate} />
-      <div className="flex flex-1 min-h-0">
-        <Group orientation="horizontal" className="flex-1 min-h-0" id="controller-main">
-          <Panel id="songs" defaultSize="20%" minSize="12%" maxSize="35%">
-            <LibraryPanel />
-          </Panel>
-          <Separator className="w-[5px] bg-surface hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
-            <div className="w-px h-8 bg-border-dim group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-          </Separator>
-          <Panel id="cues" defaultSize="45%" minSize="30%">
-            <CueGrid onManualOverride={onManualOverride} />
-          </Panel>
-          <Separator className="w-[5px] bg-surface hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-col-resize flex items-center justify-center group">
-            <div className="w-px h-8 bg-border-dim group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-          </Separator>
-          <Panel id="right" defaultSize="35%" minSize="20%" maxSize="50%">
-            <Group orientation="vertical" id="controller-right">
-              <Panel id="preview" defaultSize="45%" minSize="20%">
+      <EnhancedHeader sessionCode={sessionCode} onRegenerate={onRegenerate} />
+
+      <div className="flex-1 overflow-hidden p-3">
+        <ResponsiveGridLayout
+          layouts={layouts}
+          onLayoutChange={handleLayoutChange}
+          breakpoints={{ lg: 1200, md: 768 }}
+          cols={{ lg: 12, md: 8 }}
+          rowHeight={80}
+          isDraggable={!isLocked}
+          isResizable={!isLocked}
+          draggableHandle=".card-drag-handle"
+          containerPadding={[0, 0]}
+          margin={[12, 12]}
+        >
+          {visibleCardIds.has("songs") && (
+            <div key="songs">
+              <DashboardCard title="Song Library" isLocked={isLocked}>
+                <LibraryPanel />
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("cues") && (
+            <div key="cues">
+              <DashboardCard title="Cue Grid" isLocked={isLocked}>
+                <CueGrid onManualOverride={onManualOverride} />
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("preview") && (
+            <div key="preview">
+              <DashboardCard title="Program Out" isLocked={isLocked}>
                 <LivePreview />
-              </Panel>
-              <Separator className="h-[5px] bg-surface hover:bg-primary/20 active:bg-primary/30 transition-colors cursor-row-resize flex items-center justify-center group">
-                <div className="h-px w-8 bg-border-dim group-hover:bg-primary/50 group-active:bg-primary transition-colors" />
-              </Separator>
-              <Panel id="settings" defaultSize="55%" minSize="25%">
-                <div className="h-full overflow-y-auto">
-                  <div className="p-3">
-                    <AiTrackingPanel onToggle={(a) => { if (a) startAi(); else stopAi(); }} />
-                  </div>
-                  <QuickSettings />
-                </div>
-              </Panel>
-            </Group>
-          </Panel>
-        </Group>
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("config") && (
+            <div key="config">
+              <DashboardCard title="Display Config" isLocked={isLocked}>
+                <QuickSettings />
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("ai") && (
+            <div key="ai">
+              <DashboardCard title="AI Tracking" isLocked={isLocked}>
+                <AiTrackingPanel onToggle={(active) => { if (active) startAi(); else stopAi(); }} />
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("playlist") && (
+            <div key="playlist">
+              <DashboardCard title="Playlist" isLocked={isLocked}>
+                <PlaylistPanel />
+              </DashboardCard>
+            </div>
+          )}
+
+          {visibleCardIds.has("connection") && (
+            <div key="connection">
+              <DashboardCard title="Connection" isLocked={isLocked}>
+                <QRCodePanel sessionCode={sessionCode} size={120} />
+              </DashboardCard>
+            </div>
+          )}
+        </ResponsiveGridLayout>
       </div>
     </div>
   );
