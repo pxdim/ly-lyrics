@@ -11,6 +11,7 @@
 
 import { type ReactNode } from "react";
 import { GripVertical, Minus, Maximize2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 // ============================================================================
 // 型別定義
@@ -40,6 +41,7 @@ export function DashboardCard({
   isLocked = false,
   className = "",
 }: DashboardCardProps) {
+  const t = useTranslations("dashboard");
   return (
     <div
       className={`flex flex-col h-full bg-surface border border-border-dim rounded-lg overflow-hidden ${className}`}
@@ -67,7 +69,7 @@ export function DashboardCard({
           <button
             type="button"
             onClick={onMinimize}
-            title="最小化"
+            title={t("minimize")}
             className="p-1 hover:bg-surface rounded transition-colors"
           >
             <Minus className="w-3 h-3 text-text-dim" />
@@ -75,7 +77,7 @@ export function DashboardCard({
         )}
         <button
           type="button"
-          title="最大化（即將推出）"
+          title={t("maximizeComingSoon")}
           disabled
           className="p-1 rounded transition-colors opacity-30 cursor-not-allowed"
         >

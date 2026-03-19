@@ -9,6 +9,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { LyricsSearchInput } from "./LyricsSearchInput";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 describe("LyricsSearchInput", () => {
   beforeEach(() => {
     vi.useFakeTimers();

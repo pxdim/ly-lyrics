@@ -2,6 +2,7 @@
 
 import { type FC } from "react";
 import type { LyricsSearchResultItem } from "@/lib/api/lyrics-search";
+import { useTranslations } from "next-intl";
 
 // 可信度標記顏色
 const confidenceDots: Record<string, string> = {
@@ -10,18 +11,15 @@ const confidenceDots: Record<string, string> = {
   low: "bg-orange-400",
 };
 
-// 來源顯示名稱
-function sourceLabel(source: string): string {
-  const map: Record<string, string> = {
-    lrclib: "LRClib",
-    "lrcapi-kugou": "酷狗",
-    "lrcapi-netease": "網易雲",
-    "lrcapi-migu": "咪咕",
-    genius: "Genius",
-    gemini: "AI 搜尋",
-  };
-  return map[source] ?? source;
-}
+// 來源 key → i18n key 對照
+const SOURCE_KEY_MAP: Record<string, string> = {
+  lrclib: "lrclib",
+  "lrcapi-kugou": "kugou",
+  "lrcapi-netease": "netease",
+  "lrcapi-migu": "migu",
+  genius: "genius",
+  gemini: "gemini",
+};
 
 interface LyricsResultCardProps {
   result: LyricsSearchResultItem;
@@ -29,6 +27,14 @@ interface LyricsResultCardProps {
 }
 
 export const LyricsResultCard: FC<LyricsResultCardProps> = ({ result, onClick }) => {
+  const t = useTranslations("lyricsSearch");
+  const tSource = useTranslations("lyricsSearch.sourceLabels");
+
+  const sourceLabel = (source: string): string => {
+    const key = SOURCE_KEY_MAP[source];
+    return key ? tSource(key) : source;
+  };
+
   return (
     <button
       type="button"
@@ -54,13 +60,13 @@ export const LyricsResultCard: FC<LyricsResultCardProps> = ({ result, onClick })
               {sourceLabel(result.source)}
             </span>
             {result.hasSyncedLyrics && (
-              <span className="text-[11px] text-primary/70">⏱ 有時間戳</span>
+              <span className="text-[11px] text-primary/70">⏱ {t("hasSyncedLyrics")}</span>
             )}
             {!result.hasSyncedLyrics && result.hasPlainLyrics && (
-              <span className="text-[11px] text-text-muted">📝 純文字</span>
+              <span className="text-[11px] text-text-muted">📝 {t("plainText")}</span>
             )}
             {!result.hasSyncedLyrics && !result.hasPlainLyrics && (
-              <span className="text-[11px] text-text-muted/60">ℹ️ 僅資訊</span>
+              <span className="text-[11px] text-text-muted/60">ℹ️ {t("infoOnly")}</span>
             )}
             {result.duration && (
               <span className="text-[11px] text-text-muted">
@@ -69,18 +75,18 @@ export const LyricsResultCard: FC<LyricsResultCardProps> = ({ result, onClick })
             )}
             {result.ratio != null && (
               <span className="text-[11px] text-text-muted">
-                相似度 {Math.round(result.ratio * 100)}%
+                {t("similarity")} {Math.round(result.ratio * 100)}%
               </span>
             )}
             {result.isAiGenerated && (
-              <span className="text-[11px] text-orange-400/70">🤖 AI 生成</span>
+              <span className="text-[11px] text-orange-400/70">🤖 {t("aiGenerated")}</span>
             )}
           </div>
         </div>
         {/* 簡體標記 */}
         {result.isSimplified && (
           <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono">
-            簡
+            {t("simplified")}
           </span>
         )}
       </div>

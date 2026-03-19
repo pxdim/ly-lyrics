@@ -15,6 +15,12 @@ import {
 } from "./ErrorBoundary";
 import type { ErrorBoundaryProps as _ErrorBoundaryProps } from "./ErrorBoundary";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 // Mock logError — 外部依賴
 vi.mock("@/lib/errors/AppError", () => ({
   logError: vi.fn(),

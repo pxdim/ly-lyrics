@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface ControlModeToggleProps {
   mode: "auto" | "manual";
   onToggle: (next: "auto" | "manual") => void;
@@ -7,6 +9,7 @@ interface ControlModeToggleProps {
 }
 
 export function ControlModeToggle({ mode, onToggle, disabled }: ControlModeToggleProps) {
+  const t = useTranslations("controller.controlMode");
   const isAuto = mode === "auto";
 
   return (
@@ -14,7 +17,7 @@ export function ControlModeToggle({ mode, onToggle, disabled }: ControlModeToggl
       type="button"
       onClick={() => onToggle(isAuto ? "manual" : "auto")}
       disabled={disabled}
-      title={isAuto ? "切換為手動模式" : "切換為自動模式（AI 追蹤）"}
+      title={isAuto ? t("switchToManual") : t("switchToAuto")}
       className={[
         "px-2 py-1 text-[11px] font-mono uppercase tracking-widest",
         "border transition-colors",
@@ -24,7 +27,7 @@ export function ControlModeToggle({ mode, onToggle, disabled }: ControlModeToggl
           : "bg-surface border-border-dim text-text-muted hover:bg-elevated hover:border-text-muted",
       ].join(" ")}
     >
-      {isAuto ? "AUTO" : "MANUAL"}
+      {isAuto ? t("auto") : t("manual")}
     </button>
   );
 }

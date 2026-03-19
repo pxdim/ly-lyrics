@@ -18,6 +18,12 @@ import {
 // Mock 設定
 // ============================================================================
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 const mockFetchPlaylists = vi.fn();
 const mockCreatePlaylist = vi.fn();
 const mockUpdatePlaylist = vi.fn();

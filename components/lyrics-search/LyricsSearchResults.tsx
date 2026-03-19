@@ -3,6 +3,7 @@
 import { type FC } from "react";
 import type { LyricsSearchResultItem, LyricsSearchResponse } from "@/lib/api/lyrics-search";
 import { LyricsResultCard } from "./LyricsResultCard";
+import { useTranslations } from "next-intl";
 
 interface LyricsSearchResultsProps {
   response: LyricsSearchResponse | null;
@@ -15,10 +16,11 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
   isLoading,
   onSelect,
 }) => {
+  const t = useTranslations("lyricsSearch");
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8 text-text-muted text-[13px] font-mono">
-        搜尋中...
+        {t("searching")}
       </div>
     );
   }
@@ -28,7 +30,7 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
   if (response.totalResults === 0) {
     return (
       <div className="text-center py-8 text-text-muted text-[13px] font-mono">
-        找不到結果，請嘗試其他關鍵字
+        {t("noResults")}
       </div>
     );
   }
@@ -42,11 +44,11 @@ export const LyricsSearchResults: FC<LyricsSearchResultsProps> = ({
     <div>
       <div className="flex items-center justify-between px-1 py-2">
         <span className="text-[11px] text-text-muted font-mono">
-          搜尋結果（{response.totalResults} 筆）
+          {t("resultCount", { count: response.totalResults })}
         </span>
         {pendingSources.length > 0 && (
           <span className="text-[11px] text-yellow-400/70 font-mono">
-            逾時: {pendingSources.join(", ")} ⏳
+            {t("timeout")}: {pendingSources.join(", ")} ⏳
           </span>
         )}
       </div>

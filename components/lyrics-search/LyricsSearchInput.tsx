@@ -2,13 +2,15 @@
 
 import { type FC, useState, useRef, useEffect, useCallback } from "react";
 import type { LyricsSearchRequest } from "@/lib/api/lyrics-search";
+import { useTranslations } from "next-intl";
 
 type SearchType = "title" | "artist" | "lyrics";
 
-const searchTypeConfig: Record<SearchType, { label: string; placeholder: string; showArtist: boolean }> = {
-  title:  { label: "歌曲名", placeholder: "輸入歌曲名稱...",   showArtist: true },
-  artist: { label: "歌手",   placeholder: "輸入歌手名稱...",   showArtist: false },
-  lyrics: { label: "歌詞",   placeholder: "輸入歌詞片段...",   showArtist: true },
+/** 搜尋類型 → i18n key 對照（label/placeholder key 名稱） */
+const searchTypeKeys: Record<SearchType, { labelKey: string; placeholderKey: string; showArtist: boolean }> = {
+  title:  { labelKey: "titleType",    placeholderKey: "titlePlaceholder",  showArtist: true },
+  artist: { labelKey: "artistType",   placeholderKey: "artistPlaceholder", showArtist: false },
+  lyrics: { labelKey: "lyricsType",   placeholderKey: "lyricsPlaceholder", showArtist: true },
 };
 
 interface LyricsSearchInputProps {
@@ -17,13 +19,14 @@ interface LyricsSearchInputProps {
 }
 
 export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoading }) => {
+  const t = useTranslations("lyricsSearch");
   const [searchType, setSearchType] = useState<SearchType>("title");
   const [query, setQuery] = useState("");
   const [artist, setArtist] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const config = searchTypeConfig[searchType];
+  const config = searchTypeKeys[searchType];
 
   // 自動聚焦
   useEffect(() => {
@@ -33,7 +36,7 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
   const triggerSearch = useCallback((q: string, a: string, st: SearchType) => {
     if (q.trim().length < 2) return;
     const req: LyricsSearchRequest = { query: q.trim(), searchType: st };
-    if (a.trim() && searchTypeConfig[st].showArtist) {
+    if (a.trim() && searchTypeKeys[st].showArtist) {
       req.artist = a.trim();
     }
     onSearch(req);
@@ -66,8 +69,8 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
     <div className="space-y-3">
       {/* 搜尋類型 Radio */}
       <div className="flex items-center gap-4">
-        <span className="text-[11px] text-text-muted font-mono uppercase tracking-wider">搜尋類型:</span>
-        {(Object.keys(searchTypeConfig) as SearchType[]).map((type_) => (
+        <span className="text-[11px] text-text-muted font-mono uppercase tracking-wider">{t("searchType")}</span>
+        {(Object.keys(searchTypeKeys) as SearchType[]).map((type_) => (
           <label key={type_} className="flex items-center gap-1.5 cursor-pointer">
             <input
               type="radio"
@@ -78,7 +81,7 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
               className="accent-primary"
             />
             <span className={`text-[12px] ${searchType === type_ ? "text-primary" : "text-text-muted"}`}>
-              {searchTypeConfig[type_].label}
+              {t(searchTypeKeys[type_].labelKey)}
             </span>
           </label>
         ))}
@@ -92,7 +95,7 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={config.placeholder}
+          placeholder={t(config.placeholderKey)}
           className={`${inputClass} flex-1`}
         />
         <button
@@ -109,14 +112,14 @@ export const LyricsSearchInput: FC<LyricsSearchInputProps> = ({ onSearch, isLoad
       {config.showArtist && (
         <div>
           <label className="block font-mono text-[11px] text-text-muted uppercase tracking-wider mb-1">
-            Artist (optional)
+            {t("artistFieldLabel")}
           </label>
           <input
             type="text"
             value={artist}
             onChange={(e) => setArtist(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="輸入歌手名稱（選填）..."
+            placeholder={t("artistFieldPlaceholder")}
             className={inputClass}
           />
         </div>

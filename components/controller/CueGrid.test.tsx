@@ -19,6 +19,12 @@ Element.prototype.scrollIntoView = vi.fn();
 // Mock 設定
 // ============================================================================
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 const mockStoreState = new Map<string, unknown>();
 
 /** 預設 displaySettings，與 store defaultDisplaySettings 一致 */

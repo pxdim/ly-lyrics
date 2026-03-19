@@ -8,6 +8,7 @@
 "use client";
 
 import type { FC, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 /** 手機版分頁類型 */
 export type MobileTab = "songs" | "lyrics" | "settings";
@@ -19,11 +20,11 @@ interface MobileTabBarProps {
   onTabChange: (tab: MobileTab) => void;
 }
 
-/** 分頁定義 */
-const tabs: { key: MobileTab; label: string; icon: ReactNode }[] = [
+/** 分頁定義（label 由元件內 i18n hook 提供） */
+const tabDefs: { key: MobileTab; labelKey: "songs" | "lyrics" | "settings"; icon: ReactNode }[] = [
   {
     key: "songs",
-    label: "歌曲",
+    labelKey: "songs",
     icon: (
       <svg
         width="20"
@@ -41,7 +42,7 @@ const tabs: { key: MobileTab; label: string; icon: ReactNode }[] = [
   },
   {
     key: "lyrics",
-    label: "歌詞",
+    labelKey: "lyrics",
     icon: (
       <svg
         width="20"
@@ -61,7 +62,7 @@ const tabs: { key: MobileTab; label: string; icon: ReactNode }[] = [
   },
   {
     key: "settings",
-    label: "設定",
+    labelKey: "settings",
     icon: (
       <svg
         width="20"
@@ -82,9 +83,10 @@ export const MobileTabBar: FC<MobileTabBarProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  const t = useTranslations("controller.mobileTab");
   return (
     <nav className="flex items-stretch border-t border-border-dim bg-elevated shrink-0 h-14">
-      {tabs.map((tab) => {
+      {tabDefs.map((tab) => {
         const isActive = activeTab === tab.key;
         return (
           <button
@@ -101,7 +103,7 @@ export const MobileTabBar: FC<MobileTabBarProps> = ({
             <span
               className={`text-[10px] font-mono ${isActive ? "text-primary" : ""}`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </span>
             {/* 啟用分頁的上方指示線 */}
             {isActive && (

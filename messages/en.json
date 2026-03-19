@@ -311,5 +311,20 @@
     "warningTitle": "Warning",
     "infoTitle": "Info",
     "closeLabel": "Close"
+  },
+  "errorBoundary": {
+    "title": "Oops, something went wrong",
+    "defaultMessage": "An unexpected error occurred",
+    "reload": "Reload",
+    "goHome": "Go to Home",
+    "techDetails": "Technical Details (Dev Mode)"
+  },
+  "dashboard": {
+    "minimize": "Minimize",
+    "maximizeComingSoon": "Maximize (coming soon)"
+  },
+  "offline": {
+    "offlineMode": "Offline Mode",
+    "lyricsStayHint": "Lyrics will stay at the last position"
   }
 }

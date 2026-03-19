@@ -13,6 +13,12 @@ import type {
   LyricsDetailResponse,
 } from "@/lib/api/lyrics-search";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 // Mock API 層 — 外部依賴
 vi.mock("@/lib/api/lyrics-search", () => ({
   searchLyrics: vi.fn(),

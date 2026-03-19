@@ -18,6 +18,7 @@ import { ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
 import { useDebouncedCallback } from "@/lib/hooks/useDebounce";
 import { ControlModeToggle } from "./ControlModeToggle";
+import { useTranslations } from "next-intl";
 
 export interface LyricsControlProps {
   /** 自訂 CSS class */
@@ -73,6 +74,7 @@ export const LyricsControl: FC<LyricsControlProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
 }) => {
+  const t = useTranslations("controller.lyricsControl");
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const lyrics = useLyricsStore((state) => state.lyrics);
   const nextLine = useLyricsStore((state) => state.nextLine);
@@ -135,8 +137,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         className={`group ${canGoPrev ? NAV_BTN_BASE : NAV_BTN_DISABLED}`}
         onClick={handlePrev}
         disabled={!canGoPrev}
-        aria-label="Previous line"
-        title="Previous line (Arrow Up)"
+        aria-label={t("previousLine")}
+        title={t("previousLineShortcut")}
         type="button"
       >
         <ChevronUp
@@ -172,11 +174,11 @@ export const LyricsControl: FC<LyricsControlProps> = ({
             }}
             value={currentIndex}
             onChange={handleJump}
-            aria-label="Jump to line"
+            aria-label={t("jumpToLine")}
           >
             {Array.from({ length: totalLines }, (_, i) => (
               <option key={i} value={i}>
-                Line {i + 1} of {totalLines}
+                {t("lineOfTotal", { current: i + 1, total: totalLines })}
               </option>
             ))}
           </select>
@@ -195,8 +197,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
         className={`group ${canGoNext ? NAV_BTN_BASE : NAV_BTN_DISABLED}`}
         onClick={handleNext}
         disabled={!canGoNext}
-        aria-label="Next line"
-        title="Next line (Arrow Down)"
+        aria-label={t("nextLine")}
+        title={t("nextLineShortcut")}
         type="button"
       >
         <ChevronDown
@@ -224,8 +226,8 @@ export const LyricsControl: FC<LyricsControlProps> = ({
           <button
             className={`group ${NAV_BTN_BASE}`}
             onClick={onToggleFullscreen}
-            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            title={isFullscreen ? "退出全螢幕 (F)" : "全螢幕 (F)"}
+            aria-label={isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
+            title={isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
             type="button"
           >
             {isFullscreen ? (

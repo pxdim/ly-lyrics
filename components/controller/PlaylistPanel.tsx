@@ -21,8 +21,12 @@ import {
 import { SortablePlaylist } from "@/components/playlist/SortablePlaylist";
 import { usePlaylistReorder } from "@/lib/hooks/usePlaylistReorder";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 export const PlaylistPanel: FC = () => {
+  const t = useTranslations("controller.playlist");
+  const tc = useTranslations("common");
   const [playlists, setPlaylists] = useState<ClientPlaylist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -52,7 +56,7 @@ export const PlaylistPanel: FC = () => {
       const result = await fetchPlaylists({ limit: 100 });
       setPlaylists(result.data);
     } catch (err) {
-      console.error("載入播放清單失敗:", err);
+      logger.error("載入播放清單失敗:", err);
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +67,7 @@ export const PlaylistPanel: FC = () => {
       const result = await fetchSongs({ limit: 200 });
       setAllSongs(result.data);
     } catch (err) {
-      console.error("載入歌曲失敗:", err);
+      logger.error("載入歌曲失敗:", err);
     }
   }, []);
 
@@ -86,7 +90,7 @@ export const PlaylistPanel: FC = () => {
       setShowCreate(false);
       await loadPlaylists();
     } catch (err) {
-      console.error("建立播放清單失敗:", err);
+      logger.error("建立播放清單失敗:", err);
     } finally {
       setCreating(false);
     }
@@ -131,7 +135,7 @@ export const PlaylistPanel: FC = () => {
       setEditingName(null);
       await loadPlaylists();
     } catch (err) {
-      console.error("重命名播放清單失敗:", err);
+      logger.error("重命名播放清單失敗:", err);
     }
   };
 
@@ -144,7 +148,7 @@ export const PlaylistPanel: FC = () => {
       setSelectedPlaylist(null);
       await loadPlaylists();
     } catch (err) {
-      console.error("刪除播放清單失敗:", err);
+      logger.error("刪除播放清單失敗:", err);
     }
   };
 
@@ -165,7 +169,7 @@ export const PlaylistPanel: FC = () => {
             onClick={handleBack}
             className="text-text-muted hover:text-text-primary transition-colors p-1"
             type="button"
-            title="返回播放清單"
+            title={t("backToPlaylists")}
           >
             <svg
               width="14"
@@ -196,7 +200,7 @@ export const PlaylistPanel: FC = () => {
               <p
                 className="text-[13px] font-semibold text-text-primary truncate cursor-pointer hover:text-primary transition-colors"
                 onClick={() => setEditingName(selectedPlaylist.name)}
-                title="點擊重命名"
+                title={t("clickToRename")}
               >
                 {selectedPlaylist.name}
               </p>
@@ -209,7 +213,7 @@ export const PlaylistPanel: FC = () => {
             onClick={() => setDeleteConfirm(true)}
             className="text-text-muted hover:text-red-400 transition-colors p-1 shrink-0"
             type="button"
-            title="刪除播放清單"
+            title={t("deletePlaylist")}
           >
             <svg
               width="14"
@@ -241,10 +245,10 @@ export const PlaylistPanel: FC = () => {
         {/* 刪除播放清單確認對話框 */}
         <ConfirmDialog
           open={deleteConfirm}
-          title="確認刪除"
-          message="確定要刪除此播放清單嗎？此操作無法復原。"
+          title={t("confirmDeleteTitle")}
+          message={t("confirmDeleteMessage")}
           variant="destructive"
-          confirmText="刪除"
+          confirmText={tc("delete")}
           onConfirm={handleConfirmDeletePlaylist}
           onCancel={() => setDeleteConfirm(false)}
         />
@@ -278,7 +282,7 @@ export const PlaylistPanel: FC = () => {
             </svg>
           </button>
           <span className="text-[13px] font-semibold text-text-primary">
-            新增播放清單
+            {t("newPlaylist")}
           </span>
         </div>
 
@@ -288,7 +292,7 @@ export const PlaylistPanel: FC = () => {
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="播放清單名稱..."
+            placeholder={t("playlistNamePlaceholder")}
             className="w-full px-3 py-1.5 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
             autoFocus
           />
@@ -297,7 +301,7 @@ export const PlaylistPanel: FC = () => {
         {/* 選擇歌曲提示 */}
         <div className="px-3 py-1.5 border-b border-border-dim shrink-0">
           <span className="text-[10px] font-mono text-text-muted">
-            選擇歌曲 ({selectedSongIds.size} SELECTED)
+            {t("selectSongs")} ({selectedSongIds.size} {tc("selected")})
           </span>
         </div>
 
@@ -358,7 +362,7 @@ export const PlaylistPanel: FC = () => {
             className="w-full py-2 bg-primary text-surface font-mono text-[12px] tracking-wider disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
             type="button"
           >
-            {creating ? "CREATING..." : "CREATE PLAYLIST"}
+            {creating ? t("creating") : t("createPlaylist")}
           </button>
         </div>
       </>
@@ -377,7 +381,7 @@ export const PlaylistPanel: FC = () => {
           onClick={() => setShowCreate(true)}
           className="text-text-muted hover:text-text-primary transition-colors"
           type="button"
-          title="新增播放清單"
+          title={t("newPlaylist")}
         >
           <svg
             width="14"
@@ -415,14 +419,14 @@ export const PlaylistPanel: FC = () => {
               <path d="M3 18h18" />
             </svg>
             <p className="font-mono text-[12px] text-text-muted">
-              NO PLAYLISTS
+              {t("noPlaylists")}
             </p>
             <button
               onClick={() => setShowCreate(true)}
               className="text-[11px] font-mono text-primary hover:text-primary/80 transition-colors"
               type="button"
             >
-              + CREATE FIRST
+              {t("createFirst")}
             </button>
           </div>
         ) : (

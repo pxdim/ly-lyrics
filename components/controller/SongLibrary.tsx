@@ -22,6 +22,8 @@ import {
   type SortField,
   type SortOrder,
 } from "@/lib/utils/song-sort";
+import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 // AddSongModal 攜帶 LyricsSearchPanel → opencc-js 繁簡字典（5.5MB）
 // 只在使用者點擊「新增歌曲」時載入
@@ -48,13 +50,13 @@ const SORT_CYCLE: SortMode[] = [
   "artist-desc",
 ];
 
-/** 排序模式對應的顯示文字 */
-const SORT_LABELS: Record<SortMode, string> = {
-  off: "",
-  "title-asc": "歌名 A-Z",
-  "title-desc": "歌名 Z-A",
-  "artist-asc": "歌手 A-Z",
-  "artist-desc": "歌手 Z-A",
+/** 排序模式對應的 i18n key */
+const SORT_LABEL_KEYS: Record<SortMode, string | null> = {
+  off: null,
+  "title-asc": "sortTitleAsc",
+  "title-desc": "sortTitleDesc",
+  "artist-asc": "sortArtistAsc",
+  "artist-desc": "sortArtistDesc",
 };
 
 /** 解析排序模式為 field + order */
@@ -67,6 +69,8 @@ function parseSortMode(
 }
 
 export const SongLibrary: FC = () => {
+  const t = useTranslations("controller.library");
+  const tc = useTranslations("common");
   const [songs, setSongs] = useState<ClientSong[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +96,7 @@ export const SongLibrary: FC = () => {
       const result = await fetchSongs(params);
       setSongs(result.data);
     } catch (err) {
-      console.error("載入歌曲失敗:", err);
+      logger.error("載入歌曲失敗:", err);
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +154,7 @@ export const SongLibrary: FC = () => {
       }
       await loadSongs(search);
     } catch (err) {
-      console.error("刪除歌曲失敗:", err);
+      logger.error("刪除歌曲失敗:", err);
     } finally {
       setDeletingId(null);
     }
@@ -169,17 +173,17 @@ export const SongLibrary: FC = () => {
               {
                 key: "search" as AddSongTab,
                 icon: "🔍",
-                label: "搜尋歌詞",
+                label: t("searchLyrics"),
               },
               {
                 key: "manual" as AddSongTab,
                 icon: "✏️",
-                label: "手動輸入",
+                label: t("manualInput"),
               },
               {
                 key: "lrc" as AddSongTab,
                 icon: "📄",
-                label: "匯入 LRC",
+                label: t("importLRC"),
               },
             ] as const
           ).map((btn) => (
@@ -219,14 +223,14 @@ export const SongLibrary: FC = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜尋歌曲..."
+              placeholder={t("searchPlaceholder")}
               className="w-full pl-8 pr-3 py-1.5 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
             />
           </div>
           {/* 排序切換按鈕（FR1.7） */}
           <button
             type="button"
-            aria-label="排序方式"
+            aria-label={t("sortLabel")}
             onClick={handleCycleSort}
             className={`flex items-center gap-1 px-2 py-1.5 border text-[11px] font-mono transition-colors shrink-0 ${
               sortMode === "off"
@@ -236,7 +240,7 @@ export const SongLibrary: FC = () => {
           >
             <ArrowUpDown className="w-3 h-3" />
             {sortMode !== "off" && (
-              <span>{SORT_LABELS[sortMode]}</span>
+              <span>{SORT_LABEL_KEYS[sortMode] ? t(SORT_LABEL_KEYS[sortMode]) : ""}</span>
             )}
           </button>
         </div>
@@ -255,7 +259,7 @@ export const SongLibrary: FC = () => {
           </div>
         ) : songs.length === 0 ? (
           <div className="p-4 text-center text-[12px] text-text-muted font-mono">
-            {search ? "NO RESULTS" : "EMPTY"}
+            {search ? tc("noResults") : tc("empty")}
           </div>
         ) : (
           displaySongs.map((song, idx) => {
@@ -331,7 +335,7 @@ export const SongLibrary: FC = () => {
                     }}
                     className="p-1 opacity-0 group-hover:opacity-100 text-text-muted hover:text-primary transition-all"
                     type="button"
-                    title="匯出 LRC"
+                    title={t("exportLRC")}
                   >
                     <Download className="w-[11px] h-[11px]" />
                   </button>
@@ -340,7 +344,7 @@ export const SongLibrary: FC = () => {
                     disabled={deletingId === song.id}
                     className="p-1 opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 transition-all"
                     type="button"
-                    title="刪除歌曲"
+                    title={t("deleteSong")}
                   >
                     <svg
                       width="11"
@@ -371,10 +375,10 @@ export const SongLibrary: FC = () => {
       {/* 刪除歌曲確認對話框 */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="確認刪除"
-        message="確定要刪除這首歌曲嗎？此操作無法復原。"
+        title={t("confirmDeleteTitle")}
+        message={t("confirmDeleteMessage")}
         variant="destructive"
-        confirmText="刪除"
+        confirmText={tc("delete")}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteConfirm({ open: false })}
       />

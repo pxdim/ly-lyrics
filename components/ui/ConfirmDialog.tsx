@@ -10,6 +10,7 @@
 
 import { type FC, useEffect, useCallback } from "react";
 import { GlowButton } from "./GlowButton";
+import { useTranslations } from "next-intl";
 
 interface ConfirmDialogProps {
   /** 是否顯示對話框 */
@@ -34,12 +35,15 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   open,
   title,
   message,
-  confirmText = "確認",
-  cancelText = "取消",
+  confirmText,
+  cancelText,
   variant = "default",
   onConfirm,
   onCancel,
 }) => {
+  const tc = useTranslations("common");
+  const resolvedConfirmText = confirmText ?? tc("confirm");
+  const resolvedCancelText = cancelText ?? tc("cancel");
   // ESC 鍵關閉對話框
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -57,7 +61,12 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+    >
       {/* 背景遮罩 */}
       <div
         data-testid="confirm-backdrop"
@@ -67,14 +76,17 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
 
       {/* 對話框主體 */}
       <div className="relative glass-elevated p-6 max-w-sm w-full mx-4 animate-scale-in">
-        <h3 className="font-heading font-semibold text-lg text-text-primary mb-2">
+        <h3
+          id="confirm-dialog-title"
+          className="font-heading font-semibold text-lg text-text-primary mb-2"
+        >
           {title}
         </h3>
         <p className="font-body text-sm text-text-muted mb-6">{message}</p>
 
         <div className="flex justify-end gap-3">
           <GlowButton variant="ghost" onClick={onCancel}>
-            {cancelText}
+            {resolvedCancelText}
           </GlowButton>
           <GlowButton
             variant={variant === "destructive" ? "ghost" : "primary"}
@@ -85,7 +97,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
             }
             onClick={onConfirm}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </GlowButton>
         </div>
       </div>

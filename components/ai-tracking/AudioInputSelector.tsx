@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Volume2 } from "lucide-react";
+import { logger } from "@/lib/utils/logger";
 
 // ============================================================================
 // Types
@@ -80,7 +81,7 @@ export function AudioInputSelector({
         }
       }
     } catch (err) {
-      console.error("枚舉音訊裝置失敗:", err);
+      logger.error("枚舉音訊裝置失敗:", err);
       setPermissionDenied(true);
     }
   }, [deviceId, onDeviceChange]);

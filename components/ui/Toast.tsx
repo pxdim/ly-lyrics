@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 // ============================================================================
 // Types
@@ -84,6 +85,7 @@ interface ToastItemProps {
 }
 
 const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
+  const t = useTranslations("toast");
   useEffect(() => {
     if (toast.duration === 0) {
       return;
@@ -143,7 +145,7 @@ const ToastItem: FC<ToastItemProps> = ({ toast, onRemove }) => {
         onClick={() => onRemove(toast.id)}
         className="p-1 text-text-muted hover:text-text-primary transition-colors"
         type="button"
-        aria-label="Close"
+        aria-label={t("closeLabel")}
       >
         <X className="w-4 h-4" strokeWidth={2} />
       </button>
@@ -242,6 +244,7 @@ export const ToastProvider: FC<ToastProviderProps> = ({
   children,
   maxToasts = 5,
 }) => {
+  const t = useTranslations("toast");
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -267,31 +270,31 @@ export const ToastProvider: FC<ToastProviderProps> = ({
   );
 
   const showError = useCallback(
-    (message: string, title = "錯誤") => {
-      showToast({ type: "error", title, message, duration: 0 });
+    (message: string, title?: string) => {
+      showToast({ type: "error", title: title ?? t("errorTitle"), message, duration: 0 });
     },
-    [showToast]
+    [showToast, t]
   );
 
   const showSuccess = useCallback(
-    (message: string, title = "成功") => {
-      showToast({ type: "success", title, message, duration: 3000 });
+    (message: string, title?: string) => {
+      showToast({ type: "success", title: title ?? t("successTitle"), message, duration: 3000 });
     },
-    [showToast]
+    [showToast, t]
   );
 
   const showWarning = useCallback(
-    (message: string, title = "警告") => {
-      showToast({ type: "warning", title, message, duration: 5000 });
+    (message: string, title?: string) => {
+      showToast({ type: "warning", title: title ?? t("warningTitle"), message, duration: 5000 });
     },
-    [showToast]
+    [showToast, t]
   );
 
   const showInfo = useCallback(
-    (message: string, title = "提示") => {
-      showToast({ type: "info", title, message, duration: 4000 });
+    (message: string, title?: string) => {
+      showToast({ type: "info", title: title ?? t("infoTitle"), message, duration: 4000 });
     },
-    [showToast]
+    [showToast, t]
   );
 
   const clearAll = useCallback(() => {
@@ -351,10 +354,12 @@ export function useToast(): ToastContextValue {
  */
 export function useErrorToast() {
   const { showError } = useToast();
+  const tc = useTranslations("common");
+  const t = useTranslations("toast");
 
   return useCallback(
     (error: unknown, context?: string) => {
-      let message = "發生錯誤，請稍後再試";
+      let message = tc("genericError");
 
       if (error instanceof Error) {
         message = error.message;
@@ -362,9 +367,9 @@ export function useErrorToast() {
         message = error;
       }
 
-      showError(message, context ? `${context} 錯誤` : "錯誤");
+      showError(message, context ? `${context} ${tc("error")}` : t("errorTitle"));
     },
-    [showError]
+    [showError, tc, t]
   );
 }
 

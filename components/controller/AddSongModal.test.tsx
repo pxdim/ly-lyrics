@@ -12,6 +12,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 // Mock 設定
 // ============================================================================
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 const mockCreateSong = vi.fn();
 
 vi.mock("@/lib/api/songs", () => ({
@@ -421,5 +427,25 @@ describe("AddSongModal", () => {
 
     fireEvent.click(screen.getByText("CANCEL"));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // ==========================================================================
+  // ARIA 無障礙屬性
+  // ==========================================================================
+
+  it("has role dialog and aria-modal on the dialog container", () => {
+    render(<AddSongModal {...defaultProps} />);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+  });
+
+  it("has aria-labelledby pointing to the title element", () => {
+    render(<AddSongModal {...defaultProps} />);
+    const dialog = screen.getByRole("dialog");
+    const labelledBy = dialog.getAttribute("aria-labelledby");
+    expect(labelledBy).toBeTruthy();
+    const titleEl = document.getElementById(labelledBy!);
+    expect(titleEl).not.toBeNull();
+    expect(titleEl!.textContent).toBe("Add Track");
   });
 });

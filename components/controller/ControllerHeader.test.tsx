@@ -293,6 +293,40 @@ describe("StatusBar", () => {
       expect(combinedStyles).not.toMatch(/rgba\(/i);
     });
   });
+
+  // --------------------------------------------------------------------------
+  // rightSlot prop
+  // --------------------------------------------------------------------------
+
+  describe("rightSlot", () => {
+    it("renders rightSlot content when provided", () => {
+      render(
+        <StatusBar
+          {...defaultProps}
+          rightSlot={<div data-testid="custom-slot">自訂區塊</div>}
+        />,
+      );
+      expect(screen.getByTestId("custom-slot")).toBeInTheDocument();
+      expect(screen.getByText("自訂區塊")).toBeInTheDocument();
+    });
+
+    it("renders rightSlot before connection status section", () => {
+      const { container } = render(
+        <StatusBar
+          {...defaultProps}
+          rightSlot={<div data-testid="custom-slot">自訂區塊</div>}
+        />,
+      );
+      // rightSlot 應在右側區域內，與連線狀態同一父層
+      const rightSection = container.querySelector("header")!.lastElementChild;
+      expect(rightSection?.querySelector("[data-testid='custom-slot']")).toBeInTheDocument();
+    });
+
+    it("does not render extra content when rightSlot is not provided", () => {
+      render(<StatusBar {...defaultProps} />);
+      expect(screen.queryByTestId("custom-slot")).toBeNull();
+    });
+  });
 });
 
 // ============================================================================

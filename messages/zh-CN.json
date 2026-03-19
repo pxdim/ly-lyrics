@@ -311,5 +311,20 @@
     "warningTitle": "警告",
     "infoTitle": "提示",
     "closeLabel": "Close"
+  },
+  "errorBoundary": {
+    "title": "哎呀，出了点问题",
+    "defaultMessage": "发生未预期的错误",
+    "reload": "重新加载",
+    "goHome": "回到首页",
+    "techDetails": "技术细节 (开发模式)"
+  },
+  "dashboard": {
+    "minimize": "最小化",
+    "maximizeComingSoon": "最大化（即将推出）"
+  },
+  "offline": {
+    "offlineMode": "离线模式",
+    "lyricsStayHint": "歌词将停留在最后位置"
   }
 }

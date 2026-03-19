@@ -311,5 +311,20 @@
     "warningTitle": "警告",
     "infoTitle": "提示",
     "closeLabel": "Close"
+  },
+  "errorBoundary": {
+    "title": "哎呀，出了點問題",
+    "defaultMessage": "發生未預期的錯誤",
+    "reload": "重新載入",
+    "goHome": "回到首頁",
+    "techDetails": "技術細節 (開發模式)"
+  },
+  "dashboard": {
+    "minimize": "最小化",
+    "maximizeComingSoon": "最大化（即將推出）"
+  },
+  "offline": {
+    "offlineMode": "離線模式",
+    "lyricsStayHint": "歌詞將停留在最後位置"
   }
 }

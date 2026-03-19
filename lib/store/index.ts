@@ -1,536 +1,46 @@
 /**
  * Zustand Store for LY Lyrics Display System
  *
- * Centralized state management using Zustand with
- * WebSocket integration for real-time synchronization.
+ * 使用 slice pattern 將狀態管理拆分為獨立模組，
+ * 透過組合模式（compose）建立統一的 store。
+ *
+ * Slice 架構：
+ * - lyrics-slice: 歌曲、歌詞、導航、播放
+ * - websocket-slice: WebSocket 連線、session、事件監聽
+ * - display-slice: 顯示設定、控制模式、UI 狀態
+ * - ai-tracking-slice: AI 追蹤、音訊輸入、AI 設定
  */
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type {
-  Song,
-  SessionState,
-  DisplaySettings,
-  ClientRole,
-} from "../websocket/types";
-import type {
-  AiTrackingState,
-  AiTrackingSettings,
-  AiTrackingStatus,
-  AudioInputState,
-} from "@/types";
-import { initNativeWSClient } from "../websocket/native-client";
+
+import { createLyricsSlice } from "./lyrics-slice";
+import { createWebSocketSlice } from "./websocket-slice";
+import { createDisplaySlice } from "./display-slice";
+import { createAiTrackingSlice } from "./ai-tracking-slice";
+import type { LyricsStore, LyricsStoreState } from "./types";
+
+// 重新匯出型別，保持向後相容
+export type { LyricsStore };
+
+/** 向後相容：原有的 LyricsState 型別別名 */
+export type LyricsState = LyricsStoreState;
+
+/** 向後相容：原有的 LyricsActions 型別別名 */
+export type LyricsActions = Omit<LyricsStore, keyof LyricsStoreState>;
 
 // ============================================================================
-// Types
+// Store 建立：組合所有 Slices
 // ============================================================================
-
-export interface LyricsState {
-  // Current song and lyrics
-  currentSong: Song | null;
-  currentIndex: number;
-  lyrics: string[];
-
-  // Connection state
-  connectionState: "connected" | "reconnecting" | "disconnected";
-  reconnectAttempt: number;
-  sessionId: string | null;
-  role: ClientRole | null;
-  userId: string | null;
-
-  // Device counts
-  controllerCount: number;
-  displayCount: number;
-
-  // Display settings
-  displaySettings: DisplaySettings;
-
-  // Playback state
-  isPlaying: boolean;
-
-  // Control mode (FR6.4)
-  controlMode: "auto" | "manual";
-
-  // UI state
-  isLoading: boolean;
-  error: string | null;
-
-  // AI Tracking
-  aiTracking: AiTrackingState;
-  aiSettings: AiTrackingSettings;
-  audioInput: AudioInputState;
-}
-
-export interface LyricsActions {
-  // Song actions
-  setCurrentSong: (song: Song | null) => void;
-  setLyrics: (lyrics: string[]) => void;
-  setCurrentIndex: (index: number) => void;
-
-  // Navigation
-  nextLine: () => void;
-  prevLine: () => void;
-  jumpToLine: (index: number) => void;
-
-  // Connection actions
-  connect: () => void;
-  disconnect: () => void;
-  joinSession: (sessionId: string, role: ClientRole, userId?: string) => void;
-  leaveSession: () => void;
-
-  // Connection state (computed)
-  retryConnection: () => void;
-
-  // Settings actions
-  updateDisplaySettings: (settings: Partial<DisplaySettings>) => void;
-  resetDisplaySettings: () => void;
-
-  // Playback actions
-  setPlaying: (playing: boolean) => void;
-  togglePlaying: () => void;
-
-  // Control mode actions (FR6.4)
-  setControlMode: (mode: "auto" | "manual") => void;
-
-  // UI state actions
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  clearError: () => void;
-
-  // AI Tracking actions
-  startAiTracking: () => void;
-  stopAiTracking: () => void;
-  updateAiStatus: (status: AiTrackingStatus, confidence?: number, matchedLine?: number, errorMessage?: string | null) => void;
-  updateAiTranscript: (text: string, isFinal: boolean) => void;
-  triggerManualOverride: () => void;
-  updateAudioInput: (partial: Partial<AudioInputState>) => void;
-  updateAiSettings: (partial: Partial<AiTrackingSettings>) => void;
-}
-
-// ============================================================================
-// Default Settings
-// ============================================================================
-
-const defaultDisplaySettings: DisplaySettings = {
-  displayLines: 4,
-  fontSize: 32,
-  fontFamily: "Inter",
-  lineSpacing: 0.5,
-  theme: "dark",
-  showBackground: true,
-  backgroundColor: "#000000",
-  backgroundImage: "",
-  textColor: "#ffffff",
-  highlightColor: "#0ea5e9",
-  autoScroll: true,
-  scrollDuration: 300,
-  enableAnimation: true,
-};
-
-// ============================================================================
-// Store Creation
-// ============================================================================
-
-type LyricsStore = LyricsState & LyricsActions;
 
 export const useLyricsStore = create<LyricsStore>()(
   devtools(
     persist(
-      (set, get) => ({
-        // ========================================
-        // Initial State
-        // ========================================
-        currentSong: null,
-        currentIndex: 0,
-        lyrics: [],
-        connectionState: "disconnected" as const,
-        reconnectAttempt: 0,
-        sessionId: null,
-        role: null,
-        userId: null,
-        controllerCount: 0,
-        displayCount: 0,
-        displaySettings: defaultDisplaySettings,
-        isPlaying: false,
-        controlMode: "manual" as const,
-        isLoading: false,
-        error: null,
-
-        // AI Tracking
-        aiTracking: {
-          isActive: false,
-          status: "idle" as const,
-          confidence: 0,
-          lastMatchedLine: null,
-          cooldownUntil: null,
-          sttProvider: "google-cloud" as const,
-          errorMessage: null,
-          lastTranscript: null,
-          lastTranscriptFinal: false,
-        },
-        aiSettings: {
-          sttProvider: "google-cloud" as const,
-          apiKey: null,
-          confidenceThreshold: 0.45,
-          windowBefore: 2,
-          windowAfter: 5,
-          manualOverrideCooldown: 5000,
-          fullScanThreshold: 0.7,
-        },
-        audioInput: {
-          deviceId: null,
-          gain: 0,
-          volume: 0,
-          isCapturing: false,
-        },
-
-        // ========================================
-        // Song Actions
-        // ========================================
-        setCurrentSong: (song) => {
-          set({
-            currentSong: song,
-            currentIndex: 0,
-            lyrics: song?.lyrics ?? [],
-          });
-
-          // Controller 選歌時透過 WebSocket 通知後端，後端會廣播 song_changed 給所有 Display
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            if (song) {
-              ws.setSong(song.id);
-            }
-          }
-        },
-
-        setLyrics: (lyrics) => {
-          set({ lyrics, currentIndex: 0 });
-        },
-
-        setCurrentIndex: (index) => {
-          const { lyrics } = get();
-          if (lyrics.length === 0) return;
-          const clampedIndex = Math.max(0, Math.min(index, lyrics.length - 1));
-          set({ currentIndex: clampedIndex });
-        },
-
-        // ========================================
-        // Navigation Actions
-        // ========================================
-        nextLine: () => {
-          const { currentIndex, lyrics } = get();
-          if (lyrics.length === 0) return;
-          const nextIndex = Math.min(currentIndex + 1, lyrics.length - 1);
-          set({ currentIndex: nextIndex });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.nextLine();
-          }
-        },
-
-        prevLine: () => {
-          const { currentIndex } = get();
-          const prevIndex = Math.max(currentIndex - 1, 0);
-          set({ currentIndex: prevIndex });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.prevLine();
-          }
-        },
-
-        jumpToLine: (index) => {
-          const { lyrics } = get();
-          if (lyrics.length === 0) return;
-          const clampedIndex = Math.max(0, Math.min(index, lyrics.length - 1));
-          set({ currentIndex: clampedIndex });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.changeLine(clampedIndex);
-          }
-        },
-
-        // ========================================
-        // Connection Actions
-        // ========================================
-        connect: () => {
-          try {
-            const ws = initNativeWSClient();
-
-            // 先清除所有舊監聽器，防止多次 connect() 導致監聽器累積（記憶體洩漏）
-            ws.removeAllListeners();
-
-            // 連線狀態追蹤：透過內部事件同步真實 WebSocket 狀態
-            ws.on("_connected", () => {
-              set({ connectionState: "connected", reconnectAttempt: 0 });
-            });
-
-            ws.on("_disconnected", () => {
-              // shouldReconnect 為 true 時會自動重試，先進入 reconnecting 狀態
-              set({ connectionState: "reconnecting" });
-            });
-
-            ws.on("_reconnecting", (data: { attempt: number; maxAttempts: number }) => {
-              set({ reconnectAttempt: data.attempt });
-            });
-
-            ws.on("_reconnect_exhausted", () => {
-              set({ connectionState: "disconnected" });
-            });
-
-            // 業務事件監聽
-            ws.on("line_changed", ({ lineIndex }) => {
-              set({ currentIndex: lineIndex });
-            });
-
-            ws.on("session_state", (state: SessionState) => {
-              set({
-                currentIndex: state.currentLineIndex,
-                isPlaying: state.isPlaying,
-                controllerCount: state.controllerCount,
-                displayCount: state.displayCount,
-              });
-              if (state.currentSong) {
-                set({
-                  currentSong: state.currentSong,
-                  lyrics: state.currentSong.lyrics ?? [],
-                });
-              }
-            });
-
-            ws.on("song_changed", ({ song }) => {
-              set({
-                currentSong: song,
-                currentIndex: 0,
-                lyrics: song?.lyrics ?? [],
-              });
-            });
-
-            ws.on("settings_updated", ({ settings }) => {
-              set({ displaySettings: settings });
-            });
-
-            ws.on("playing_changed", ({ isPlaying }) => {
-              set({ isPlaying });
-            });
-
-            ws.on("client_joined", ({ controllerCount, displayCount }) => {
-              set({ controllerCount, displayCount });
-            });
-
-            ws.on("client_left", ({ controllerCount, displayCount }) => {
-              set({ controllerCount, displayCount });
-            });
-
-            ws.on("error", ({ message }) => {
-              set({ error: message });
-            });
-
-            // 如果 WebSocket 已經連上（singleton 可能已經在連線中），立即同步狀態
-            if (ws.isConnected()) {
-              set({ connectionState: "connected", reconnectAttempt: 0 });
-            }
-          } catch (error) {
-            console.error("Failed to connect to WebSocket:", error);
-            set({
-              error: error instanceof Error ? error.message : "Connection failed",
-            });
-          }
-        },
-
-        disconnect: () => {
-          const ws = initNativeWSClient();
-          ws.removeAllListeners();
-          ws.disconnect();
-          set({
-            connectionState: "disconnected" as const,
-            reconnectAttempt: 0,
-            sessionId: null,
-            role: null,
-            controllerCount: 0,
-            displayCount: 0,
-          });
-        },
-
-        joinSession: (sessionId, role, userId) => {
-          const ws = initNativeWSClient();
-          ws.joinSession(sessionId, role, userId);
-          set({ sessionId, role, userId: userId ?? null });
-        },
-
-        leaveSession: () => {
-          const ws = initNativeWSClient();
-          ws.leaveSession();
-          set({ sessionId: null, role: null });
-        },
-
-        retryConnection: () => {
-          const ws = initNativeWSClient();
-          set({ connectionState: "reconnecting" as const, reconnectAttempt: 0 });
-          ws.resetAndReconnect();
-        },
-
-        // ========================================
-        // Settings Actions
-        // ========================================
-        updateDisplaySettings: (settings) => {
-          const newSettings = { ...get().displaySettings, ...settings };
-          set({ displaySettings: newSettings });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.updateSettings(settings);
-          }
-        },
-
-        resetDisplaySettings: () => {
-          set({ displaySettings: defaultDisplaySettings });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.updateSettings(defaultDisplaySettings);
-          }
-        },
-
-        // ========================================
-        // Playback Actions
-        // ========================================
-        setPlaying: (playing) => {
-          set({ isPlaying: playing });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.setPlaying(playing);
-          }
-        },
-
-        togglePlaying: () => {
-          const { isPlaying } = get();
-          set({ isPlaying: !isPlaying });
-
-          // Send to WebSocket if connected as controller
-          const ws = initNativeWSClient();
-          if (get().role === "controller" && ws.isConnected()) {
-            ws.setPlaying(!isPlaying);
-          }
-        },
-
-        setControlMode: (mode) => {
-          set({ controlMode: mode });
-        },
-
-        // ========================================
-        // AI Tracking Actions
-        // ========================================
-        startAiTracking: () => {
-          set({
-            aiTracking: {
-              ...get().aiTracking,
-              isActive: true,
-              status: "listening",
-              errorMessage: null,
-              lastTranscript: null,
-              lastTranscriptFinal: false,
-            },
-          });
-        },
-
-        stopAiTracking: () => {
-          set({
-            aiTracking: {
-              isActive: false,
-              status: "idle",
-              confidence: 0,
-              lastMatchedLine: null,
-              cooldownUntil: null,
-              sttProvider: get().aiSettings.sttProvider,
-              errorMessage: null,
-              lastTranscript: null,
-              lastTranscriptFinal: false,
-            },
-          });
-        },
-
-        updateAiStatus: (status, confidence, matchedLine, errorMessage) => {
-          set({
-            aiTracking: {
-              ...get().aiTracking,
-              status,
-              ...(confidence !== undefined && { confidence }),
-              ...(matchedLine !== undefined && { lastMatchedLine: matchedLine }),
-              ...(errorMessage !== undefined && { errorMessage }),
-            },
-          });
-        },
-
-        updateAiTranscript: (text, isFinal) => {
-          set({
-            aiTracking: {
-              ...get().aiTracking,
-              lastTranscript: text,
-              lastTranscriptFinal: isFinal,
-            },
-          });
-        },
-
-        triggerManualOverride: () => {
-          const cooldown = get().aiSettings.manualOverrideCooldown;
-          set({
-            aiTracking: {
-              ...get().aiTracking,
-              status: "cooldown",
-              cooldownUntil: Date.now() + cooldown,
-            },
-          });
-          // 冷卻結束後自動恢復監聽狀態
-          setTimeout(() => {
-            const current = get().aiTracking;
-            if (current.isActive && current.status === "cooldown") {
-              set({
-                aiTracking: {
-                  ...get().aiTracking,
-                  status: "listening",
-                  cooldownUntil: null,
-                },
-              });
-            }
-          }, cooldown);
-        },
-
-        updateAudioInput: (partial) => {
-          set({
-            audioInput: { ...get().audioInput, ...partial },
-          });
-        },
-
-        updateAiSettings: (partial) => {
-          set({
-            aiSettings: { ...get().aiSettings, ...partial },
-          });
-        },
-
-        // ========================================
-        // UI State Actions
-        // ========================================
-        setLoading: (loading) => {
-          set({ isLoading: loading });
-        },
-
-        setError: (error) => {
-          set({ error });
-        },
-
-        clearError: () => {
-          set({ error: null });
-        },
+      (...a) => ({
+        ...createLyricsSlice(...a),
+        ...createWebSocketSlice(...a),
+        ...createDisplaySlice(...a),
+        ...createAiTrackingSlice(...a),
       }),
       {
         name: "lyrics-store",
@@ -556,9 +66,9 @@ export const useLyricsStore = create<LyricsStore>()(
 // ============================================================================
 
 /**
- * Get visible lyrics based on current index and display lines setting
+ * 取得可見歌詞窗口（根據目前行號和顯示行數設定）
  */
-export const selectVisibleLyrics = (state: LyricsState) => {
+export const selectVisibleLyrics = (state: LyricsStoreState) => {
   const { lyrics, currentIndex, displaySettings } = state;
   const { displayLines } = displaySettings;
 
@@ -576,9 +86,9 @@ export const selectVisibleLyrics = (state: LyricsState) => {
 };
 
 /**
- * Get connection status summary
+ * 取得連線狀態摘要
  */
-export const selectConnectionStatus = (state: LyricsState) => {
+export const selectConnectionStatus = (state: LyricsStoreState) => {
   return {
     isConnected: state.connectionState === "connected",
     connectionState: state.connectionState,
@@ -591,9 +101,9 @@ export const selectConnectionStatus = (state: LyricsState) => {
 };
 
 /**
- * Get navigation state
+ * 取得導航狀態
  */
-export const selectNavigationState = (state: LyricsState) => {
+export const selectNavigationState = (state: LyricsStoreState) => {
   return {
     currentIndex: state.currentIndex,
     totalLines: state.lyrics.length,

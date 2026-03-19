@@ -10,6 +10,7 @@
 "use client";
 
 import { useLyricsStore } from "@/lib/store";
+import { useTranslations } from "next-intl";
 
 const stateConfig = {
   connected: {
@@ -17,7 +18,7 @@ const stateConfig = {
     textClass: "text-accent",
     borderClass: "border-accent/30",
     shadowClass: "shadow-glow-accent",
-    label: "已連接",
+    labelKey: "connected" as const,
     pulse: true,
   },
   reconnecting: {
@@ -25,7 +26,7 @@ const stateConfig = {
     textClass: "text-warning",
     borderClass: "border-warning/30",
     shadowClass: "",
-    label: "重連中",
+    labelKey: "reconnecting" as const,
     pulse: true,
   },
   disconnected: {
@@ -33,12 +34,13 @@ const stateConfig = {
     textClass: "text-error",
     borderClass: "border-error/30",
     shadowClass: "",
-    label: "已離線",
+    labelKey: "disconnected" as const,
     pulse: false,
   },
 } as const;
 
 export function ConnectionIndicator({ className = "" }: { className?: string }) {
+  const t = useTranslations("display.connection");
   const connectionState = useLyricsStore((s) => s.connectionState);
   const config = stateConfig[connectionState];
 
@@ -57,7 +59,7 @@ export function ConnectionIndicator({ className = "" }: { className?: string }) 
         />
       </span>
       <span className={`font-body text-xs font-medium ${config.textClass}`}>
-        {config.label}
+        {t(config.labelKey)}
       </span>
     </div>
   );

@@ -13,6 +13,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 // ============================================================================
 // Mock 設定
 // ============================================================================
@@ -220,14 +226,14 @@ describe("LyricsControl", () => {
     it("有 onToggleFullscreen 時顯示全螢幕按鈕", () => {
       render(<LyricsControl onToggleFullscreen={() => {}} />);
       expect(
-        screen.getByLabelText("Enter fullscreen")
+        screen.getByLabelText("全螢幕 (F)")
       ).toBeInTheDocument();
     });
 
     it("無 onToggleFullscreen 時不顯示全螢幕按鈕", () => {
       render(<LyricsControl />);
-      expect(screen.queryByLabelText("Enter fullscreen")).toBeNull();
-      expect(screen.queryByLabelText("Exit fullscreen")).toBeNull();
+      expect(screen.queryByLabelText("全螢幕 (F)")).toBeNull();
+      expect(screen.queryByLabelText("退出全螢幕 (F)")).toBeNull();
     });
 
     it("isFullscreen 為 true 時顯示 Exit fullscreen 按鈕", () => {
@@ -235,7 +241,7 @@ describe("LyricsControl", () => {
         <LyricsControl isFullscreen onToggleFullscreen={() => {}} />
       );
       expect(
-        screen.getByLabelText("Exit fullscreen")
+        screen.getByLabelText("退出全螢幕 (F)")
       ).toBeInTheDocument();
     });
   });

@@ -6,8 +6,15 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { ToastProvider, useToast, type ToastType } from "./Toast";
 import { useEffect, useState } from "react";
+
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
+import { ToastProvider, useToast, type ToastType } from "./Toast";
 
 // 輔助元件：觸發指定類型的 toast
 function ToastTrigger({ type, title }: { type: ToastType; title: string }) {

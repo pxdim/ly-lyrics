@@ -9,6 +9,12 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { LyricsResultCard } from "./LyricsResultCard";
 import type { LyricsSearchResultItem } from "@/lib/api/lyrics-search";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 // ============================================================================
 // 測試輔助
 // ============================================================================

@@ -13,8 +13,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { useOnlineStatus } from "@/lib/hooks/useOnlineStatus";
+import { useTranslations } from "next-intl";
 
 export function ConnectionStatusBar() {
+  const t = useTranslations("display.connection");
+  const tOffline = useTranslations("offline");
+  const tc = useTranslations("common");
   const connectionState = useLyricsStore((s) => s.connectionState);
   const reconnectAttempt = useLyricsStore((s) => s.reconnectAttempt);
   const retryConnection = useLyricsStore((s) => s.retryConnection);
@@ -42,8 +46,8 @@ export function ConnectionStatusBar() {
       <div className="fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-warning/10 border-b border-warning/20">
           <span className="inline-block w-2 h-2 rounded-full bg-warning" />
-          <span className="text-warning text-xs font-medium">離線模式</span>
-          <span className="text-warning text-xs">· 歌詞將停留在最後位置</span>
+          <span className="text-warning text-xs font-medium">{tOffline("offlineMode")}</span>
+          <span className="text-warning text-xs">· {tOffline("lyricsStayHint")}</span>
         </div>
       </div>
     );
@@ -60,7 +64,7 @@ export function ConnectionStatusBar() {
       <div className="fixed top-0 left-0 right-0 z-50 animate-fade-out-slow">
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-accent/10 border-b border-accent/20">
           <span className="inline-block w-2 h-2 rounded-full bg-accent" />
-          <span className="text-accent text-xs font-medium">連線已恢復</span>
+          <span className="text-accent text-xs font-medium">{t("restored")}</span>
         </div>
       </div>
     );
@@ -73,7 +77,7 @@ export function ConnectionStatusBar() {
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-warning/10 border-b border-warning/20">
           <span className="inline-block w-2 h-2 rounded-full bg-warning animate-pulse" />
           <span className="text-warning text-xs font-medium">
-            連線中斷 · 重新連接中 ({reconnectAttempt})
+            {t("interrupted")} ({reconnectAttempt})
           </span>
         </div>
       </div>
@@ -85,13 +89,13 @@ export function ConnectionStatusBar() {
     <div className="fixed top-0 left-0 right-0 z-50">
       <div className="flex items-center justify-center gap-3 py-2 px-4 bg-error/10 border-b border-error/25">
         <span className="text-error text-sm">✕</span>
-        <span className="text-error text-xs font-medium">無法連線</span>
+        <span className="text-error text-xs font-medium">{t("failed")}</span>
         <button
           type="button"
           onClick={retryConnection}
           className="ml-2 px-3 py-1 bg-error/10 border border-error/25 rounded-md text-[10px] text-error hover:bg-error/20 transition-colors cursor-pointer"
         >
-          重試
+          {tc("retry")}
         </button>
       </div>
     </div>

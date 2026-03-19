@@ -68,7 +68,7 @@ npm run dev          # 啟動開發伺服器 (Turbopack)
 npm run build        # 生產環境建置
 npm run lint         # ESLint
 npm run type-check   # TypeScript 類型檢查
-npx vitest run       # 執行所有單元測試 (1053 tests)
+npx vitest run       # 執行所有單元測試 (1155 tests)
 npm run test:e2e     # Playwright E2E 測試
 ```
 
@@ -82,7 +82,7 @@ npm run test:e2e     # Playwright E2E 測試
 
 ## 測試
 
-- **70 個測試檔案**，1053 個測試案例
+- **79 個測試檔案**，1155 個測試案例
 - **框架**：Vitest + @testing-library/react + jsdom
 - **Mock 策略**：真實程式碼優先，僅 mock 不可避免的外部依賴（navigator.mediaDevices、WebSocket、fetch）
 - **TDD**：遵循紅綠燈法（Red-Green-Refactor），所有功能開發必須先有失敗測試

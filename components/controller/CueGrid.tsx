@@ -11,6 +11,7 @@
 import { useEffect, useRef, useMemo, type FC } from "react";
 import { useLyricsStore } from "@/lib/store";
 import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
+import { useTranslations } from "next-intl";
 
 interface CueGridProps {
   /** AI 追蹤手動覆寫回呼（當使用者手動操作時觸發） */
@@ -18,6 +19,7 @@ interface CueGridProps {
 }
 
 export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
+  const t = useTranslations("controller.cueGrid");
   const lyrics = useLyricsStore((state) => state.lyrics);
   const currentIndex = useLyricsStore((state) => state.currentIndex);
   const jumpToLine = useLyricsStore((state) => state.jumpToLine);
@@ -160,7 +162,7 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
                     fontFamily: "'Noto Sans TC', sans-serif",
                   }}
                 >
-                  {line || "(空行)"}
+                  {line || t("emptyLine")}
                 </div>
                 <div className="w-14 text-right relative z-10">
                   <span className="text-[9px] font-mono border border-primary text-primary px-1.5 py-0.5 bg-primary/10">
@@ -195,7 +197,7 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
                   fontFamily: "'Noto Sans TC', sans-serif",
                 }}
               >
-                {line || "(空行)"}
+                {line || t("emptyLine")}
               </div>
               <div className="w-14 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-[9px] font-mono border border-border-dim text-text-muted px-1.5 py-0.5 bg-surface">
@@ -247,16 +249,19 @@ export const CueGrid: FC<CueGridProps> = ({ onManualOverride }) => {
 // 內部子元件：Cue Grid 標頭列
 // ────────────────────────────────────────────────────────────
 
-const CueGridHeader: FC = () => (
-  <div className="flex items-center px-4 py-3 border-b border-border-dim bg-elevated shrink-0">
-    <div className="w-14 font-mono text-[11px] text-text-muted uppercase">
-      Line
+const CueGridHeader: FC = () => {
+  const t = useTranslations("controller.cueGrid");
+  return (
+    <div className="flex items-center px-4 py-3 border-b border-border-dim bg-elevated shrink-0">
+      <div className="w-14 font-mono text-[11px] text-text-muted uppercase">
+        {t("line")}
+      </div>
+      <div className="flex-1 font-mono text-[11px] text-text-muted uppercase pl-3">
+        {t("lyricPayload")}
+      </div>
+      <div className="w-14 font-mono text-[11px] text-text-muted uppercase text-right">
+        {t("action")}
+      </div>
     </div>
-    <div className="flex-1 font-mono text-[11px] text-text-muted uppercase pl-3">
-      Lyric Payload
-    </div>
-    <div className="w-14 font-mono text-[11px] text-text-muted uppercase text-right">
-      Action
-    </div>
-  </div>
-);
+  );
+};

@@ -155,7 +155,7 @@
 | NFR4.2 | API 文檔完整 | ✅ 完成 |
 | NFR4.3 | 錯誤日誌記錄 | ✅ 完成 |
 
-> **NFR4.1 備註**：1053 個測試案例全部通過，82% 語句覆蓋率。
+> **NFR4.1 備註**：1155 個測試案例全部通過，82% 語句覆蓋率。
 > **NFR4.2 備註**：docs/spec/api.md v3.0 涵蓋全部 24 個 endpoint（23 REST + 1 WebSocket），含 request/response schema、錯誤代碼。
 > **NFR4.3 備註**：Go 後端使用 log/slog JSON handler，41 處結構化日誌呼叫。HTTP request logging middleware 記錄 method/path/status/duration/request_id。環境感知等級（production: Info, development: Debug）。
 

@@ -10,6 +10,7 @@
 import { useState, useCallback } from "react";
 import { Settings, ChevronDown } from "lucide-react";
 import { useLyricsStore } from "@/lib/store";
+import { useTranslations } from "next-intl";
 import { AiStatusIndicator } from "./AiStatusIndicator";
 import { AudioInputSelector } from "./AudioInputSelector";
 
@@ -57,6 +58,7 @@ function ToggleSwitch({ checked, onChange, label }: ToggleSwitchProps) {
 // ============================================================================
 
 function AdvancedSettings() {
+  const t = useTranslations("ai.settings");
   const aiSettings = useLyricsStore((s) => s.aiSettings);
   const updateAiSettings = useLyricsStore((s) => s.updateAiSettings);
 
@@ -64,21 +66,21 @@ function AdvancedSettings() {
     <div className="flex flex-col gap-2.5 text-[11px]">
       {/* 辨識引擎 */}
       <div className="flex items-center justify-between">
-        <span className="text-text-muted">辨識引擎</span>
+        <span className="text-text-muted">{t("engine")}</span>
         <select
           value={aiSettings.sttProvider}
           onChange={(e) => updateAiSettings({ sttProvider: e.target.value as "google-cloud" | "web-speech" | "deepgram" })}
           className="bg-elevated border border-border-dim text-text-primary text-[10px] font-mono rounded px-1.5 py-0.5 focus:outline-none focus:border-primary"
         >
-          <option value="google-cloud">Google Cloud STT</option>
-          <option value="web-speech">Web Speech (免費)</option>
-          <option value="deepgram">Deepgram</option>
+          <option value="google-cloud">{t("googleCloud")}</option>
+          <option value="web-speech">{t("webSpeech")}</option>
+          <option value="deepgram">{t("deepgram")}</option>
         </select>
       </div>
 
       {/* 信心門檻 */}
       <div className="flex items-center justify-between">
-        <span className="text-text-muted">比對門檻</span>
+        <span className="text-text-muted">{t("threshold")}</span>
         <div className="flex items-center gap-1.5">
           <input
             type="range"
@@ -97,15 +99,15 @@ function AdvancedSettings() {
 
       {/* 搜尋視窗 */}
       <div className="flex items-center justify-between">
-        <span className="text-text-muted">搜尋範圍</span>
+        <span className="text-text-muted">{t("searchRange")}</span>
         <span className="text-text-primary font-mono">
-          前{aiSettings.windowBefore} / 後{aiSettings.windowAfter}行
+          {t("searchRangeValue", { before: aiSettings.windowBefore, after: aiSettings.windowAfter })}
         </span>
       </div>
 
       {/* 冷卻時間 */}
       <div className="flex items-center justify-between">
-        <span className="text-text-muted">手動冷卻</span>
+        <span className="text-text-muted">{t("manualCooldown")}</span>
         <div className="flex items-center gap-1.5">
           <input
             type="range"
@@ -130,6 +132,8 @@ function AdvancedSettings() {
 // ============================================================================
 
 export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
+  const t = useTranslations("ai.tracking");
+  const tSettings = useTranslations("ai.settings");
   const aiTracking = useLyricsStore((s) => s.aiTracking);
   const audioInput = useLyricsStore((s) => s.audioInput);
   const updateAudioInput = useLyricsStore((s) => s.updateAudioInput);
@@ -163,7 +167,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
           )}
           <span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">
-            AI 自動跟歌
+            {t("title")}
           </span>
         </div>
 
@@ -175,8 +179,8 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
             className={`p-1 transition-colors ${
               showSettings ? "text-primary" : "text-text-muted hover:text-text-primary"
             }`}
-            title="AI 自動跟歌設定"
-            aria-label="展開 AI 自動跟歌設定"
+            title={t("settingsLabel")}
+            aria-label={t("expandSettings")}
             aria-expanded={showSettings}
           >
             <Settings size={13} />
@@ -185,7 +189,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           <ToggleSwitch
             checked={isActive}
             onChange={handleToggle}
-            label="切換 AI 自動跟歌"
+            label={t("toggleLabel")}
           />
         </div>
       </div>
@@ -203,7 +207,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
           <div className="flex items-center gap-1 mb-2">
             <ChevronDown size={10} className="text-text-muted" />
             <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
-              進階設定
+              {t("advancedSettings")}
             </span>
           </div>
           <AdvancedSettings />
@@ -215,7 +219,7 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
         <div className="mt-3 flex flex-col gap-3 border-t border-border-dim pt-3">
           {/* 手動校正提示 */}
           <p className="text-[10px] text-text-muted font-mono leading-relaxed">
-            點擊歌詞行可手動校正 AI 位置，校正後 AI 暫停追蹤數秒後自動恢復
+            {t("manualCorrectionHint")}
           </p>
 
           {/* 音訊輸入選擇器 */}
@@ -246,14 +250,14 @@ export function AiTrackingPanel({ onToggle }: AiTrackingPanelProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
-                    STT 辨識
+                    {tSettings("sttRecognition")}
                   </span>
                   <span className={`text-[9px] font-mono px-1 rounded ${
                     aiTracking.lastTranscriptFinal
                       ? "bg-primary/20 text-primary"
                       : "bg-border-dim text-text-muted"
                   }`}>
-                    {aiTracking.lastTranscriptFinal ? "FINAL" : "INTERIM"}
+                    {aiTracking.lastTranscriptFinal ? tSettings("final") : tSettings("interim")}
                   </span>
                 </div>
                 <p className={`text-[11px] font-mono leading-relaxed break-all ${

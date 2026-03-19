@@ -22,6 +22,7 @@ import React, {
 } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { logError } from "@/lib/errors/AppError";
+import { useTranslations } from "next-intl";
 
 // ============================================================================
 // Error Types
@@ -58,6 +59,7 @@ interface ErrorFallbackProps {
  * Error fallback UI component
  */
 function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
+  const t = useTranslations("errorBoundary");
   return (
     <div className="min-h-screen flex items-center justify-center bg-void p-8">
       {/* Background Effects */}
@@ -76,13 +78,13 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 
           {/* Title */}
           <h1 className="font-heading text-2xl font-bold text-center text-primary mb-4">
-            哎呀，出了點問題
+            {t("title")}
           </h1>
 
           {/* Error Message */}
           <div className="bg-void/50 rounded-xl p-4 mb-6 border border-border-dim">
             <p className="font-body text-text-muted text-center">
-              {error?.message || "發生未預期的錯誤"}
+              {error?.message || t("defaultMessage")}
             </p>
           </div>
 
@@ -94,7 +96,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
               type="button"
             >
               <RefreshCw className="w-5 h-5" strokeWidth={2} />
-              重新載入
+              {t("reload")}
             </button>
 
             <button
@@ -102,7 +104,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
               className="w-full px-6 py-3 bg-elevated border border-border-dim text-text-muted rounded-xl font-body font-medium transition-all duration-300 hover:border-primary/50 hover:text-primary"
               type="button"
             >
-              回到首頁
+              {t("goHome")}
             </button>
           </div>
 
@@ -110,7 +112,7 @@ function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           {process.env.NODE_ENV === "development" && error?.stack && (
             <details className="mt-6">
               <summary className="font-body text-xs text-text-muted cursor-pointer hover:text-primary transition-colors">
-                技術細節 (開發模式)
+                {t("techDetails")}
               </summary>
               <pre className="mt-2 p-3 bg-void/80 rounded-lg text-xs font-mono text-primary/70 overflow-auto max-h-40">
                 {error.stack}

@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState, useCallback, type FC } from "react";
+import { useState, useCallback, type FC, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useLyricsStore } from "@/lib/store";
 import { QRCodePanel } from "@/components/controller/QRCodePanel";
@@ -22,11 +22,14 @@ interface StatusBarProps {
   sessionCode: string;
   /** 重新產生房間碼回呼 */
   onRegenerate: () => void;
+  /** 可選的右側插槽，插入在連線狀態區之前 */
+  rightSlot?: ReactNode;
 }
 
 export const StatusBar: FC<StatusBarProps> = ({
   sessionCode,
   onRegenerate,
+  rightSlot,
 }) => {
   const t = useTranslations("controller.header");
   const tc = useTranslations("common");
@@ -227,8 +230,9 @@ export const StatusBar: FC<StatusBarProps> = ({
         )}
       </div>
 
-      {/* 右：連線狀態 */}
+      {/* 右：rightSlot + 連線狀態 */}
       <div className="flex items-center gap-6">
+        {rightSlot}
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${isConnected ? "bg-primary animate-pulse" : "bg-error"}`}
@@ -412,7 +416,7 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
                 <button
                   type="button"
                   onClick={onRegenerate}
-                  className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-dim rounded-lg text-[12px] font-mono text-text-muted active:bg-amber-500/5 active:border-amber-500/40 active:text-amber-400 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-dim rounded-lg text-[12px] font-mono text-text-muted active:bg-warning/5 active:border-warning/40 active:text-warning transition-all"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 2v6h-6" />

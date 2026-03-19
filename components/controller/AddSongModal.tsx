@@ -10,18 +10,25 @@ import { type FC, useState, useRef, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { createSong } from "@/lib/api/songs";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
+import { useTranslations } from "next-intl";
+
+// 動態載入 loading fallback 元件（需使用 i18n hook）
+function SearchLoadingFallback() {
+  const t = useTranslations("controller.addSong");
+  return (
+    <div className="flex flex-col items-center justify-center py-12 gap-3">
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <span className="text-[11px] font-mono text-text-muted">{t("loadingSearch")}</span>
+    </div>
+  );
+}
 
 // LyricsSearchPanel 攜帶 opencc-js 繁簡轉換字典（5.5MB），僅在搜尋歌詞 tab 時載入
 const LyricsSearchPanel = dynamic(
   () => import("@/components/lyrics-search/LyricsSearchPanel").then((m) => ({ default: m.LyricsSearchPanel })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex flex-col items-center justify-center py-12 gap-3">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-[11px] font-mono text-text-muted">載入搜尋元件...</span>
-      </div>
-    ),
+    loading: SearchLoadingFallback,
   },
 );
 
@@ -35,6 +42,8 @@ interface AddSongModalProps {
 }
 
 export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdded, initialTab = "search" }) => {
+  const t = useTranslations("controller.addSong");
+  const tLib = useTranslations("controller.library");
   const [activeTab, setActiveTab] = useState<"search" | "manual" | "lrc">("search");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -44,9 +53,9 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   const titleRef = useRef<HTMLInputElement>(null);
 
   const tabs = [
-    { key: "search" as const, label: "🔍 搜尋歌詞" },
-    { key: "manual" as const, label: "✏️ 手動輸入" },
-    { key: "lrc"    as const, label: "📄 匯入 LRC" },
+    { key: "search" as const, label: `🔍 ${tLib("searchLyrics")}` },
+    { key: "manual" as const, label: `✏️ ${tLib("manualInput")}` },
+    { key: "lrc"    as const, label: `📄 ${tLib("importLRC")}` },
   ];
 
   // 偵測手機螢幕寬度，用於響應式調整
@@ -85,7 +94,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   const handleSubmit = async () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      setError("請輸入歌曲名稱");
+      setError(t("errorNoTitle"));
       return;
     }
 
@@ -95,7 +104,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       .filter((line) => line.length > 0);
 
     if (lyrics.length === 0) {
-      setError("請輸入至少一行歌詞");
+      setError(t("errorNoLyrics"));
       return;
     }
 
@@ -110,7 +119,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
       onSongAdded();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "建立歌曲失敗");
+      setError(err instanceof Error ? err.message : t("createFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -124,6 +133,9 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-song-modal-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -139,7 +151,10 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
               <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
             </svg>
-            <span className="font-mono text-[13px] font-semibold uppercase tracking-wider text-primary">
+            <span
+              id="add-song-modal-title"
+              className="font-mono text-[13px] font-semibold uppercase tracking-wider text-primary"
+            >
               Add Track
             </span>
           </div>
@@ -193,7 +208,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="輸入歌曲名稱..."
+                  placeholder={t("titlePlaceholder")}
                   className={inputClass}
                 />
               </div>
@@ -207,7 +222,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
                   type="text"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  placeholder="輸入歌手名稱（選填）..."
+                  placeholder={t("artistPlaceholder")}
                   className={inputClass}
                 />
               </div>
@@ -220,7 +235,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
                 <textarea
                   value={lyricsText}
                   onChange={(e) => setLyricsText(e.target.value)}
-                  placeholder={"第一行歌詞\n第二行歌詞\n第三行歌詞\n..."}
+                  placeholder={t("lyricsPlaceholder")}
                   rows={isMobile ? 6 : 10}
                   className={`${inputClass} resize-y`}
                 />

@@ -13,6 +13,7 @@ import { createSong } from "@/lib/api/songs";
 import { LyricsSearchInput } from "./LyricsSearchInput";
 import { LyricsSearchResults } from "./LyricsSearchResults";
 import { LyricsPreviewModal } from "./LyricsPreviewModal";
+import { useTranslations } from "next-intl";
 
 interface LyricsSearchPanelProps {
   onSongAdded: () => void;
@@ -20,6 +21,7 @@ interface LyricsSearchPanelProps {
 }
 
 export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onClose }) => {
+  const t = useTranslations("lyricsSearch");
   const [searchResponse, setSearchResponse] = useState<LyricsSearchResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +47,11 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
       setSearchResponse(resp);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
-      setError(err instanceof Error ? err.message : "搜尋失敗");
+      setError(err instanceof Error ? err.message : t("searchFailed"));
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [t]);
 
   // 組件 unmount 時取消進行中的搜尋請求
   useEffect(() => {
@@ -65,12 +67,12 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
       const detail = await getLyricsDetail(result.id);
       setPreviewLyrics(detail);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "取得歌詞失敗");
+      setError(err instanceof Error ? err.message : t("preview.getLyricsFailed"));
       setIsPreviewOpen(false);
     } finally {
       setIsLoadingLyrics(false);
     }
-  }, []);
+  }, [t]);
 
   const handleImport = useCallback(async (lyrics: LyricsDetailResponse, convertToTrad: boolean) => {
     try {
@@ -109,9 +111,9 @@ export const LyricsSearchPanel: FC<LyricsSearchPanelProps> = ({ onSongAdded, onC
       onSongAdded();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "匯入失敗");
+      setError(err instanceof Error ? err.message : t("preview.importFailed"));
     }
-  }, [onSongAdded, onClose]);
+  }, [onSongAdded, onClose, t]);
 
   const handleReSearch = useCallback((title: string, artist: string) => {
     handleSearch({ query: title, searchType: "title", artist });

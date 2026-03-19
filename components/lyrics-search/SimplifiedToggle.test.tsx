@@ -8,6 +8,12 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { SimplifiedToggle } from "./SimplifiedToggle";
 
+// 模擬 next-intl
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 describe("SimplifiedToggle", () => {
   // --------------------------------------------------------------------------
   // 基本渲染
