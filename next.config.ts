@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// next-intl 插件 — 指向 i18n/request.ts 設定檔
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 // Go 後端 URL（由環境變數設定，預設為本地開發位址）
 const goBackendUrl = process.env["GO_BACKEND_URL"] || "http://localhost:8080";
@@ -52,4 +56,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

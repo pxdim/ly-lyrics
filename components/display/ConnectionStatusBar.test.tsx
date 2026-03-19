@@ -29,6 +29,12 @@ vi.mock("@/lib/store", () => ({
   },
 }));
 
+// Mock useOnlineStatus — 預設線上
+let mockOnlineStatus = true;
+vi.mock("@/lib/hooks/useOnlineStatus", () => ({
+  useOnlineStatus: () => mockOnlineStatus,
+}));
+
 // 載入元件
 import { ConnectionStatusBar } from "./ConnectionStatusBar";
 
@@ -37,6 +43,7 @@ describe("ConnectionStatusBar", () => {
     mockStoreState.set("connectionState", "disconnected");
     mockStoreState.set("reconnectAttempt", 0);
     mockStoreState.set("retryConnection", vi.fn());
+    mockOnlineStatus = true;
   });
 
   // ========================================================================
@@ -105,6 +112,43 @@ describe("ConnectionStatusBar", () => {
   it("reconnecting 渲染結果不包含硬編碼 hex/rgba 色值", () => {
     mockStoreState.set("connectionState", "reconnecting");
     mockStoreState.set("reconnectAttempt", 2);
+    const { container } = render(<ConnectionStatusBar />);
+    const html = container.innerHTML;
+    const hexPattern = /#(?!000000)[0-9a-fA-F]{3,8}/g;
+    const rgbaPattern = /rgba?\(\s*\d/g;
+    expect(html).not.toMatch(hexPattern);
+    expect(html).not.toMatch(rgbaPattern);
+  });
+
+  // ========================================================================
+  // 離線模式 (NFR2.4)
+  // ========================================================================
+
+  it("離線時顯示「離線模式」提示", () => {
+    mockOnlineStatus = false;
+    mockStoreState.set("connectionState", "connected");
+    render(<ConnectionStatusBar />);
+    expect(screen.getByText("離線模式")).toBeInTheDocument();
+  });
+
+  it("離線提示包含「歌詞將停留在最後位置」說明文字", () => {
+    mockOnlineStatus = false;
+    mockStoreState.set("connectionState", "connected");
+    render(<ConnectionStatusBar />);
+    expect(screen.getByText(/歌詞將停留在最後位置/)).toBeInTheDocument();
+  });
+
+  it("離線提示優先於 connected 狀態的隱藏邏輯", () => {
+    mockOnlineStatus = false;
+    mockStoreState.set("connectionState", "connected");
+    const { container } = render(<ConnectionStatusBar />);
+    // connected 正常情況下 container 為空，但離線時應有內容
+    expect(container.innerHTML).not.toBe("");
+  });
+
+  it("離線提示渲染結果不包含硬編碼 hex/rgba 色值", () => {
+    mockOnlineStatus = false;
+    mockStoreState.set("connectionState", "connected");
     const { container } = render(<ConnectionStatusBar />);
     const html = container.innerHTML;
     const hexPattern = /#(?!000000)[0-9a-fA-F]{3,8}/g;

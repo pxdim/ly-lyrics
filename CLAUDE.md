@@ -19,6 +19,7 @@
 | QR Code | qrcode.react | — |
 | 繁簡轉換 | opencc-js | — |
 | 驗證 | zod | — |
+| 國際化 | next-intl | 4 |
 | Git Hooks | Husky pre-commit | — |
 
 ## 資料夾結構
@@ -41,10 +42,13 @@ components/         → React 元件
 lib/                → 工具庫
   api/              → API client (auth, songs, playlists, lyrics-search)
   audio/            → 音訊擷取
-  hooks/            → 自訂 hooks (useMediaQuery, useIsMobile, useDebounce, etc.)
+  hooks/            → 自訂 hooks (useMediaQuery, useIsMobile, useDebounce, useOnlineStatus, etc.)
+  i18n/             → i18n 設定 (config.ts: locales/defaultLocale)
   store/            → Zustand store
   utils/            → 工具函式 (visible-lines, chinese-converter)
   websocket/        → WebSocket client
+i18n/               → next-intl 請求層設定 (request.ts)
+messages/           → 語言檔案 (zh-TW.json, zh-CN.json, en.json)
 docs/               → 專案文檔
 backend/            → Go 後端 (如存在)
 ```
@@ -56,7 +60,7 @@ npm run dev          # 啟動開發伺服器 (Turbopack)
 npm run build        # 生產環境建置
 npm run lint         # ESLint
 npm run type-check   # TypeScript 類型檢查
-npx vitest run       # 執行所有單元測試 (1028 tests)
+npx vitest run       # 執行所有單元測試 (1053 tests)
 npm run test:e2e     # Playwright E2E 測試
 ```
 
@@ -70,7 +74,7 @@ npm run test:e2e     # Playwright E2E 測試
 
 ## 測試
 
-- **68 個測試檔案**，1028 個測試案例
+- **70 個測試檔案**，1053 個測試案例
 - **框架**：Vitest + @testing-library/react + jsdom
 - **Mock 策略**：真實程式碼優先，僅 mock 不可避免的外部依賴（navigator.mediaDevices、WebSocket、fetch）
 - **TDD**：遵循紅綠燈法（Red-Green-Refactor），所有功能開發必須先有失敗測試
@@ -84,6 +88,7 @@ npm run test:e2e     # Playwright E2E 測試
 | Token 儲存 | HttpOnly cookie | 防止 XSS 竊取 token |
 | 狀態管理 | Zustand + persist | 輕量、支援 localStorage 持久化 |
 | 影像輸出 | Clean Output mode (?mode=clean) | 替代 NDI/Spout，供 OBS/VJ 軟體擷取 |
+| 國際化 | next-intl (基礎架構已建立，元件尚未替換) | Next.js App Router 官方推薦 i18n 方案 |
 
 ## 特殊規則
 
@@ -92,6 +97,7 @@ npm run test:e2e     # Playwright E2E 測試
 3. **Clean Output**：Display 頁加 `?mode=clean` 參數，純黑背景 `#000000` + 白字，供 OBS 視窗擷取或 VJ 軟體使用
 4. **API Proxy**：所有 `/api/*` 請求由 Next.js rewrite 轉發至 Go 後端 `:8080`
 5. **繁簡轉換**：使用 opencc-js 支援繁體/簡體歌詞轉換
+6. **國際化（i18n）**：使用 next-intl，語言檔案位於 `messages/`，設定位於 `lib/i18n/config.ts` 和 `i18n/request.ts`。支援 zh-TW（預設）、zh-CN、en。目前為基礎架構，元件中的硬編碼字串尚未替換為 `t()` 呼叫
 
 ## 分支策略
 

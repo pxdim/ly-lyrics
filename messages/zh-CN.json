@@ -1,0 +1,316 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "close": "关闭",
+    "save": "保存",
+    "upload": "上传",
+    "clear": "清除",
+    "retry": "重试",
+    "copy": "复制",
+    "download": "下载",
+    "search": "搜索",
+    "noResults": "NO RESULTS",
+    "empty": "EMPTY",
+    "tracks": "TRACKS",
+    "lists": "LISTS",
+    "live": "LIVE",
+    "jump": "JUMP",
+    "selected": "SELECTED",
+    "appName": "LY",
+    "lyricsSystem": "歌词显示系统",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "提示",
+    "genericError": "发生错误，请稍后再试"
+  },
+  "controller": {
+    "header": {
+      "controlDesk": "Control Desk",
+      "room": "Room",
+      "copyCode": "点击复制房间码",
+      "copyLink": "复制链接",
+      "copiedLink": "已复制",
+      "copyDisplayLink": "复制显示端链接",
+      "copiedDisplayLink": "已复制链接",
+      "newRoom": "新房间",
+      "regenerateTooltip": "重新生成房间码（所有接收端需重新连接）",
+      "showQRCode": "显示 QR Code",
+      "systemReady": "SYSTEM READY",
+      "offline": "OFFLINE",
+      "on": "ON",
+      "off": "OFF",
+      "ws": "WS",
+      "ctl": "CTL",
+      "dsp": "DSP"
+    },
+    "library": {
+      "songs": "Songs",
+      "playlists": "Playlists",
+      "searchLyrics": "搜索歌词",
+      "manualInput": "手动输入",
+      "importLRC": "导入 LRC",
+      "searchPlaceholder": "搜索歌曲...",
+      "sortLabel": "排序方式",
+      "sortTitleAsc": "歌名 A-Z",
+      "sortTitleDesc": "歌名 Z-A",
+      "sortArtistAsc": "歌手 A-Z",
+      "sortArtistDesc": "歌手 Z-A",
+      "exportLRC": "导出 LRC",
+      "deleteSong": "删除歌曲",
+      "confirmDeleteTitle": "确认删除",
+      "confirmDeleteMessage": "确定要删除这首歌曲吗？此操作无法恢复。",
+      "loadFailed": "加载歌曲失败",
+      "deleteFailed": "删除歌曲失败"
+    },
+    "playlist": {
+      "newPlaylist": "新增播放列表",
+      "playlistNamePlaceholder": "播放列表名称...",
+      "selectSongs": "选择歌曲",
+      "creating": "CREATING...",
+      "createPlaylist": "CREATE PLAYLIST",
+      "noPlaylists": "NO PLAYLISTS",
+      "createFirst": "+ CREATE FIRST",
+      "backToPlaylists": "返回播放列表",
+      "clickToRename": "点击重命名",
+      "deletePlaylist": "删除播放列表",
+      "confirmDeleteTitle": "确认删除",
+      "confirmDeleteMessage": "确定要删除此播放列表吗？此操作无法恢复。",
+      "loadFailed": "加载播放列表失败",
+      "createFailed": "创建播放列表失败",
+      "deleteFailed": "删除播放列表失败",
+      "renameFailed": "重命名播放列表失败"
+    },
+    "addSong": {
+      "addTrack": "Add Track",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "输入歌曲名称...",
+      "artistLabel": "Artist",
+      "artistPlaceholder": "输入歌手名称（选填）...",
+      "lyricsLabel": "Lyrics * (one line per cue)",
+      "lyricsPlaceholder": "第一行歌词\n第二行歌词\n第三行歌词\n...",
+      "cancelButton": "CANCEL",
+      "adding": "ADDING...",
+      "addButton": "ADD TRACK",
+      "errorNoTitle": "请输入歌曲名称",
+      "errorNoLyrics": "请输入至少一行歌词",
+      "createFailed": "创建歌曲失败",
+      "loadingSearch": "加载搜索组件..."
+    },
+    "cueGrid": {
+      "line": "Line",
+      "lyricPayload": "Lyric Payload",
+      "action": "Action",
+      "noTrackSelected": "No Track Selected",
+      "selectTrackHint": "Select a track from the library to begin",
+      "spaceNextCue": "[ SPACE ] — GO TO NEXT CUE",
+      "emptyLine": "（空行）"
+    },
+    "settings": {
+      "displayConfig": "Display Config",
+      "lines": "Lines",
+      "fontSize": "Font Size",
+      "lineSpacing": "Line Spacing",
+      "highlight": "Highlight",
+      "bgColor": "BG Color",
+      "bgColorLabel": "背景色",
+      "bgImage": "BG Image",
+      "bgImageAlt": "背景图片预览",
+      "theme": "Theme",
+      "dark": "DARK",
+      "light": "LIGHT",
+      "background": "BACKGROUND",
+      "autoScroll": "AUTO SCROLL",
+      "animation": "ANIMATION",
+      "restartWs": "RESTART WS",
+      "blackout": "BLACKOUT"
+    },
+    "livePreview": {
+      "programOut": "Program Out",
+      "preview": "Preview",
+      "noSignal": "NO SIGNAL",
+      "channel": "CH 1"
+    },
+    "qrCode": {
+      "scanToConnect": "扫码连接",
+      "scanDescription": "扫描后自动连接显示端",
+      "downloadQR": "下载 QR"
+    },
+    "mobileTab": {
+      "songs": "歌曲",
+      "lyrics": "歌词",
+      "settings": "设置",
+      "qr": "QR"
+    },
+    "controlMode": {
+      "auto": "AUTO",
+      "manual": "MANUAL",
+      "switchToManual": "切换为手动模式",
+      "switchToAuto": "切换为自动模式（AI 追踪）"
+    },
+    "lyricsControl": {
+      "previousLine": "Previous line",
+      "previousLineShortcut": "Previous line (Arrow Up)",
+      "nextLine": "Next line",
+      "nextLineShortcut": "Next line (Arrow Down)",
+      "jumpToLine": "Jump to line",
+      "lineOfTotal": "Line {current} of {total}",
+      "enterFullscreen": "全屏 (F)",
+      "exitFullscreen": "退出全屏 (F)"
+    }
+  },
+  "display": {
+    "enterCode": "输入控制器显示的同步码以连接",
+    "codePlaceholder": "______",
+    "quickStepsTitle": "快速连接步骤",
+    "step1": "打开控制台页面",
+    "step2": "点击顶部状态栏的房间码复制",
+    "step3": "在上方输入框粘贴 6 码同步码",
+    "step4": "输入完毕自动连接",
+    "directLinkHint": "或直接使用控制台的「复制链接」功能，在浏览器打开即自动连接",
+    "noLyricsLoaded": "NO LYRICS LOADED",
+    "selectSongToBegin": "Select a song to begin",
+    "connection": {
+      "connected": "已连接",
+      "reconnecting": "重连中",
+      "disconnected": "已离线",
+      "restored": "连接已恢复",
+      "interrupted": "连接中断 · 重新连接中",
+      "failed": "无法连接"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "登录歌词显示系统",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "••••••",
+      "submitButton": "登录",
+      "submitting": "登录中...",
+      "noAccount": "还没有账号？",
+      "registerLink": "注册",
+      "defaultError": "登录失败，请稍后再试"
+    },
+    "register": {
+      "title": "创建账号",
+      "nameLabel": "名称",
+      "namePlaceholder": "你的名称",
+      "nameHint": "（选填）",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "至少 6 个字符",
+      "passwordMinLength": "密码至少需要 6 个字符",
+      "submitButton": "创建账号",
+      "submitting": "注册中...",
+      "hasAccount": "已有账号？",
+      "loginLink": "登录",
+      "defaultError": "注册失败，请稍后再试"
+    }
+  },
+  "ai": {
+    "tracking": {
+      "title": "AI 自动跟歌",
+      "toggleLabel": "切换 AI 自动跟歌",
+      "settingsLabel": "AI 自动跟歌设置",
+      "expandSettings": "展开 AI 自动跟歌设置",
+      "advancedSettings": "高级设置",
+      "manualCorrectionHint": "点击歌词行可手动校正 AI 位置，校正后 AI 暂停追踪数秒后自动恢复"
+    },
+    "status": {
+      "idle": "待机",
+      "listening": "监听中",
+      "matched": "已匹配",
+      "cooldown": "冷却中",
+      "error": "错误"
+    },
+    "settings": {
+      "engine": "识别引擎",
+      "googleCloud": "Google Cloud STT",
+      "webSpeech": "Web Speech (免费)",
+      "deepgram": "Deepgram",
+      "threshold": "匹配阈值",
+      "searchRange": "搜索范围",
+      "searchRangeValue": "前{before} / 后{after}行",
+      "manualCooldown": "手动冷却",
+      "sttRecognition": "STT 识别",
+      "final": "FINAL",
+      "interim": "INTERIM"
+    },
+    "audio": {
+      "inputDevice": "Input Device",
+      "deviceLabel": "音频输入设备",
+      "permissionDenied": "麦克风访问被拒绝",
+      "detectingDevices": "检测设备中...",
+      "microphoneDefault": "麦克风",
+      "gain": "Gain",
+      "gainLabel": "增益调整",
+      "level": "Level"
+    }
+  },
+  "lyricsSearch": {
+    "searchType": "搜索类型:",
+    "titleType": "歌曲名",
+    "artistType": "歌手",
+    "lyricsType": "歌词",
+    "titlePlaceholder": "输入歌曲名称...",
+    "artistPlaceholder": "输入歌手名称...",
+    "lyricsPlaceholder": "输入歌词片段...",
+    "artistFieldLabel": "Artist (optional)",
+    "artistFieldPlaceholder": "输入歌手名称（选填）...",
+    "searching": "搜索中...",
+    "searchFailed": "搜索失败",
+    "noResults": "找不到结果，请尝试其他关键字",
+    "resultCount": "搜索结果（{count} 条）",
+    "timeout": "超时",
+    "hasSyncedLyrics": "有时间戳",
+    "plainText": "纯文本",
+    "infoOnly": "仅信息",
+    "aiGenerated": "AI 生成",
+    "simplified": "简",
+    "similarity": "相似度",
+    "preview": {
+      "title": "歌词预览",
+      "loading": "加载中...",
+      "noLyricsData": "无歌词数据",
+      "source": "来源：{source}",
+      "noContentHint": "此来源仅提供歌曲信息，不包含歌词内容",
+      "openGenius": "前往 Genius 查看歌词",
+      "reSearch": "用「{title}」重新搜索歌词",
+      "importToPlaylist": "导入到歌单",
+      "importFailed": "导入失败",
+      "getLyricsFailed": "获取歌词失败"
+    },
+    "simplifiedToggle": {
+      "showOriginal": "显示原文",
+      "convertTraditional": "转繁体"
+    },
+    "sourceLabels": {
+      "lrclib": "LRClib",
+      "kugou": "酷狗",
+      "netease": "网易云",
+      "migu": "咪咕",
+      "genius": "Genius",
+      "gemini": "AI 搜索"
+    }
+  },
+  "lrc": {
+    "dropZone": {
+      "idle": "拖放 .lrc 导入",
+      "parsing": "解析中...",
+      "importSuccess": "已成功导入「{title}」（{count} 行）",
+      "importFailed": "导入失败"
+    }
+  },
+  "toast": {
+    "errorTitle": "错误",
+    "successTitle": "成功",
+    "warningTitle": "警告",
+    "infoTitle": "提示",
+    "closeLabel": "Close"
+  }
+}

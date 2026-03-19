@@ -1,7 +1,8 @@
 /**
- * ConnectionStatusBar — 斷線重連頂部提示條
+ * ConnectionStatusBar — 連線狀態頂部提示條
  *
- * 根據 WebSocket 連線狀態顯示不同的頂部警告/提示橫幅。
+ * 根據 WebSocket 連線狀態與網路連線狀態顯示不同的頂部警告/提示橫幅。
+ * offline (NFR2.4): 黃色提示，顯示「離線模式」+ 歌詞停留說明
  * connected: 不顯示（淡出）
  * reconnecting: 橘色提示，顯示重試次數
  * disconnected: 紅色警告，附「重試」按鈕
@@ -11,11 +12,13 @@
 
 import { useEffect, useState } from "react";
 import { useLyricsStore } from "@/lib/store";
+import { useOnlineStatus } from "@/lib/hooks/useOnlineStatus";
 
 export function ConnectionStatusBar() {
   const connectionState = useLyricsStore((s) => s.connectionState);
   const reconnectAttempt = useLyricsStore((s) => s.reconnectAttempt);
   const retryConnection = useLyricsStore((s) => s.retryConnection);
+  const isOnline = useOnlineStatus();
 
   // 連線成功後短暫顯示再淡出
   const [showConnected, setShowConnected] = useState(false);
@@ -31,6 +34,19 @@ export function ConnectionStatusBar() {
     setPrevState(connectionState);
     return undefined;
   }, [connectionState, prevState]);
+
+  // 離線模式提示 (NFR2.4) — 無論 WebSocket 狀態，瀏覽器離線時顯示
+  if (!isOnline) {
+    return (
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-warning/10 border-b border-warning/20">
+          <span className="inline-block w-2 h-2 rounded-full bg-warning" />
+          <span className="text-warning text-xs font-medium">離線模式</span>
+          <span className="text-warning text-xs">· 歌詞將停留在最後位置</span>
+        </div>
+      </div>
+    );
+  }
 
   // connected 且不需要顯示恢復提示 → 不渲染
   if (connectionState === "connected" && !showConnected) {

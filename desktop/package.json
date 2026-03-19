@@ -1,0 +1,13 @@
+{
+  "name": "ly-desktop",
+  "version": "0.1.0",
+  "description": "LY 歌詞顯示系統桌面版 — Electron POC",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:dev": "ELECTRON_URL=http://localhost:3000 electron ."
+  },
+  "dependencies": {
+    "electron": "^35.0.0"
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "common": {
+    "loading": "載入中...",
+    "cancel": "取消",
+    "confirm": "確認",
+    "delete": "刪除",
+    "close": "關閉",
+    "save": "儲存",
+    "upload": "上傳",
+    "clear": "清除",
+    "retry": "重試",
+    "copy": "複製",
+    "download": "下載",
+    "search": "搜尋",
+    "noResults": "NO RESULTS",
+    "empty": "EMPTY",
+    "tracks": "TRACKS",
+    "lists": "LISTS",
+    "live": "LIVE",
+    "jump": "JUMP",
+    "selected": "SELECTED",
+    "appName": "LY",
+    "lyricsSystem": "歌詞顯示系統",
+    "error": "錯誤",
+    "success": "成功",
+    "warning": "警告",
+    "info": "提示",
+    "genericError": "發生錯誤，請稍後再試"
+  },
+  "controller": {
+    "header": {
+      "controlDesk": "Control Desk",
+      "room": "Room",
+      "copyCode": "點擊複製房間碼",
+      "copyLink": "複製連結",
+      "copiedLink": "已複製",
+      "copyDisplayLink": "複製顯示端連結",
+      "copiedDisplayLink": "已複製連結",
+      "newRoom": "新房間",
+      "regenerateTooltip": "重新產生房間碼（所有接收端需重新連線）",
+      "showQRCode": "顯示 QR Code",
+      "systemReady": "SYSTEM READY",
+      "offline": "OFFLINE",
+      "on": "ON",
+      "off": "OFF",
+      "ws": "WS",
+      "ctl": "CTL",
+      "dsp": "DSP"
+    },
+    "library": {
+      "songs": "Songs",
+      "playlists": "Playlists",
+      "searchLyrics": "搜尋歌詞",
+      "manualInput": "手動輸入",
+      "importLRC": "匯入 LRC",
+      "searchPlaceholder": "搜尋歌曲...",
+      "sortLabel": "排序方式",
+      "sortTitleAsc": "歌名 A-Z",
+      "sortTitleDesc": "歌名 Z-A",
+      "sortArtistAsc": "歌手 A-Z",
+      "sortArtistDesc": "歌手 Z-A",
+      "exportLRC": "匯出 LRC",
+      "deleteSong": "刪除歌曲",
+      "confirmDeleteTitle": "確認刪除",
+      "confirmDeleteMessage": "確定要刪除這首歌曲嗎？此操作無法復原。",
+      "loadFailed": "載入歌曲失敗",
+      "deleteFailed": "刪除歌曲失敗"
+    },
+    "playlist": {
+      "newPlaylist": "新增播放清單",
+      "playlistNamePlaceholder": "播放清單名稱...",
+      "selectSongs": "選擇歌曲",
+      "creating": "CREATING...",
+      "createPlaylist": "CREATE PLAYLIST",
+      "noPlaylists": "NO PLAYLISTS",
+      "createFirst": "+ CREATE FIRST",
+      "backToPlaylists": "返回播放清單",
+      "clickToRename": "點擊重命名",
+      "deletePlaylist": "刪除播放清單",
+      "confirmDeleteTitle": "確認刪除",
+      "confirmDeleteMessage": "確定要刪除此播放清單嗎？此操作無法復原。",
+      "loadFailed": "載入播放清單失敗",
+      "createFailed": "建立播放清單失敗",
+      "deleteFailed": "刪除播放清單失敗",
+      "renameFailed": "重命名播放清單失敗"
+    },
+    "addSong": {
+      "addTrack": "Add Track",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "輸入歌曲名稱...",
+      "artistLabel": "Artist",
+      "artistPlaceholder": "輸入歌手名稱（選填）...",
+      "lyricsLabel": "Lyrics * (one line per cue)",
+      "lyricsPlaceholder": "第一行歌詞\n第二行歌詞\n第三行歌詞\n...",
+      "cancelButton": "CANCEL",
+      "adding": "ADDING...",
+      "addButton": "ADD TRACK",
+      "errorNoTitle": "請輸入歌曲名稱",
+      "errorNoLyrics": "請輸入至少一行歌詞",
+      "createFailed": "建立歌曲失敗",
+      "loadingSearch": "載入搜尋元件..."
+    },
+    "cueGrid": {
+      "line": "Line",
+      "lyricPayload": "Lyric Payload",
+      "action": "Action",
+      "noTrackSelected": "No Track Selected",
+      "selectTrackHint": "Select a track from the library to begin",
+      "spaceNextCue": "[ SPACE ] — GO TO NEXT CUE",
+      "emptyLine": "(空行)"
+    },
+    "settings": {
+      "displayConfig": "Display Config",
+      "lines": "Lines",
+      "fontSize": "Font Size",
+      "lineSpacing": "Line Spacing",
+      "highlight": "Highlight",
+      "bgColor": "BG Color",
+      "bgColorLabel": "背景色",
+      "bgImage": "BG Image",
+      "bgImageAlt": "背景圖片預覽",
+      "theme": "Theme",
+      "dark": "DARK",
+      "light": "LIGHT",
+      "background": "BACKGROUND",
+      "autoScroll": "AUTO SCROLL",
+      "animation": "ANIMATION",
+      "restartWs": "RESTART WS",
+      "blackout": "BLACKOUT"
+    },
+    "livePreview": {
+      "programOut": "Program Out",
+      "preview": "Preview",
+      "noSignal": "NO SIGNAL",
+      "channel": "CH 1"
+    },
+    "qrCode": {
+      "scanToConnect": "掃碼連接",
+      "scanDescription": "掃描後自動連接顯示端",
+      "downloadQR": "下載 QR"
+    },
+    "mobileTab": {
+      "songs": "歌曲",
+      "lyrics": "歌詞",
+      "settings": "設定",
+      "qr": "QR"
+    },
+    "controlMode": {
+      "auto": "AUTO",
+      "manual": "MANUAL",
+      "switchToManual": "切換為手動模式",
+      "switchToAuto": "切換為自動模式（AI 追蹤）"
+    },
+    "lyricsControl": {
+      "previousLine": "Previous line",
+      "previousLineShortcut": "Previous line (Arrow Up)",
+      "nextLine": "Next line",
+      "nextLineShortcut": "Next line (Arrow Down)",
+      "jumpToLine": "Jump to line",
+      "lineOfTotal": "Line {current} of {total}",
+      "enterFullscreen": "全螢幕 (F)",
+      "exitFullscreen": "退出全螢幕 (F)"
+    }
+  },
+  "display": {
+    "enterCode": "輸入控制器顯示的同步碼以連接",
+    "codePlaceholder": "______",
+    "quickStepsTitle": "快速連接步驟",
+    "step1": "開啟控制台頁面",
+    "step2": "點擊頂部狀態列的房間碼複製",
+    "step3": "在上方輸入框貼上 6 碼同步碼",
+    "step4": "輸入完畢自動連線",
+    "directLinkHint": "或直接使用控制台的「複製連結」功能，在瀏覽器開啟即自動連線",
+    "noLyricsLoaded": "NO LYRICS LOADED",
+    "selectSongToBegin": "Select a song to begin",
+    "connection": {
+      "connected": "已連接",
+      "reconnecting": "重連中",
+      "disconnected": "已離線",
+      "restored": "連線已恢復",
+      "interrupted": "連線中斷 · 重新連接中",
+      "failed": "無法連線"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "登入歌詞顯示系統",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密碼",
+      "passwordPlaceholder": "••••••",
+      "submitButton": "登入",
+      "submitting": "登入中...",
+      "noAccount": "還沒有帳號？",
+      "registerLink": "註冊",
+      "defaultError": "登入失敗，請稍後再試"
+    },
+    "register": {
+      "title": "建立帳號",
+      "nameLabel": "名稱",
+      "namePlaceholder": "你的名稱",
+      "nameHint": "（選填）",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密碼",
+      "passwordPlaceholder": "至少 6 個字元",
+      "passwordMinLength": "密碼至少需要 6 個字元",
+      "submitButton": "建立帳號",
+      "submitting": "註冊中...",
+      "hasAccount": "已有帳號？",
+      "loginLink": "登入",
+      "defaultError": "註冊失敗，請稍後再試"
+    }
+  },
+  "ai": {
+    "tracking": {
+      "title": "AI 自動跟歌",
+      "toggleLabel": "切換 AI 自動跟歌",
+      "settingsLabel": "AI 自動跟歌設定",
+      "expandSettings": "展開 AI 自動跟歌設定",
+      "advancedSettings": "進階設定",
+      "manualCorrectionHint": "點擊歌詞行可手動校正 AI 位置，校正後 AI 暫停追蹤數秒後自動恢復"
+    },
+    "status": {
+      "idle": "待機",
+      "listening": "監聽中",
+      "matched": "已匹配",
+      "cooldown": "冷卻中",
+      "error": "錯誤"
+    },
+    "settings": {
+      "engine": "辨識引擎",
+      "googleCloud": "Google Cloud STT",
+      "webSpeech": "Web Speech (免費)",
+      "deepgram": "Deepgram",
+      "threshold": "比對門檻",
+      "searchRange": "搜尋範圍",
+      "searchRangeValue": "前{before} / 後{after}行",
+      "manualCooldown": "手動冷卻",
+      "sttRecognition": "STT 辨識",
+      "final": "FINAL",
+      "interim": "INTERIM"
+    },
+    "audio": {
+      "inputDevice": "Input Device",
+      "deviceLabel": "音訊輸入裝置",
+      "permissionDenied": "麥克風存取被拒絕",
+      "detectingDevices": "偵測裝置中...",
+      "microphoneDefault": "麥克風",
+      "gain": "Gain",
+      "gainLabel": "增益調整",
+      "level": "Level"
+    }
+  },
+  "lyricsSearch": {
+    "searchType": "搜尋類型:",
+    "titleType": "歌曲名",
+    "artistType": "歌手",
+    "lyricsType": "歌詞",
+    "titlePlaceholder": "輸入歌曲名稱...",
+    "artistPlaceholder": "輸入歌手名稱...",
+    "lyricsPlaceholder": "輸入歌詞片段...",
+    "artistFieldLabel": "Artist (optional)",
+    "artistFieldPlaceholder": "輸入歌手名稱（選填）...",
+    "searching": "搜尋中...",
+    "searchFailed": "搜尋失敗",
+    "noResults": "找不到結果，請嘗試其他關鍵字",
+    "resultCount": "搜尋結果（{count} 筆）",
+    "timeout": "逾時",
+    "hasSyncedLyrics": "有時間戳",
+    "plainText": "純文字",
+    "infoOnly": "僅資訊",
+    "aiGenerated": "AI 生成",
+    "simplified": "簡",
+    "similarity": "相似度",
+    "preview": {
+      "title": "歌詞預覽",
+      "loading": "載入中...",
+      "noLyricsData": "無歌詞資料",
+      "source": "來源：{source}",
+      "noContentHint": "此來源僅提供歌曲資訊，不包含歌詞內容",
+      "openGenius": "前往 Genius 查看歌詞",
+      "reSearch": "用「{title}」重新搜尋歌詞",
+      "importToPlaylist": "匯入到歌單",
+      "importFailed": "匯入失敗",
+      "getLyricsFailed": "取得歌詞失敗"
+    },
+    "simplifiedToggle": {
+      "showOriginal": "顯示原文",
+      "convertTraditional": "轉繁體"
+    },
+    "sourceLabels": {
+      "lrclib": "LRClib",
+      "kugou": "酷狗",
+      "netease": "網易雲",
+      "migu": "咪咕",
+      "genius": "Genius",
+      "gemini": "AI 搜尋"
+    }
+  },
+  "lrc": {
+    "dropZone": {
+      "idle": "拖放 .lrc 匯入",
+      "parsing": "解析中...",
+      "importSuccess": "已成功匯入「{title}」（{count} 行）",
+      "importFailed": "匯入失敗"
+    }
+  },
+  "toast": {
+    "errorTitle": "錯誤",
+    "successTitle": "成功",
+    "warningTitle": "警告",
+    "infoTitle": "提示",
+    "closeLabel": "Close"
+  }
+}

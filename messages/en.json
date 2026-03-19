@@ -1,0 +1,316 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "close": "Close",
+    "save": "Save",
+    "upload": "Upload",
+    "clear": "Clear",
+    "retry": "Retry",
+    "copy": "Copy",
+    "download": "Download",
+    "search": "Search",
+    "noResults": "NO RESULTS",
+    "empty": "EMPTY",
+    "tracks": "TRACKS",
+    "lists": "LISTS",
+    "live": "LIVE",
+    "jump": "JUMP",
+    "selected": "SELECTED",
+    "appName": "LY",
+    "lyricsSystem": "Lyrics Display System",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "genericError": "An error occurred. Please try again later."
+  },
+  "controller": {
+    "header": {
+      "controlDesk": "Control Desk",
+      "room": "Room",
+      "copyCode": "Click to copy room code",
+      "copyLink": "Copy Link",
+      "copiedLink": "Copied",
+      "copyDisplayLink": "Copy Display Link",
+      "copiedDisplayLink": "Link Copied",
+      "newRoom": "New Room",
+      "regenerateTooltip": "Regenerate room code (all receivers must reconnect)",
+      "showQRCode": "Show QR Code",
+      "systemReady": "SYSTEM READY",
+      "offline": "OFFLINE",
+      "on": "ON",
+      "off": "OFF",
+      "ws": "WS",
+      "ctl": "CTL",
+      "dsp": "DSP"
+    },
+    "library": {
+      "songs": "Songs",
+      "playlists": "Playlists",
+      "searchLyrics": "Search Lyrics",
+      "manualInput": "Manual Input",
+      "importLRC": "Import LRC",
+      "searchPlaceholder": "Search songs...",
+      "sortLabel": "Sort",
+      "sortTitleAsc": "Title A-Z",
+      "sortTitleDesc": "Title Z-A",
+      "sortArtistAsc": "Artist A-Z",
+      "sortArtistDesc": "Artist Z-A",
+      "exportLRC": "Export LRC",
+      "deleteSong": "Delete Song",
+      "confirmDeleteTitle": "Confirm Delete",
+      "confirmDeleteMessage": "Are you sure you want to delete this song? This action cannot be undone.",
+      "loadFailed": "Failed to load songs",
+      "deleteFailed": "Failed to delete song"
+    },
+    "playlist": {
+      "newPlaylist": "New Playlist",
+      "playlistNamePlaceholder": "Playlist name...",
+      "selectSongs": "Select songs",
+      "creating": "CREATING...",
+      "createPlaylist": "CREATE PLAYLIST",
+      "noPlaylists": "NO PLAYLISTS",
+      "createFirst": "+ CREATE FIRST",
+      "backToPlaylists": "Back to playlists",
+      "clickToRename": "Click to rename",
+      "deletePlaylist": "Delete Playlist",
+      "confirmDeleteTitle": "Confirm Delete",
+      "confirmDeleteMessage": "Are you sure you want to delete this playlist? This action cannot be undone.",
+      "loadFailed": "Failed to load playlists",
+      "createFailed": "Failed to create playlist",
+      "deleteFailed": "Failed to delete playlist",
+      "renameFailed": "Failed to rename playlist"
+    },
+    "addSong": {
+      "addTrack": "Add Track",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "Enter song title...",
+      "artistLabel": "Artist",
+      "artistPlaceholder": "Enter artist name (optional)...",
+      "lyricsLabel": "Lyrics * (one line per cue)",
+      "lyricsPlaceholder": "First line of lyrics\nSecond line of lyrics\nThird line of lyrics\n...",
+      "cancelButton": "CANCEL",
+      "adding": "ADDING...",
+      "addButton": "ADD TRACK",
+      "errorNoTitle": "Please enter a song title",
+      "errorNoLyrics": "Please enter at least one line of lyrics",
+      "createFailed": "Failed to create song",
+      "loadingSearch": "Loading search component..."
+    },
+    "cueGrid": {
+      "line": "Line",
+      "lyricPayload": "Lyric Payload",
+      "action": "Action",
+      "noTrackSelected": "No Track Selected",
+      "selectTrackHint": "Select a track from the library to begin",
+      "spaceNextCue": "[ SPACE ] — GO TO NEXT CUE",
+      "emptyLine": "(empty)"
+    },
+    "settings": {
+      "displayConfig": "Display Config",
+      "lines": "Lines",
+      "fontSize": "Font Size",
+      "lineSpacing": "Line Spacing",
+      "highlight": "Highlight",
+      "bgColor": "BG Color",
+      "bgColorLabel": "Background Color",
+      "bgImage": "BG Image",
+      "bgImageAlt": "Background image preview",
+      "theme": "Theme",
+      "dark": "DARK",
+      "light": "LIGHT",
+      "background": "BACKGROUND",
+      "autoScroll": "AUTO SCROLL",
+      "animation": "ANIMATION",
+      "restartWs": "RESTART WS",
+      "blackout": "BLACKOUT"
+    },
+    "livePreview": {
+      "programOut": "Program Out",
+      "preview": "Preview",
+      "noSignal": "NO SIGNAL",
+      "channel": "CH 1"
+    },
+    "qrCode": {
+      "scanToConnect": "Scan to Connect",
+      "scanDescription": "Scan to auto-connect the display",
+      "downloadQR": "Download QR"
+    },
+    "mobileTab": {
+      "songs": "Songs",
+      "lyrics": "Lyrics",
+      "settings": "Settings",
+      "qr": "QR"
+    },
+    "controlMode": {
+      "auto": "AUTO",
+      "manual": "MANUAL",
+      "switchToManual": "Switch to Manual mode",
+      "switchToAuto": "Switch to Auto mode (AI tracking)"
+    },
+    "lyricsControl": {
+      "previousLine": "Previous line",
+      "previousLineShortcut": "Previous line (Arrow Up)",
+      "nextLine": "Next line",
+      "nextLineShortcut": "Next line (Arrow Down)",
+      "jumpToLine": "Jump to line",
+      "lineOfTotal": "Line {current} of {total}",
+      "enterFullscreen": "Fullscreen (F)",
+      "exitFullscreen": "Exit Fullscreen (F)"
+    }
+  },
+  "display": {
+    "enterCode": "Enter the sync code shown on the controller",
+    "codePlaceholder": "______",
+    "quickStepsTitle": "Quick Connection Steps",
+    "step1": "Open the Controller page",
+    "step2": "Click the room code in the top status bar to copy",
+    "step3": "Paste the 6-digit sync code above",
+    "step4": "Auto-connect upon entry",
+    "directLinkHint": "Or use the 'Copy Link' feature on the controller to open directly in browser",
+    "noLyricsLoaded": "NO LYRICS LOADED",
+    "selectSongToBegin": "Select a song to begin",
+    "connection": {
+      "connected": "Connected",
+      "reconnecting": "Reconnecting",
+      "disconnected": "Disconnected",
+      "restored": "Connection restored",
+      "interrupted": "Connection lost, reconnecting",
+      "failed": "Unable to connect"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to Lyrics Display System",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••",
+      "submitButton": "Sign In",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register",
+      "defaultError": "Login failed. Please try again later."
+    },
+    "register": {
+      "title": "Create Account",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "nameHint": "(optional)",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "submitButton": "Create Account",
+      "submitting": "Registering...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign In",
+      "defaultError": "Registration failed. Please try again later."
+    }
+  },
+  "ai": {
+    "tracking": {
+      "title": "AI Auto-Tracking",
+      "toggleLabel": "Toggle AI Auto-Tracking",
+      "settingsLabel": "AI Auto-Tracking Settings",
+      "expandSettings": "Expand AI Auto-Tracking Settings",
+      "advancedSettings": "Advanced Settings",
+      "manualCorrectionHint": "Click a lyrics line to manually correct AI position. After correction, AI pauses tracking for a few seconds before auto-resuming."
+    },
+    "status": {
+      "idle": "Idle",
+      "listening": "Listening",
+      "matched": "Matched",
+      "cooldown": "Cooldown",
+      "error": "Error"
+    },
+    "settings": {
+      "engine": "STT Engine",
+      "googleCloud": "Google Cloud STT",
+      "webSpeech": "Web Speech (Free)",
+      "deepgram": "Deepgram",
+      "threshold": "Match Threshold",
+      "searchRange": "Search Range",
+      "searchRangeValue": "Before {before} / After {after} lines",
+      "manualCooldown": "Manual Cooldown",
+      "sttRecognition": "STT Recognition",
+      "final": "FINAL",
+      "interim": "INTERIM"
+    },
+    "audio": {
+      "inputDevice": "Input Device",
+      "deviceLabel": "Audio Input Device",
+      "permissionDenied": "Microphone access denied",
+      "detectingDevices": "Detecting devices...",
+      "microphoneDefault": "Microphone",
+      "gain": "Gain",
+      "gainLabel": "Gain Adjustment",
+      "level": "Level"
+    }
+  },
+  "lyricsSearch": {
+    "searchType": "Search Type:",
+    "titleType": "Title",
+    "artistType": "Artist",
+    "lyricsType": "Lyrics",
+    "titlePlaceholder": "Enter song title...",
+    "artistPlaceholder": "Enter artist name...",
+    "lyricsPlaceholder": "Enter lyrics fragment...",
+    "artistFieldLabel": "Artist (optional)",
+    "artistFieldPlaceholder": "Enter artist name (optional)...",
+    "searching": "Searching...",
+    "searchFailed": "Search failed",
+    "noResults": "No results found. Try different keywords.",
+    "resultCount": "Results ({count} found)",
+    "timeout": "Timeout",
+    "hasSyncedLyrics": "Has timestamps",
+    "plainText": "Plain text",
+    "infoOnly": "Info only",
+    "aiGenerated": "AI Generated",
+    "simplified": "Simplified",
+    "similarity": "Similarity",
+    "preview": {
+      "title": "Lyrics Preview",
+      "loading": "Loading...",
+      "noLyricsData": "No lyrics data",
+      "source": "Source: {source}",
+      "noContentHint": "This source only provides song info, no lyrics content",
+      "openGenius": "View lyrics on Genius",
+      "reSearch": "Re-search with \"{title}\"",
+      "importToPlaylist": "Import to Playlist",
+      "importFailed": "Import failed",
+      "getLyricsFailed": "Failed to get lyrics"
+    },
+    "simplifiedToggle": {
+      "showOriginal": "Show Original",
+      "convertTraditional": "To Traditional"
+    },
+    "sourceLabels": {
+      "lrclib": "LRClib",
+      "kugou": "KuGou",
+      "netease": "NetEase",
+      "migu": "Migu",
+      "genius": "Genius",
+      "gemini": "AI Search"
+    }
+  },
+  "lrc": {
+    "dropZone": {
+      "idle": "Drag & drop .lrc to import",
+      "parsing": "Parsing...",
+      "importSuccess": "Successfully imported \"{title}\" ({count} lines)",
+      "importFailed": "Import failed"
+    }
+  },
+  "toast": {
+    "errorTitle": "Error",
+    "successTitle": "Success",
+    "warningTitle": "Warning",
+    "infoTitle": "Info",
+    "closeLabel": "Close"
+  }
+}
