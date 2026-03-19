@@ -7,8 +7,14 @@
 "use client";
 
 import { useState, type FC } from "react";
+import dynamic from "next/dynamic";
 import { SongLibrary } from "./SongLibrary";
-import { PlaylistPanel } from "./PlaylistPanel";
+
+// PlaylistPanel 攜帶 @dnd-kit（拖曳排序），僅在切換到 Playlists tab 時載入
+const PlaylistPanel = dynamic(
+  () => import("./PlaylistPanel").then((m) => ({ default: m.PlaylistPanel })),
+  { ssr: false, loading: () => <div className="flex-1 animate-pulse bg-surface" /> },
+);
 
 /** 分頁類型 */
 type LibraryTab = "songs" | "playlists";

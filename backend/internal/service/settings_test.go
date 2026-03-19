@@ -1,8 +1,9 @@
 // Package service 測試設定服務的業務邏輯。
-// 純函式（entSettingsToDTO）可直接測試；需要 Ent Client 的方法標記為整合測試。
+// 純函式（entSettingsToDTO）可直接測試；CRUD 方法使用 SQLite in-memory 整合測試。
 package service
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -167,21 +168,240 @@ func TestEntSettingsToDTO_BooleanZeroValues(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SettingsService 方法（需要 Ent Client + 資料庫的整合測試骨架）
+// SettingsService 整合測試（SQLite in-memory）
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ensureTestUser 建立測試用使用者（Settings 的 FK 約束需要 User 存在）
+func ensureTestUser(t *testing.T, client *ent.Client, userID uuid.UUID) {
+	t.Helper()
+	ctx := context.Background()
+	exists, _ := client.User.Get(ctx, userID)
+	if exists != nil {
+		return
+	}
+	_, err := client.User.Create().
+		SetID(userID).
+		SetEmail(userID.String() + "@test.local").
+		SetPasswordHash("$2a$10$placeholder000000000000000000000000000000000").
+		SetName("Test User").
+		SetEmailVerified(false).
+		Save(ctx)
+	require.NoError(t, err)
+}
+
 func TestSettingsService_GetByUserID(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSettingsService(client)
+	ctx := context.Background()
+	userID := uuid.New()
+	ensureTestUser(t, client, userID)
+
+	t.Run("首次取得自動建立預設值", func(t *testing.T) {
+		resp, err := svc.GetByUserID(ctx, userID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		assert.Equal(t, userID, resp.UserID)
+		ds := resp.DisplaySettings
+		assert.Equal(t, 4, ds.DisplayLines)
+		assert.Equal(t, 32, ds.FontSize)
+		assert.Equal(t, "Inter", ds.FontFamily)
+		assert.Equal(t, "dark", ds.Theme)
+		assert.True(t, ds.ShowBackground)
+		assert.True(t, ds.AutoScroll)
+		assert.Equal(t, 300, ds.ScrollDuration)
+		assert.True(t, ds.EnableAnimation)
+	})
+
+	t.Run("再次取得回傳同一筆", func(t *testing.T) {
+		resp1, err := svc.GetByUserID(ctx, userID)
+		require.NoError(t, err)
+		resp2, err := svc.GetByUserID(ctx, userID)
+		require.NoError(t, err)
+
+		assert.Equal(t, resp1.ID, resp2.ID, "同一使用者應回傳同一筆設定")
+	})
 }
 
 func TestSettingsService_Update(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSettingsService(client)
+	ctx := context.Background()
+	userID := uuid.New()
+	ensureTestUser(t, client, userID)
+
+	t.Run("部分更新 displaySettings", func(t *testing.T) {
+		fontSize := 48
+		theme := "light"
+		resp, err := svc.Update(ctx, userID, dto.UpdateSettingsRequest{
+			DisplaySettings: &dto.UpdateDisplaySettings{
+				FontSize: &fontSize,
+				Theme:    &theme,
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		ds := resp.DisplaySettings
+		assert.Equal(t, 48, ds.FontSize, "FontSize 應更新為 48")
+		assert.Equal(t, "light", ds.Theme, "Theme 應更新為 light")
+		// 未更新的欄位應保持預設值
+		assert.Equal(t, 4, ds.DisplayLines)
+		assert.True(t, ds.AutoScroll)
+	})
+
+	t.Run("displaySettings 為 nil 時不更新", func(t *testing.T) {
+		// 先取得目前設定
+		before, err := svc.GetByUserID(ctx, userID)
+		require.NoError(t, err)
+
+		resp, err := svc.Update(ctx, userID, dto.UpdateSettingsRequest{
+			DisplaySettings: nil,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		assert.Equal(t, before.DisplaySettings.FontSize, resp.DisplaySettings.FontSize)
+	})
+
+	t.Run("不存在的使用者會自動建立預設值再更新", func(t *testing.T) {
+		newUserID := uuid.New()
+		ensureTestUser(t, client, newUserID)
+
+		fontSize := 36
+		resp, err := svc.Update(ctx, newUserID, dto.UpdateSettingsRequest{
+			DisplaySettings: &dto.UpdateDisplaySettings{
+				FontSize: &fontSize,
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, 36, resp.DisplaySettings.FontSize)
+		// 其他欄位應為預設值
+		assert.Equal(t, 4, resp.DisplaySettings.DisplayLines)
+	})
+
+	t.Run("更新所有 displaySettings 欄位", func(t *testing.T) {
+		anotherUserID := uuid.New()
+		ensureTestUser(t, client, anotherUserID)
+
+		displayLines := 6
+		fontSize := 24
+		fontFamily := "Noto Sans TC"
+		lineSpacing := 1.5
+		theme := "transparent"
+		showBg := false
+		bgColor := "#111111"
+		textColor := "#eeeeee"
+		highlightColor := "#ff0000"
+		autoScroll := false
+		scrollDuration := 500
+		enableAnimation := false
+
+		resp, err := svc.Update(ctx, anotherUserID, dto.UpdateSettingsRequest{
+			DisplaySettings: &dto.UpdateDisplaySettings{
+				DisplayLines:    &displayLines,
+				FontSize:        &fontSize,
+				FontFamily:      &fontFamily,
+				LineSpacing:     &lineSpacing,
+				Theme:           &theme,
+				ShowBackground:  &showBg,
+				BackgroundColor: &bgColor,
+				TextColor:       &textColor,
+				HighlightColor:  &highlightColor,
+				AutoScroll:      &autoScroll,
+				ScrollDuration:  &scrollDuration,
+				EnableAnimation: &enableAnimation,
+			},
+		})
+		require.NoError(t, err)
+		ds := resp.DisplaySettings
+		assert.Equal(t, 6, ds.DisplayLines)
+		assert.Equal(t, 24, ds.FontSize)
+		assert.Equal(t, "Noto Sans TC", ds.FontFamily)
+		assert.Equal(t, 1.5, ds.LineSpacing)
+		assert.Equal(t, "transparent", ds.Theme)
+		assert.False(t, ds.ShowBackground)
+		require.NotNil(t, ds.BackgroundColor)
+		assert.Equal(t, "#111111", *ds.BackgroundColor)
+		require.NotNil(t, ds.TextColor)
+		assert.Equal(t, "#eeeeee", *ds.TextColor)
+		require.NotNil(t, ds.HighlightColor)
+		assert.Equal(t, "#ff0000", *ds.HighlightColor)
+		assert.False(t, ds.AutoScroll)
+		assert.Equal(t, 500, ds.ScrollDuration)
+		assert.False(t, ds.EnableAnimation)
+	})
 }
 
 func TestSettingsService_Reset(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSettingsService(client)
+	ctx := context.Background()
+	userID := uuid.New()
+	ensureTestUser(t, client, userID)
+
+	t.Run("重設後回傳預設值", func(t *testing.T) {
+		// 先更新設定
+		fontSize := 72
+		_, err := svc.Update(ctx, userID, dto.UpdateSettingsRequest{
+			DisplaySettings: &dto.UpdateDisplaySettings{
+				FontSize: &fontSize,
+			},
+		})
+		require.NoError(t, err)
+
+		// 重設
+		resp, err := svc.Reset(ctx, userID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		// 應為預設值
+		ds := resp.DisplaySettings
+		assert.Equal(t, 32, ds.FontSize, "重設後 FontSize 應為預設值 32")
+		assert.Equal(t, 4, ds.DisplayLines)
+		assert.Equal(t, "dark", ds.Theme)
+		assert.True(t, ds.AutoScroll)
+	})
+
+	t.Run("對無設定的使用者重設不會出錯", func(t *testing.T) {
+		newUserID := uuid.New()
+		ensureTestUser(t, client, newUserID)
+
+		resp, err := svc.Reset(ctx, newUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, 32, resp.DisplaySettings.FontSize)
+	})
 }
 
 func TestSettingsService_CreateDefaults(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSettingsService(client)
+	ctx := context.Background()
+	userID := uuid.New()
+	ensureTestUser(t, client, userID)
+
+	// 透過 GetByUserID 觸發 createDefaults（首次查詢）
+	resp, err := svc.GetByUserID(ctx, userID)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	// 驗證所有預設值
+	ds := resp.DisplaySettings
+	assert.Equal(t, 4, ds.DisplayLines)
+	assert.Equal(t, 32, ds.FontSize)
+	assert.Equal(t, "Inter", ds.FontFamily)
+	assert.Equal(t, 0.5, ds.LineSpacing)
+	assert.Equal(t, "dark", ds.Theme)
+	assert.True(t, ds.ShowBackground)
+	require.NotNil(t, ds.BackgroundColor)
+	assert.Equal(t, "#000000", *ds.BackgroundColor)
+	require.NotNil(t, ds.TextColor)
+	assert.Equal(t, "#ffffff", *ds.TextColor)
+	require.NotNil(t, ds.HighlightColor)
+	assert.Equal(t, "#0ea5e9", *ds.HighlightColor)
+	assert.True(t, ds.AutoScroll)
+	assert.Equal(t, 300, ds.ScrollDuration)
+	assert.True(t, ds.EnableAnimation)
 }

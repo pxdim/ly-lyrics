@@ -9,12 +9,10 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, type FC } from "react";
+import dynamic from "next/dynamic";
 import { useLyricsStore } from "@/lib/store";
 import { fetchSongs, deleteSong, type ClientSong } from "@/lib/api/songs";
-import {
-  AddSongModal,
-  type AddSongTab,
-} from "@/components/controller/AddSongModal";
+import type { AddSongTab } from "@/components/controller/AddSongModal";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 import { generateLrcContent, downloadLrcFile } from "@/lib/lrc/export";
 import { Download, ArrowUpDown } from "lucide-react";
@@ -24,6 +22,13 @@ import {
   type SortField,
   type SortOrder,
 } from "@/lib/utils/song-sort";
+
+// AddSongModal 攜帶 LyricsSearchPanel → opencc-js 繁簡字典（5.5MB）
+// 只在使用者點擊「新增歌曲」時載入
+const AddSongModal = dynamic(
+  () => import("@/components/controller/AddSongModal").then((m) => ({ default: m.AddSongModal })),
+  { ssr: false },
+);
 
 /**
  * 排序模式循環：關閉 → 歌名升冪 → 歌名降冪 → 歌手升冪 → 歌手降冪 → 關閉

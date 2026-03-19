@@ -10,10 +10,10 @@ import (
 func (s *Server) setupRoutes() {
 	h := handler.NewHealth(s.sqlDB)
 
-	// 健康檢查
+	// 健康檢查（不限速 — 供監控系統使用）
 	s.router.Get("/api/go-health", h.Check)
 
-	// Auth 路由（公開，套用速率限制，含 refresh token 撤銷）
+	// Auth 路由（公開，10 req/min — 防暴力破解）
 	authHandler := handler.NewAuthHandlerFull(s.userService, s.jwtManager, s.sessionService)
 	s.router.Group(func(r chi.Router) {
 		r.Use(s.authLimiter.Middleware)
@@ -22,28 +22,26 @@ func (s *Server) setupRoutes() {
 		r.Post("/api/auth/refresh", authHandler.Refresh)
 	})
 
-	// Auth 路由（需認證）
+	// Auth 路由（需認證，60 req/min）
 	s.router.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(s.jwtManager))
+		r.Use(s.crudLimiter.Middleware)
 		r.Get("/api/auth/me", authHandler.Me)
 	})
 
-	// STT（RequireAuth — API key 僅限認證使用者取得，防止未授權洩漏）
+	// STT 路由（需認證，5 req/min — 最昂貴的 API）
 	sttHandler := handler.NewSTT(s.cfg.DeepgramAPIKey, s.cfg.GoogleSTTAPIKey)
 	s.router.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(s.jwtManager))
+		r.Use(s.sttLimiter.Middleware)
 		r.Get("/api/stt/token", sttHandler.GetToken)
-	})
-
-	// STT WebSocket 串流代理（Google Cloud STT）— 需認證防止未授權使用者濫用 API 配額
-	s.router.Group(func(r chi.Router) {
-		r.Use(auth.RequireAuth(s.jwtManager))
 		r.Get("/api/stt/stream", sttHandler.StreamSTT)
 	})
 
-	// CRUD 路由（OptionalAuth — 未認證使用 demo user）
+	// CRUD 路由 — Songs、Playlists、Lyrics Search（OptionalAuth，60 req/min）
 	s.router.Group(func(r chi.Router) {
 		r.Use(auth.OptionalAuth(s.jwtManager))
+		r.Use(s.crudLimiter.Middleware)
 
 		songSvc := service.NewSongService(s.db)
 		songHandler := handler.NewSong(songSvc)
@@ -71,14 +69,6 @@ func (s *Server) setupRoutes() {
 			})
 		})
 
-		settingsSvc := service.NewSettingsService(s.db)
-		settingsHandler := handler.NewSettings(settingsSvc)
-		r.Route("/api/settings", func(r chi.Router) {
-			r.Get("/", settingsHandler.Get)
-			r.Put("/", settingsHandler.Update)
-			r.Post("/", settingsHandler.Reset)
-		})
-
 		// 歌詞搜尋
 		lyricsSearchHandler := handler.NewLyricsSearch(s.lyricsSearchSvc)
 		r.Route("/api/lyrics", func(r chi.Router) {
@@ -87,7 +77,21 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
-	// WebSocket 路由
+	// Settings 路由（OptionalAuth，30 req/min）
+	s.router.Group(func(r chi.Router) {
+		r.Use(auth.OptionalAuth(s.jwtManager))
+		r.Use(s.settingsLimiter.Middleware)
+
+		settingsSvc := service.NewSettingsService(s.db)
+		settingsHandler := handler.NewSettings(settingsSvc)
+		r.Route("/api/settings", func(r chi.Router) {
+			r.Get("/", settingsHandler.Get)
+			r.Put("/", settingsHandler.Update)
+			r.Post("/", settingsHandler.Reset)
+		})
+	})
+
+	// WebSocket 路由（不限速 — 長連線，由 Hub 管理連線數）
 	if s.wsHandler != nil {
 		s.router.Get("/ws", s.wsHandler.ServeWS)
 	}

@@ -1,12 +1,14 @@
 // Package service 測試歌曲服務的業務邏輯。
-// 純函式（entSongToDTO）可直接測試；需要 Ent Client 的方法標記為整合測試。
+// 純函式（entSongToDTO）可直接測試；CRUD 方法使用 SQLite in-memory 整合測試。
 package service
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raymondchen/ly-backend/internal/dto"
 	"github.com/raymondchen/ly-backend/internal/ent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -168,25 +170,230 @@ func TestEntSongToDTO_EmptyLyricsArray(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SongService CRUD 方法（需要 Ent Client + 資料庫的整合測試骨架）
+// SongService CRUD 整合測試（SQLite in-memory）
 // ─────────────────────────────────────────────────────────────────────────────
 
-func TestSongService_List(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
-}
-
-func TestSongService_GetByID(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+// createTestSong 建立測試用歌曲並回傳 SongResponse
+func createTestSong(t *testing.T, svc *SongService, title string, userID uuid.UUID) *dto.SongResponse {
+	t.Helper()
+	artist := "測試藝人"
+	lang := "zh"
+	resp, err := svc.Create(context.Background(), dto.CreateSongRequest{
+		Title:    title,
+		Artist:   &artist,
+		Lyrics:   []string{"第一行", "第二行"},
+		Language: &lang,
+	}, userID)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	return resp
 }
 
 func TestSongService_Create(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSongService(client)
+	ctx := context.Background()
+
+	t.Run("建立歌曲成功", func(t *testing.T) {
+		artist := "藝人A"
+		lang := "zh"
+		req := dto.CreateSongRequest{
+			Title:    "測試歌曲",
+			Artist:   &artist,
+			Lyrics:   []string{"第一行", "第二行", "第三行"},
+			Language: &lang,
+		}
+		resp, err := svc.Create(ctx, req, DemoUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		assert.Equal(t, "測試歌曲", resp.Title)
+		require.NotNil(t, resp.Artist)
+		assert.Equal(t, "藝人A", *resp.Artist)
+		assert.Equal(t, []string{"第一行", "第二行", "第三行"}, resp.Lyrics)
+		require.NotNil(t, resp.Language)
+		assert.Equal(t, "zh", *resp.Language)
+		assert.Equal(t, DemoUserID, resp.UserID)
+		assert.NotEqual(t, uuid.Nil, resp.ID)
+	})
+
+	t.Run("建立歌曲含 LRC 時間戳記", func(t *testing.T) {
+		req := dto.CreateSongRequest{
+			Title:         "帶時間戳記",
+			Lyrics:        []string{"行一", "行二"},
+			LrcTimestamps: []float64{0.0, 5.5},
+		}
+		resp, err := svc.Create(ctx, req, DemoUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, []float64{0.0, 5.5}, resp.LrcTimestamps)
+	})
+
+	t.Run("建立歌曲無可選欄位", func(t *testing.T) {
+		req := dto.CreateSongRequest{
+			Title:  "只有標題",
+			Lyrics: []string{"歌詞"},
+		}
+		resp, err := svc.Create(ctx, req, DemoUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Nil(t, resp.Artist)
+		assert.Nil(t, resp.Language)
+		assert.Nil(t, resp.LrcTimestamps)
+	})
+}
+
+func TestSongService_GetByID(t *testing.T) {
+	client := newTestEntClient(t)
+	svc := NewSongService(client)
+	ctx := context.Background()
+
+	t.Run("取得存在的歌曲", func(t *testing.T) {
+		created := createTestSong(t, svc, "可查詢歌曲", DemoUserID)
+
+		resp, err := svc.GetByID(ctx, created.ID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, created.ID, resp.ID)
+		assert.Equal(t, "可查詢歌曲", resp.Title)
+	})
+
+	t.Run("取得不存在的歌曲回傳 nil", func(t *testing.T) {
+		resp, err := svc.GetByID(ctx, uuid.New())
+		assert.NoError(t, err)
+		assert.Nil(t, resp, "不存在的 ID 應回傳 nil")
+	})
+}
+
+func TestSongService_List(t *testing.T) {
+	client := newTestEntClient(t)
+	svc := NewSongService(client)
+	ctx := context.Background()
+
+	// 建立 3 首歌曲
+	createTestSong(t, svc, "歌曲A", DemoUserID)
+	createTestSong(t, svc, "歌曲B", DemoUserID)
+	createTestSong(t, svc, "歌曲C", DemoUserID)
+
+	t.Run("列表分頁", func(t *testing.T) {
+		userIDStr := DemoUserID.String()
+		resp, err := svc.List(ctx, dto.SongListParams{
+			Limit:  2,
+			Offset: 0,
+			UserID: &userIDStr,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 3, resp.Total, "總數應為 3")
+		assert.Len(t, resp.Data, 2, "分頁限制 2 筆")
+		assert.Equal(t, 2, resp.Limit)
+		assert.Equal(t, 0, resp.Offset)
+	})
+
+	t.Run("列表搜尋過濾", func(t *testing.T) {
+		search := "歌曲A"
+		userIDStr := DemoUserID.String()
+		resp, err := svc.List(ctx, dto.SongListParams{
+			Limit:  10,
+			Offset: 0,
+			Search: &search,
+			UserID: &userIDStr,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 1, resp.Total, "搜尋 '歌曲A' 應只有 1 筆")
+		require.Len(t, resp.Data, 1)
+		assert.Equal(t, "歌曲A", resp.Data[0].Title)
+	})
+
+	t.Run("列表 offset 超出範圍回傳空資料", func(t *testing.T) {
+		userIDStr := DemoUserID.String()
+		resp, err := svc.List(ctx, dto.SongListParams{
+			Limit:  10,
+			Offset: 100,
+			UserID: &userIDStr,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 3, resp.Total, "總數不受 offset 影響")
+		assert.Empty(t, resp.Data, "offset 超出範圍時資料應為空")
+	})
 }
 
 func TestSongService_Update(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSongService(client)
+	ctx := context.Background()
+
+	t.Run("更新標題", func(t *testing.T) {
+		created := createTestSong(t, svc, "原始標題", DemoUserID)
+
+		newTitle := "新標題"
+		resp, err := svc.Update(ctx, created.ID, dto.UpdateSongRequest{
+			Title: &newTitle,
+		}, DemoUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, "新標題", resp.Title)
+	})
+
+	t.Run("更新歌詞", func(t *testing.T) {
+		created := createTestSong(t, svc, "更新歌詞測試", DemoUserID)
+
+		newLyrics := []string{"新第一行", "新第二行", "新第三行"}
+		resp, err := svc.Update(ctx, created.ID, dto.UpdateSongRequest{
+			Lyrics: newLyrics,
+		}, DemoUserID)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, newLyrics, resp.Lyrics)
+	})
+
+	t.Run("更新不存在的歌曲回傳 nil", func(t *testing.T) {
+		newTitle := "不存在"
+		resp, err := svc.Update(ctx, uuid.New(), dto.UpdateSongRequest{
+			Title: &newTitle,
+		}, DemoUserID)
+		assert.NoError(t, err)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("非擁有者更新回傳 ErrForbidden", func(t *testing.T) {
+		created := createTestSong(t, svc, "擁有權測試", DemoUserID)
+		otherUserID := uuid.New()
+
+		newTitle := "被篡改"
+		_, err := svc.Update(ctx, created.ID, dto.UpdateSongRequest{
+			Title: &newTitle,
+		}, otherUserID)
+		assert.ErrorIs(t, err, ErrForbidden)
+	})
 }
 
 func TestSongService_Delete(t *testing.T) {
-	t.Skip("需要整合測試環境（Ent Client + PostgreSQL）")
+	client := newTestEntClient(t)
+	svc := NewSongService(client)
+	ctx := context.Background()
+
+	t.Run("刪除歌曲成功", func(t *testing.T) {
+		created := createTestSong(t, svc, "待刪除", DemoUserID)
+
+		err := svc.Delete(ctx, created.ID, DemoUserID)
+		require.NoError(t, err)
+
+		// 確認已刪除
+		resp, err := svc.GetByID(ctx, created.ID)
+		assert.NoError(t, err)
+		assert.Nil(t, resp, "刪除後應查不到")
+	})
+
+	t.Run("刪除不存在的歌曲回傳 NotFound error", func(t *testing.T) {
+		err := svc.Delete(ctx, uuid.New(), DemoUserID)
+		assert.Error(t, err)
+	})
+
+	t.Run("非擁有者刪除回傳 ErrForbidden", func(t *testing.T) {
+		created := createTestSong(t, svc, "禁止刪除", DemoUserID)
+		otherUserID := uuid.New()
+
+		err := svc.Delete(ctx, created.ID, otherUserID)
+		assert.ErrorIs(t, err, ErrForbidden)
+	})
 }

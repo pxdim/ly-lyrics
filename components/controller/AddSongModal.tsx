@@ -7,9 +7,23 @@
 "use client";
 
 import { type FC, useState, useRef, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { createSong } from "@/lib/api/songs";
-import { LyricsSearchPanel } from "@/components/lyrics-search/LyricsSearchPanel";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
+
+// LyricsSearchPanel 攜帶 opencc-js 繁簡轉換字典（5.5MB），僅在搜尋歌詞 tab 時載入
+const LyricsSearchPanel = dynamic(
+  () => import("@/components/lyrics-search/LyricsSearchPanel").then((m) => ({ default: m.LyricsSearchPanel })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[11px] font-mono text-text-muted">載入搜尋元件...</span>
+      </div>
+    ),
+  },
+);
 
 export type AddSongTab = "search" | "manual" | "lrc";
 

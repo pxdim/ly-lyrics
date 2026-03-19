@@ -35,6 +35,9 @@ type Server struct {
 	hub             *ws.Hub
 	wsHandler       *handler.WSHandler
 	authLimiter     *middleware.RateLimiter
+	crudLimiter     *middleware.RateLimiter
+	sttLimiter      *middleware.RateLimiter
+	settingsLimiter *middleware.RateLimiter
 	lyricsSearchSvc *service.LyricsSearchService
 }
 
@@ -68,8 +71,11 @@ func New(cfg *config.Config, db *ent.Client, sqlDB *sql.DB) *Server {
 	s.userService = service.NewUserService(db)
 	s.sessionService = service.NewSessionService(db)
 
-	// 初始化 Auth 速率限制器（每分鐘 10 次）
-	s.authLimiter = middleware.NewRateLimiter(10, 60)
+	// 初始化速率限制器（per-IP 滑動視窗）
+	s.authLimiter = middleware.NewRateLimiter(10, 60)       // Auth：每分鐘 10 次（防暴力破解）
+	s.crudLimiter = middleware.NewRateLimiter(60, 60)       // CRUD：每分鐘 60 次
+	s.sttLimiter = middleware.NewRateLimiter(5, 60)         // STT：每分鐘 5 次（最昂貴的 API）
+	s.settingsLimiter = middleware.NewRateLimiter(30, 60)   // Settings：每分鐘 30 次
 
 	// Redis 連線（WebSocket 必需）
 	if cfg.RedisURL != "" {
@@ -118,8 +124,16 @@ func (s *Server) Start() error {
 
 // Shutdown 優雅關閉 server
 func (s *Server) Shutdown(ctx context.Context) error {
-	if s.authLimiter != nil {
-		s.authLimiter.Stop()
+	// 停止所有速率限制器的 cleanup goroutine，防止 goroutine 洩漏
+	for _, rl := range []*middleware.RateLimiter{
+		s.authLimiter,
+		s.crudLimiter,
+		s.sttLimiter,
+		s.settingsLimiter,
+	} {
+		if rl != nil {
+			rl.Stop()
+		}
 	}
 	return s.http.Shutdown(ctx)
 }

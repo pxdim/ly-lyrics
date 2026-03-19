@@ -8,6 +8,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import { useLyricsStore } from "@/lib/store";
 import { generateSessionCode } from "@/lib/websocket/session-code";
@@ -18,10 +19,31 @@ import { StatusBar, MobileStatusBar, MobileQRTab } from "@/components/controller
 import { MobileTabBar, type MobileTab } from "@/components/controller/MobileTabBar";
 import { LibraryPanel } from "@/components/controller/LibraryPanel";
 import { CueGrid } from "@/components/controller/CueGrid";
-import { LivePreview } from "@/components/controller/LivePreview";
-import { QuickSettings } from "@/components/controller/QuickSettings";
-import { QRCodePanel } from "@/components/controller/QRCodePanel";
-import { AiTrackingPanel } from "@/components/ai-tracking/AiTrackingPanel";
+
+// 非首屏核心元件 — 懶載入以分割 bundle
+// QRCodePanel：攜帶 qrcode.react，桌面側欄/手機 QR tab
+const QRCodePanel = dynamic(
+  () => import("@/components/controller/QRCodePanel").then((m) => ({ default: m.QRCodePanel })),
+  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-40" /> },
+);
+
+// LivePreview：桌面右欄預覽面板
+const LivePreview = dynamic(
+  () => import("@/components/controller/LivePreview").then((m) => ({ default: m.LivePreview })),
+  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-40" /> },
+);
+
+// QuickSettings：設定面板，非首屏必要
+const QuickSettings = dynamic(
+  () => import("@/components/controller/QuickSettings").then((m) => ({ default: m.QuickSettings })),
+  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-20" /> },
+);
+
+// AiTrackingPanel：展開型面板，延遲載入不影響核心操作
+const AiTrackingPanel = dynamic(
+  () => import("@/components/ai-tracking/AiTrackingPanel").then((m) => ({ default: m.AiTrackingPanel })),
+  { ssr: false, loading: () => <div className="animate-pulse bg-surface h-16" /> },
+);
 
 /** 共用佈局 props */
 interface LayoutProps {
