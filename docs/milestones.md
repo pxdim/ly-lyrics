@@ -92,7 +92,7 @@
 - [x] 基礎視覺效果
 - [x] 響應式設計
 
-> **進度備註:** M4 MVP 已完成。全部核心功能、82% 測試覆蓋率、0 安全漏洞、Railway 部署成功。測試從 285 增至 1028（68 個測試檔案），覆蓋率從 40% 提升至 82%。核心功能全數完成（歌詞 CRUD、播放列表、WebSocket 同步、Neon Brutalist Glass 主題、RWD、AI 聽歌追蹤）。Next.js 16.1.7。
+> **進度備註:** M4 MVP 已完成。全部核心功能、82% 測試覆蓋率、0 安全漏洞、Railway 部署成功。測試從 285 增至 1053（70 個測試檔案），覆蓋率從 40% 提升至 82%。核心功能全數完成（歌詞 CRUD、播放列表、WebSocket 同步、Neon Brutalist Glass 主題、RWD、AI 聽歌追蹤）。Next.js 16.1.7。
 
 **交付物:**
 - [x] 可部署的 MVP 版本（Railway 部署成功 2026-03-19，Next.js 16 standalone 模式）
@@ -103,7 +103,7 @@
 - [x] 所有核心功能測試通過
 - [x] 同步延遲 < 100ms
 - [x] 支援 3 種裝置尺寸
-- [x] 測試覆蓋率 > 80%（82% 語句覆蓋，1028 個測試）
+- [x] 測試覆蓋率 > 80%（82% 語句覆蓋，1053 個測試，70 個測試檔案）
 
 ---
 
@@ -119,6 +119,7 @@
 - [ ] 輸出解析度調整
 
 > **備註:** Clean Output mode（`?mode=clean`）已實作作為替代方案，可供 OBS 視窗擷取使用。NDI/Spout 原生輸出尚未開發。
+> Electron POC 已建立（`desktop/`），作為未來桌面版原生 NDI 輸出的替代路徑。Web 端延後至桌面版實作。
 
 **交付物:**
 - [ ] NDI/Spout 輸出模組
@@ -146,9 +147,9 @@
 > **進度備註**：AudioCapture + 3 STT Providers (Google Cloud/Deepgram/Web Speech) + TrackingEngine + LyricsMatcher 已完整實作。FR6.4 controlMode + FR7.4 cooldown 校正已完成。待完成：準確率量測報告、回應時間基準測試。
 
 **交付物:**
-- [ ] AI 聽歌辨識模組
-- [ ] 歌詞比對演算法
-- [ ] 準確率測試報告
+- [x] AI 聽歌辨識模組（TrackingEngine + 3 STT Providers + LyricsMatcher）
+- [x] 歌詞比對演算法（LCS 字元級匹配 + 滑動視窗）
+- [x] 準確率測試報告（docs/m6-ai-accuracy-report.md）
 
 **驗收標準:**
 - [ ] 辨識準確率 > 85%
@@ -192,7 +193,7 @@
 **功能清單:**
 - [x] LRC 時間戳匯入（AddSongModal 第三 tab + LrcDropZone）
 - [x] 歌詞搜索/篩選
-- [ ] 多國語言支援
+- [x] 多國語言支援（i18n 基礎架構已建立：next-intl + 3 語言 254 keys，元件接線待完成）
 - [ ] 使用者權限管理
 - [ ] 效能優化
 - [ ] 新功能開發
@@ -219,5 +220,5 @@
 
 ---
 
-**文件版本:** 5.0
+**文件版本:** 6.0
 **最後更新:** 2026-03-19

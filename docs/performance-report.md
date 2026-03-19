@@ -6,7 +6,7 @@
 
 | 項目 | 規格 |
 |------|------|
-| Next.js | 15.5.13 |
+| Next.js | 15.5.13（報告產出時版本，後已升級至 16.1.7。數據基於升級前量測，但 bundle 大小已因 dynamic import 優化而改善） |
 | Build 工具 | Turbopack (dev) / Webpack (prod) |
 | Go 後端 | WebSocket Hub (port 8080) |
 | 量測方式 | 靜態分析 + Build Output 量測 |

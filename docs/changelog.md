@@ -2,6 +2,77 @@
 
 ## 版本歷史
 
+### v1.1.0 - 2026-03-19
+
+#### 新增
+- NFR2.4: 離線支援（Service Worker v2 + useOnlineStatus + 離線橫幅）
+- i18n 基礎架構（next-intl, 254 keys x 3 語言）
+- Electron 桌面版 POC（desktop/ 目錄）
+- 使用者操作手冊（10 章 7600 字）
+- NDI/Spout 可行性研究報告
+- Dockerfile 修復（Next.js 16 standalone 模式）
+
+#### 品質
+- 測試 1028 → 1053
+- Simplify 審查修復（prevState useRef, SSR 安全, Electron IS_DEV）
+
+---
+
+### v1.0.0 - 2026-03-19
+
+#### 重大
+- M4 MVP 正式關閉，Railway 部署成功
+- Next.js 15 → 16.1.7（0 安全漏洞）
+
+#### 新增
+- NFR3.3: API 速率限制（Auth 10/min, STT 5/min, CRUD 60/min）
+- NFR4.2: API 文檔 v3.0（24 endpoints 完整文檔）
+- Controller bundle 優化：2112kB → 935kB（-55.7%，dynamic import）
+- Go 後端測試覆蓋率大幅提升（ws 15%→77%, service 34%→73%, auth 45%→89%）
+- 測試 922 → 1028
+
+#### 文檔
+- M6 AI 準確率分析報告
+- M7 上線準備文件（launch checklist, monitoring, backup, env vars）
+- 效能評估報告
+
+---
+
+### v0.9.5 - 2026-03-18
+
+#### 安全
+- 修復 IDOR 漏洞：Song/Playlist CRUD 加入資源擁有權驗證
+- STT Stream 加入 RequireAuth 認證
+- STT Token 升級為 RequireAuth
+- 移除 NEXT_PUBLIC_DEEPGRAM_API_KEY 客戶端暴露
+- Audio buffer 加入 10MB 上限
+
+#### 品質
+- 測試 610 → 922（+312）
+- AppError test 修復（vi.stubEnv）
+- console.log → console.debug（WebSocket client）
+
+---
+
+### v0.9.0 - 2026-03-18
+
+#### 新增
+- FR6.4: AUTO/MANUAL 控制模式切換
+- FR1.7: 歌詞排序（title/artist, asc/desc）
+- FR4.2: 自訂背景色（QuickSettings color picker）
+- FR4.3: 背景圖片上傳（data URL, 2MB, JPEG/PNG/WebP）
+- FR7.4: 手動校正 AI 辨識（cooldown 機制確認 + 提示文字）
+
+#### 修復
+- 消除所有硬編碼色值（ConnectionStatusBar, ConnectionIndicator, LyricsControl, AudioInputSelector, Toast, AiStatusIndicator）
+- Display isConnected → hasAttemptedConnection 語意修正
+- ESLint 5 warning → 0
+
+#### 測試
+- 測試數量 285 → 610（+325 新測試，13 個新測試檔案）
+
+---
+
 ### v0.8.1 - 2026-03-18
 
 #### 新增
@@ -254,5 +325,5 @@
 
 ---
 
-**文件版本:** 3.0
-**最後更新:** 2026-03-17
+**文件版本:** 4.0
+**最後更新:** 2026-03-19

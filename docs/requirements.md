@@ -51,12 +51,12 @@
 
 | ID | 需求描述 | 優先級 | 狀態 |
 |----|---------|-------|------|
-| FR4.1 | 支援深色/淺色主題切換 | P0 | ✅ 完成 |
+| FR4.1 | 支援深色/淺色主題切換 | P0 | 🟡 部分完成 |
 | FR4.2 | 支援自訂背景顏色 | P1 | ✅ 完成 |
 | FR4.3 | 支援背景圖片上傳 | P1 | ✅ 完成 |
 | FR4.4 | 支援背景影片 (Phase 2+) | P2 | 🔴 Not Started |
 
-> **FR4.1 備註**：目前僅實作深色主題（Neon Brutalist Glass），無淺色主題切換。
+> **FR4.1 備註**：QuickSettings 有 dark/light 切換 UI，但 Display 端尚無對應淺色樣式定義（`globals.css` 無 light theme CSS 變數）。
 > **FR4.2 備註**：QuickSettings 面板新增背景色 color picker，透過 WebSocket 同步至 Display 端。Clean Output mode 強制 #000000。
 > **FR4.3 備註**：QuickSettings 面板新增圖片上傳（data URL, 2MB, JPEG/PNG/WebP），透過 WebSocket 同步。Clean Output 不套用。
 
@@ -128,9 +128,10 @@
 | NFR2.1 | 瀏覽器支援 | Chrome, Safari, Edge 最新版 | ✅ 完成 |
 | NFR2.2 | 裝置支援 | Desktop, Tablet, Mobile | ✅ 完成 |
 | NFR2.3 | 同時連線數 | 10+ 裝置 | ✅ 完成 |
-| NFR2.4 | 離線可用性 | 控制端需網路，顯示端可短暫離線 | 🔴 Not Started |
+| NFR2.4 | 離線可用性 | 控制端需網路，顯示端可短暫離線 | ✅ 完成 |
 
 > **NFR2.3 備註**：Go Hub 架構理論驗證通過，10 裝置場景僅需 ~500 KB 記憶體、21 goroutines，理論上限數千級別。
+> **NFR2.4 備註**：Service Worker v2（三層快取策略）+ useOnlineStatus hook + ConnectionStatusBar 離線橫幅。Display 端離線時歌詞靜止在最後位置。
 
 ### NFR3: 安全性
 
@@ -153,7 +154,7 @@
 | NFR4.2 | API 文檔完整 | ✅ 完成 |
 | NFR4.3 | 錯誤日誌記錄 | ✅ 完成 |
 
-> **NFR4.1 備註**：1028 個測試案例全部通過，82% 語句覆蓋率。
+> **NFR4.1 備註**：1053 個測試案例全部通過，82% 語句覆蓋率。
 > **NFR4.2 備註**：docs/spec/api.md v3.0 涵蓋全部 24 個 endpoint（23 REST + 1 WebSocket），含 request/response schema、錯誤代碼。
 > **NFR4.3 備註**：Go 後端使用 log/slog JSON handler，41 處結構化日誌呼叫。HTTP request logging middleware 記錄 method/path/status/duration/request_id。環境感知等級（production: Info, development: Debug）。
 
@@ -190,6 +191,7 @@
 | 4.0 | 2026-03-18 | FR4.3、FR7.4 完成、測試數更新至 922 | 對齊程式碼實作進度 |
 | 5.0 | 2026-03-19 | NFR 狀態更新（NFR1.2/1.4/2.3/5.2/5.3），測試數更新至 1028 | M4 收官效能評估結果同步 |
 | 6.0 | 2026-03-19 | NFR3.3/4.2/4.3 完成，M4 里程碑正式關閉 | 速率限制、API 文檔、錯誤日誌實作完成確認 |
+| 7.0 | 2026-03-19 | NFR2.4 完成、FR4.1 修正為部分完成、測試數 1053/70 檔 | 離線支援實作確認、淺色主題缺少 CSS 變數、測試數同步 |
 
 ---
 
@@ -201,5 +203,5 @@
 
 ---
 
-**文件版本:** 6.0
+**文件版本:** 7.0
 **最後更新:** 2026-03-19

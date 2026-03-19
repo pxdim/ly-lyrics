@@ -6,7 +6,7 @@
 
 | 類別 | 技術 | 版本 |
 |------|------|------|
-| 前端框架 | Next.js (App Router, Turbopack dev) | 15 |
+| 前端框架 | Next.js (App Router, Turbopack dev) | 16 |
 | UI 函式庫 | React | 19 |
 | 語言 | TypeScript | 5.7 |
 | 後端 | Go (port 8080, Next.js rewrite proxy) | — |
@@ -36,19 +36,27 @@ components/         → React 元件
   controller/       → Controller 子元件 (9 個)
   display/          → Display 元件 (ConnectionStatusBar, ConnectionIndicator)
   lyrics/           → 歌詞相關 (LyricsDisplay, LyricsControl, CueGrid, LivePreview)
+  lyrics-search/    → 歌詞搜尋 (6 個元件)
   lrc/              → LRC 格式匯入匯出
   playlist/         → 播放清單 (SortablePlaylist)
   ui/               → 共用 UI (GlowButton, GlowInput, Spinner, ConfirmDialog, Toast)
 lib/                → 工具庫
+  ai-tracking/      → AI 聽歌追蹤引擎 (TrackingEngine, LyricsMatcher)
   api/              → API client (auth, songs, playlists, lyrics-search)
   audio/            → 音訊擷取
+  auth/             → Session 管理
+  errors/           → AppError 錯誤類別
   hooks/            → 自訂 hooks (useMediaQuery, useIsMobile, useDebounce, useOnlineStatus, etc.)
   i18n/             → i18n 設定 (config.ts: locales/defaultLocale)
+  pwa/              → Service Worker 註冊
+  schemas/          → Zod 驗證 schemas
   store/            → Zustand store
+  stt/              → STT 語音辨識 providers (Deepgram, Google Cloud, Web Speech)
   utils/            → 工具函式 (visible-lines, chinese-converter)
   websocket/        → WebSocket client
 i18n/               → next-intl 請求層設定 (request.ts)
 messages/           → 語言檔案 (zh-TW.json, zh-CN.json, en.json)
+desktop/            → Electron 桌面版 POC
 docs/               → 專案文檔
 backend/            → Go 後端 (如存在)
 ```
@@ -89,6 +97,9 @@ npm run test:e2e     # Playwright E2E 測試
 | 狀態管理 | Zustand + persist | 輕量、支援 localStorage 持久化 |
 | 影像輸出 | Clean Output mode (?mode=clean) | 替代 NDI/Spout，供 OBS/VJ 軟體擷取 |
 | 國際化 | next-intl (基礎架構已建立，元件尚未替換) | Next.js App Router 官方推薦 i18n 方案 |
+| i18n | next-intl | App Router 官方推薦，支援 server components |
+| 桌面版 POC | Electron | 驗證現有 React 可直接包裝，未來原生 NDI |
+| 離線支援 | Service Worker v2 | 三層快取策略，Display 端離線靜止歌詞 |
 
 ## 特殊規則
 
