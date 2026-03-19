@@ -138,10 +138,11 @@
 |----|---------|------|
 | NFR3.1 | 用戶數據加密儲存 | 🔴 Not Started |
 | NFR3.2 | WebSocket 連線驗證 | ✅ 完成 |
-| NFR3.3 | API 速率限制 | 🔴 Not Started |
+| NFR3.3 | API 速率限制 | ✅ 完成 |
 | NFR3.4 | XSS/CSRF 防護 | ✅ 完成 |
 
 > **NFR3.2 備註**：WebSocket 使用 session code 認證。
+> **NFR3.3 備註**：Go 後端已實作 per-IP 滑動視窗速率限制：Auth 10 req/min、STT 5 req/min、Settings 30 req/min、CRUD 60 req/min。WebSocket 不限速（由 Hub 管理）。
 > **NFR3.4 備註**：JWT 存於 HttpOnly cookie，防止 XSS 竊取 token。
 
 ### NFR4: 可維護性
@@ -149,10 +150,12 @@
 | ID | 需求描述 | 狀態 |
 |----|---------|------|
 | NFR4.1 | 程式碼測試覆蓋率 > 80% | 🟡 部分完成 |
-| NFR4.2 | API 文檔完整 | 🔴 Not Started |
-| NFR4.3 | 錯誤日誌記錄 | 🔴 Not Started |
+| NFR4.2 | API 文檔完整 | ✅ 完成 |
+| NFR4.3 | 錯誤日誌記錄 | ✅ 完成 |
 
 > **NFR4.1 備註**：1028 個測試案例全部通過，82% 語句覆蓋率。
+> **NFR4.2 備註**：docs/spec/api.md v3.0 涵蓋全部 24 個 endpoint（23 REST + 1 WebSocket），含 request/response schema、錯誤代碼。
+> **NFR4.3 備註**：Go 後端使用 log/slog JSON handler，41 處結構化日誌呼叫。HTTP request logging middleware 記錄 method/path/status/duration/request_id。環境感知等級（production: Info, development: Debug）。
 
 ### NFR5: 相容性
 
@@ -186,6 +189,7 @@
 | 3.0 | 2026-03-18 | FR4.2 完成、FR7.1-7.3 完成、測試數更新至 610 | 對齊程式碼實作進度 |
 | 4.0 | 2026-03-18 | FR4.3、FR7.4 完成、測試數更新至 922 | 對齊程式碼實作進度 |
 | 5.0 | 2026-03-19 | NFR 狀態更新（NFR1.2/1.4/2.3/5.2/5.3），測試數更新至 1028 | M4 收官效能評估結果同步 |
+| 6.0 | 2026-03-19 | NFR3.3/4.2/4.3 完成，M4 里程碑正式關閉 | 速率限制、API 文檔、錯誤日誌實作完成確認 |
 
 ---
 
@@ -197,5 +201,5 @@
 
 ---
 
-**文件版本:** 5.0
+**文件版本:** 6.0
 **最後更新:** 2026-03-19
