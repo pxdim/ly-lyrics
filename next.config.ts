@@ -27,6 +27,8 @@ const goWsUrl = resolveWsUrl();
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Docker/Railway 部署使用 standalone 模式，減少 image 大小
+  output: "standalone",
   // 明確將環境變數內聯到客戶端 bundle
   // Railway 的 NEXT_PUBLIC_ 變數在 build time 可能不可用，
   // 所以這裡用 server-side 變數推導後傳入
