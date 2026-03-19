@@ -17,6 +17,17 @@ import { render, screen, fireEvent } from "@testing-library/react";
 // Mock 設定
 // ============================================================================
 
+// Mock next-intl — 使用真實 zh-TW 翻譯
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
+// Mock LocaleSwitcher — 避免依賴 next-intl 的 useLocale
+vi.mock("@/components/ui/LocaleSwitcher", () => ({
+  LocaleSwitcher: () => <div data-testid="locale-switcher" />,
+}));
+
 const mockStoreState = new Map<string, unknown>();
 
 const defaultDisplaySettings = {

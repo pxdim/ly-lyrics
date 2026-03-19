@@ -4,6 +4,7 @@
  * Lyrics display for secondary screens/projectors.
  * Receives real-time updates via WebSocket from controller.
  * Design System v2.0 - Dark Tech Edition
+ * 所有 UI 字串透過 next-intl useTranslations 取得。
  */
 
 "use client";
@@ -11,6 +12,7 @@
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link2, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useLyricsStore } from "@/lib/store";
 import { LyricsDisplay } from "@/components/lyrics/LyricsDisplay";
 import { LyricsControl } from "@/components/lyrics/LyricsControl";
@@ -38,6 +40,8 @@ function DisplayLoading() {
 
 function DisplayPage() {
   const searchParams = useSearchParams();
+  const t = useTranslations("display");
+  const tc = useTranslations("common");
   const urlCode = searchParams.get("code")?.toUpperCase().slice(0, 6) ?? "";
   // Clean Output 模式：供 OBS/Resolume/VJ 軟體擷取，純黑背景 + 歌詞文字，無 UI chrome
   const isCleanOutput = searchParams.get("mode") === "clean";
@@ -185,11 +189,11 @@ function DisplayPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 bg-elevated border-2 border-primary/30 rounded-3xl shadow-glow-lg">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-bold text-primary tracking-wider">
-                LY
+                {tc("appName")}
               </h1>
             </div>
             <p className="text-xl font-body text-text-muted tracking-wide">
-              歌詞顯示系統
+              {tc("lyricsSystem")}
             </p>
             <div className="w-24 h-0.5 mx-auto bg-gradient-to-r from-transparent via-primary to-transparent" />
           </div>
@@ -197,7 +201,7 @@ function DisplayPage() {
           {/* Connection Input */}
           <div className="space-y-6">
             <p className="font-body text-text-muted">
-              輸入控制器顯示的同步碼以連接
+              {t("enterCode")}
             </p>
 
             <div className="relative">
@@ -208,7 +212,7 @@ function DisplayPage() {
                   const value = e.target.value.toUpperCase().slice(0, 6);
                   setConnectionCode(value);
                 }}
-                placeholder="______"
+                placeholder={t("codePlaceholder")}
                 className="w-full px-6 py-5 text-2xl sm:text-3xl md:text-4xl font-mono text-center bg-elevated text-primary rounded-2xl border-2 border-primary/30 focus:outline-none focus:border-primary focus:shadow-glow-md transition-all tracking-[0.5em] placeholder:text-primary/20"
                 maxLength={6}
                 autoFocus
@@ -233,28 +237,28 @@ function DisplayPage() {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Check className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
-              <p className="font-heading font-semibold text-text-primary">快速連接步驟</p>
+              <p className="font-heading font-semibold text-text-primary">{t("quickStepsTitle")}</p>
             </div>
             <ol className="list-decimal list-inside space-y-3 font-body text-sm text-text-muted">
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">1.</span>
-                <span>開啟控制台頁面</span>
+                <span>{t("step1")}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">2.</span>
-                <span>點擊頂部狀態列的房間碼複製</span>
+                <span>{t("step2")}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">3.</span>
-                <span>在上方輸入框貼上 6 碼同步碼</span>
+                <span>{t("step3")}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-primary font-bold">4.</span>
-                <span>輸入完畢自動連線</span>
+                <span>{t("step4")}</span>
               </li>
             </ol>
             <p className="text-xs text-text-muted/60 pt-2 border-t border-border-dim">
-              或直接使用控制台的「複製連結」功能，在瀏覽器開啟即自動連線
+              {t("directLinkHint")}
             </p>
           </div>
         </div>

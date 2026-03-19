@@ -15,6 +15,12 @@ import { render, screen } from "@testing-library/react";
 // Mock 設定
 // ============================================================================
 
+// Mock next-intl — 使用真實 zh-TW 翻譯
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 // 模擬 useSearchParams 回傳值
 let mockSearchParams = new URLSearchParams();
 

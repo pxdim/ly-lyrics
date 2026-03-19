@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Noto_Sans_TC, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 // Error Handling Components
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ToastProvider } from "@/components/ui/Toast";
 import { StoreHydration } from "@/components/StoreHydration";
+import { ThemeApplier } from "@/components/ThemeApplier";
 
 // Neon Brutalist Glass 主題字體
 const archivoBlack = Archivo_Black({
@@ -44,13 +47,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="zh-TW" className="dark" suppressHydrationWarning>
+    <html lang={locale} className="dark" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#0a0a0a" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
@@ -59,10 +65,13 @@ export default function RootLayout({
         className={`${archivoBlack.variable} ${notoSansTC.variable} ${jetbrainsMono.variable} font-body bg-void text-text-primary antialiased`}
       >
         <StoreHydration />
+        <ThemeApplier />
         <ErrorBoundary>
-          <ToastProvider>
-            <ClientErrorWrapper>{children}</ClientErrorWrapper>
-          </ToastProvider>
+          <NextIntlClientProvider messages={messages}>
+            <ToastProvider>
+              <ClientErrorWrapper>{children}</ClientErrorWrapper>
+            </ToastProvider>
+          </NextIntlClientProvider>
         </ErrorBoundary>
       </body>
     </html>

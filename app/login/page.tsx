@@ -3,6 +3,7 @@
  *
  * 使用 AuthLayout、GlowInput、GlowButton 共用元件重新設計。
  * 透過 proxy 呼叫 Go backend 認證，token 由後端設定 HttpOnly cookie。
+ * 所有 UI 字串透過 next-intl useTranslations 取得。
  */
 
 "use client";
@@ -10,6 +11,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { login } from "@/lib/api/auth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { GlowInput } from "@/components/ui/GlowInput";
@@ -17,6 +19,7 @@ import { GlowButton } from "@/components/ui/GlowButton";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +34,7 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/controller");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "登入失敗，請稍後再試");
+      setError(err instanceof Error ? err.message : t("defaultError"));
     } finally {
       setLoading(false);
     }
@@ -39,15 +42,15 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="登入歌詞顯示系統"
+      title={t("title")}
       footer={
         <p>
-          還沒有帳號？{" "}
+          {t("noAccount")}{" "}
           <Link
             href="/register"
             className="text-primary hover:text-primary-300 transition-colors duration-[var(--duration-fast)]"
           >
-            註冊
+            {t("registerLink")}
           </Link>
         </p>
       }
@@ -61,26 +64,26 @@ export default function LoginPage() {
         )}
 
         <GlowInput
-          label="Email"
+          label={t("emailLabel")}
           id="email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
+          placeholder={t("emailPlaceholder")}
           disabled={loading}
         />
 
         <GlowInput
-          label="密碼"
+          label={t("passwordLabel")}
           id="password"
           type="password"
           required
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••"
+          placeholder={t("passwordPlaceholder")}
           disabled={loading}
         />
 
@@ -89,7 +92,7 @@ export default function LoginPage() {
           loading={loading}
           className="w-full"
         >
-          {loading ? "登入中..." : "登入"}
+          {loading ? t("submitting") : t("submitButton")}
         </GlowButton>
       </form>
     </AuthLayout>

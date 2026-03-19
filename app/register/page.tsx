@@ -3,6 +3,7 @@
  *
  * 使用 AuthLayout、GlowInput、GlowButton 共用元件重新設計。
  * 透過 proxy 呼叫 Go backend 註冊，token 由後端設定 HttpOnly cookie。
+ * 所有 UI 字串透過 next-intl useTranslations 取得。
  */
 
 "use client";
@@ -10,6 +11,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { register } from "@/lib/api/auth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { GlowInput } from "@/components/ui/GlowInput";
@@ -17,6 +19,7 @@ import { GlowButton } from "@/components/ui/GlowButton";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useTranslations("auth.register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +32,7 @@ export default function RegisterPage() {
 
     // 前端密碼長度驗證
     if (password.length < 6) {
-      setError("密碼至少需要 6 個字元");
+      setError(t("passwordMinLength"));
       return;
     }
 
@@ -39,7 +42,7 @@ export default function RegisterPage() {
       await register(email, password, name);
       router.push("/controller");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "註冊失敗，請稍後再試");
+      setError(err instanceof Error ? err.message : t("defaultError"));
     } finally {
       setLoading(false);
     }
@@ -47,15 +50,15 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      title="建立帳號"
+      title={t("title")}
       footer={
         <p>
-          已有帳號？{" "}
+          {t("hasAccount")}{" "}
           <Link
             href="/login"
             className="text-primary hover:text-primary-300 transition-colors duration-[var(--duration-fast)]"
           >
-            登入
+            {t("loginLink")}
           </Link>
         </p>
       }
@@ -69,38 +72,38 @@ export default function RegisterPage() {
         )}
 
         <GlowInput
-          label="名稱"
+          label={t("nameLabel")}
           id="name"
           type="text"
           autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="你的名稱"
-          hint="（選填）"
+          placeholder={t("namePlaceholder")}
+          hint={t("nameHint")}
           disabled={loading}
         />
 
         <GlowInput
-          label="Email"
+          label={t("emailLabel")}
           id="email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
+          placeholder={t("emailPlaceholder")}
           disabled={loading}
         />
 
         <GlowInput
-          label="密碼"
+          label={t("passwordLabel")}
           id="password"
           type="password"
           required
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="至少 6 個字元"
+          placeholder={t("passwordPlaceholder")}
           disabled={loading}
         />
 
@@ -109,7 +112,7 @@ export default function RegisterPage() {
           loading={loading}
           className="w-full"
         >
-          {loading ? "註冊中..." : "建立帳號"}
+          {loading ? t("submitting") : t("submitButton")}
         </GlowButton>
       </form>
     </AuthLayout>

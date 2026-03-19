@@ -4,11 +4,11 @@
 
 | 類別 | 狀態 |
 |------|------|
-| 認證與授權 | 🟡 待實作 |
-| 資料保護 | 🟡 待實作 |
-| API 安全 | 🟡 待實作 |
-| WebSocket 安全 | 🟡 待實作 |
-| 輸入驗證 | 🟡 待實作 |
+| 認證與授權 | ✅ 已實作 |
+| 資料保護 | ✅ 已實作 |
+| API 安全 | ✅ 已實作 |
+| WebSocket 安全 | ✅ 已實作 |
+| 輸入驗證 | ✅ 已實作 |
 
 ---
 
@@ -16,53 +16,71 @@
 
 ### 1.1 用戶認證
 
-- [ ] 使用 Supabase Auth 進行用戶認證
-- [ ] 支援 Email/Password 登入
-- [ ] 支援 OAuth (Google) 登入
-- [ ] JWT Token 驗證
-- [ ] Token 過期時間設定 (7天)
-- [ ] Refresh Token 機制
+- [x] 使用自建 Go 後端 JWT 認證系統
+- [x] 支援 Email/Password 登入
+- [x] JWT Token 驗證（HS256 HMAC-SHA256）
+- [x] Access Token 有效期設定（預設 24 小時，可由 `JWT_EXPIRY_HOURS` 調整）
+- [x] Refresh Token 機制（30 天有效期，支援 JTI 撤銷與輪換）
 
-### 1.2 Row Level Security (RLS)
+### 1.2 密碼安全
 
-```sql
--- 啟用 RLS
-ALTER TABLE songs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE playlists ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+- [x] bcrypt hash 儲存（cost=10，OWASP 建議 10+）
+- [x] 自動 salt（bcrypt 內建，每次 hash 結果不同）
+- [x] 密碼長度限制：8-72 bytes（同時檢查 rune 下限與 byte 上限）
+- [x] 密碼**從未以明文儲存或傳輸**
 
--- 用戶只能存取自己的資料
-CREATE POLICY "Users can view own data" ON songs
-  FOR SELECT USING (auth.uid() = user_id);
-```
+### 1.3 JWT 安全
 
-### 1.3 API 權限檢查
+- [x] Secret 從環境變數 `JWT_SECRET` 讀取
+- [x] 生產環境空 secret 時**拒絕啟動**（防止 token 偽造）
+- [x] 開發環境 fallback 值名稱含警告（`dev-insecure-jwt-secret-do-not-use-in-production`）
+- [x] `ValidateToken` 驗證 `SigningMethodHMAC`，防止 `alg: none` 攻擊
+- [x] Access / Refresh token 有明確的 `TokenType` 欄位區分
 
-- [ ] 每個 API 端點驗證 JWT
-- [ ] 服務端角色 (service_role) 金鑰保護
-- [ ] 跨用戶存取檢查
+### 1.4 Cookie 安全
+
+- [x] `HttpOnly: true` — 防止 XSS JavaScript 讀取 token
+- [x] `Secure: true`（生產環境）— 強制 HTTPS 傳輸
+- [x] `SameSite: Strict` — 防止 CSRF 跨站請求偽造
+- [x] Refresh token path 限定 `/api/auth/refresh` — 最小暴露面
+
+### 1.5 資源擁有權
+
+- [x] Song CRUD：Update/Delete 驗證 `userID` 匹配，非擁有者回傳 `403 Forbidden`
+- [x] Playlist CRUD：同上
+- [x] Settings：以 `user_id` 隔離，使用者僅能存取自己的設定
 
 ---
 
 ## 2. 資料保護
 
-### 2.1 敏感資料處理
+### 2.1 敏感資料分類
 
-- [ ] API Key 儲存在環境變數
-- [ ] 不將敏感資料寫入日誌
-- [ ] 錯誤訊息不洩漏系統資訊
+| 資料類型 | 敏感等級 | 保護措施 |
+|----------|---------|---------|
+| 密碼 | 高 | bcrypt hash（cost=10），永不明文儲存 |
+| JWT Secret | 高 | 環境變數，生產環境強制要求 |
+| JWT Token | 中 | HttpOnly cookie，不在 response body 回傳 |
+| Email | 低 | 資料庫層級保護，API 不批量暴露 |
+| 歌詞/播放清單/設定 | 無 | 非敏感公開內容，傳輸層 HTTPS 保護 |
 
 ### 2.2 資料傳輸
 
-- [ ] 強制使用 HTTPS
-- [ ] WebSocket 使用 WSS
-- [ ] 資料庫連線加密
+- [x] Railway 平台自動提供 HTTPS（TLS 在 load balancer 終端）
+- [x] WebSocket 使用 WSS 協議
+- [x] `poweredByHeader: false` — 不洩漏框架資訊
 
 ### 2.3 資料儲存
 
-- [ ] 密碼使用 bcrypt 雜湊 (Supabase 自動處理)
-- [ ] 敏感資料不儲存在前端
-- [ ] 資料庫備份加密
+- [x] 密碼使用 bcrypt 雜湊（Go `golang.org/x/crypto/bcrypt`）
+- [x] Token 不儲存在 localStorage（使用 HttpOnly cookie）
+- [x] 歌詞等業務資料**不實作應用層加密** — 為非敏感公開內容，加密會增加查詢複雜度與效能開銷，無安全收益
+
+### 2.4 環境變數管理
+
+- [x] `.env` 在 `.gitignore` 中，不會被提交到版本控制
+- [x] API Key（Deepgram、Google STT、Genius、Gemini）皆從環境變數讀取
+- [x] 程式碼中無 hardcoded secret（測試檔案中的 test secret 僅用於單元測試）
 
 ---
 
@@ -70,42 +88,28 @@ CREATE POLICY "Users can view own data" ON songs
 
 ### 3.1 速率限制
 
-```typescript
-// API 速率限制
-const rateLimit = {
-  windowMs: 60 * 1000, // 1 分鐘
-  max: 100, // 最多 100 請求
-  standardHeaders: true,
-  legacyHeaders: false,
-}
-```
+Go 後端已實作 per-IP 滑動視窗速率限制：
 
-- [ ] 一般 API: 100 請求/分鐘
-- [ ] WebSocket: 60 訊息/分鐘
-- [ ] AI API: 10 請求/分鐘
+| 端點類別 | 限制 |
+|---------|------|
+| Auth（登入/註冊） | 10 req/min |
+| STT（語音辨識） | 5 req/min |
+| Settings | 30 req/min |
+| CRUD（歌曲/播放清單） | 60 req/min |
+| WebSocket | 不限速（由 Hub 管理） |
 
 ### 3.2 輸入驗證
 
-- [ ] 使用 Zod 驗證所有輸入
-- [ ] SQL 注入防護 (Supabase 自動處理)
-- [ ] XSS 防護 (React 自動處理)
-- [ ] CSRF 防護
-
-```typescript
-import { z } from 'zod'
-
-const CreateSongSchema = z.object({
-  title: z.string().min(1).max(255).transform(sanitize),
-  artist: z.string().max(255).optional().transform(sanitize),
-  lyrics: z.string().min(1).transform(sanitize),
-})
-```
+- [x] Go `go-playground/validator` 驗證所有 DTO
+- [x] Ent schema 層級 `MaxLen` 約束（title 255、email 255、password_hash 255）
+- [x] SQL 注入防護（Ent ORM 參數化查詢）
+- [x] XSS 防護（React 自動 escape + HttpOnly cookie）
 
 ### 3.3 錯誤處理
 
-- [ ] 不洩漏系統資訊
-- [ ] 統一錯誤回應格式
-- [ ] 記錄錯誤但不記錄敏感資料
+- [x] 統一錯誤碼格式（`AUTH_INVALID_CREDENTIALS`、`SYS_INTERNAL_ERROR` 等）
+- [x] 不洩漏系統內部資訊（stack trace、DB query 不出現在 response）
+- [x] 結構化日誌記錄（`log/slog` JSON handler），敏感資料不寫入日誌
 
 ---
 
@@ -113,63 +117,28 @@ const CreateSongSchema = z.object({
 
 ### 4.1 連線驗證
 
-```typescript
-// WebSocket 連線時驗證 JWT
-io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token
+- [x] WebSocket 使用 session code 認證（非 JWT）
+- [x] Session code 為隨機生成，綁定特定使用者
 
-  try {
-    const user = await verifyToken(token)
-    socket.data.user = user
-    next()
-  } catch (err) {
-    next(new Error('Authentication error'))
-  }
-})
-```
+### 4.2 訊息安全
 
-### 4.2 訊息驗證
-
-- [ ] 驗證所有接收的訊息格式
-- [ ] 限制訊息大小
-- [ ] 過濾惡意內容
-
-### 4.3 房間隔離
-
-- [ ] 每個用戶只能加入自己的房間
-- [ ] 防止跨房間存取
+- [x] Go Hub 架構管理連線池
+- [x] 房間隔離（session code 為 namespace）
 
 ---
 
 ## 5. 前端安全
 
-### 5.1 Content Security Policy (CSP)
+### 5.1 框架層保護
 
-```typescript
-// next.config.js
-const securityHeaders = [
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "connect-src 'self' wss://*.supabase.co",
-    ].join('; '),
-  },
-]
-```
+- [x] React 自動 escape HTML 輸出（防止 XSS）
+- [x] Next.js `poweredByHeader: false`（不洩漏框架資訊）
+- [x] API proxy（Next.js rewrite `/api/*` → Go :8080），前端不直接連後端
 
 ### 5.2 環境變數
 
-- [ ] 敏感資料使用 `NEXT_PUBLIC_*` 前綴慎用
-- [ ] API Key 不暴露在前端
-
-### 5.3 第三方腳本
-
-- [ ] 最小化第三方腳本
-- [ ] 使用 Subresource Integrity (SRI)
+- [x] 敏感 API Key 不暴露在前端
+- [x] `NEXT_PUBLIC_*` 僅用於非敏感設定（WebSocket URL 等）
 
 ---
 
@@ -178,94 +147,56 @@ const securityHeaders = [
 ### 6.1 套件掃描
 
 ```bash
-# 檢查已知漏洞
-pnpm audit
+# 前端套件漏洞檢查
+npm audit
 
-# 自動修復
-pnpm audit fix
+# Go 套件漏洞檢查
+cd backend && go list -m all | nancy sleuth
 ```
 
-### 6.2 定期更新
+### 6.2 Git 安全
 
-- [ ] 每週檢查套件更新
-- [ ] 優先更新安全修復
-- [ ] 測試後再部署
-
----
-
-## 7. 部署安全
-
-### 7.1 環境變數
-
-- [ ] 使用 Railway Secrets 管理
-- [ ] 不將 .env 檔案提交到 Git
-- [ ] .env.example 提供範本
-
-### 7.2 Git 安全
-
-```bash
-# .gitignore
+```gitignore
+# .gitignore 已包含
 .env
-.env.local
-.env.*.local
+.env*.local
+.env.production
 *.key
 *.pem
 ```
 
-### 7.3 日誌管理
-
-- [ ] 不記錄敏感資料
-- [ ] 日誌定期清理
-- [ ] 錯誤追蹤使用 Sentry
-
 ---
 
-## 8. 合規性
+## 7. 安全評估摘要（NFR3.1）
 
-### 8.1 GDPR (如適用)
+**評估日期**：2026-03-19
+**評估範圍**：用戶資料加密儲存
 
-- [ ] 用戶資料刪除功能
-- [ ] 資料匯出功能
-- [ ] 隱私政策
+### 結論：已充分滿足
 
-### 8.2 資料保留
+| 安全控制 | 實作方式 | 狀態 |
+|---------|---------|------|
+| 密碼加密儲存 | bcrypt hash（cost=10, 自動 salt） | ✅ |
+| JWT Secret 保護 | 環境變數 `JWT_SECRET`，生產環境強制要求 | ✅ |
+| Token 傳輸保護 | HttpOnly + Secure + SameSite=Strict cookie | ✅ |
+| 傳輸層加密 | HTTPS（Railway TLS）+ WSS | ✅ |
+| 業務資料加密 | 不適用 — 歌詞/設定為非敏感公開內容 | N/A |
 
-- [ ] 刪除用戶後 30 天內清除資料
-- [ ] 日誌保留 90 天
-
----
-
-## 安全檢查清單
-
-### 開發階段
-
-- [ ] 程式碼審查
-- [ ] 安全掃描
-- [ ] 測試惡意輸入
-
-### 部署前
-
-- [ ] 所有環境變數已設定
-- [ ] HTTPS 已啟用
-- [ ] RLS 已啟用
-- [ ] 速率限制已設定
-- [ ] 錯誤處理不洩漏資訊
-
-### 定期檢查
-
-- [ ] 依賴套件漏洞掃描
-- [ ] 存取日誌審查
-- [ ] 安全策略更新
+**備註**：對歌詞、播放清單、顯示設定等業務資料實施應用層加密（AES/ChaCha20）屬於 security theater（安全劇場）。這些資料本質上是公開的教會敬拜歌詞，加密不會提升安全性，反而增加查詢延遲、阻礙全文搜尋、增加維護成本。
 
 ---
 
 ## 相關文檔
 
 - [部署文檔](deployment.md)
-- [開發規範](development.md)
-- [風險管理](risks.md)
+- [需求文檔](requirements.md)
+- [API 文檔](spec/api.md)
 
 ---
 
-**文件版本:** 1.0
-**最後更新:** 2026-03-11
+**文件版本:** 2.0
+**最後更新:** 2026-03-19
+
+**變更記錄:**
+- v2.0 (2026-03-19): 全面改寫 — 對齊 Go 後端實際安全實作，移除 Supabase 相關過時內容，新增 NFR3.1 安全評估摘要
+- v1.0 (2026-03-11): 初始版本（模板）

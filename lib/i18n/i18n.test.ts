@@ -13,7 +13,7 @@ import zhCN from "@/messages/zh-CN.json";
 import en from "@/messages/en.json";
 
 // 設定
-import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
+import { locales, defaultLocale, detectLocale, type Locale } from "@/lib/i18n/config";
 
 // ============================================================================
 // 工具函式：遞迴取得所有 key 路徑（dot notation）
@@ -125,6 +125,56 @@ describe("i18n 設定", () => {
     // TypeScript 編譯時期驗證，此處只做 runtime 型別守衛
     const testLocale: Locale = "zh-TW";
     expect(locales).toContain(testLocale);
+  });
+});
+
+// ============================================================================
+// detectLocale 語言偵測測試
+// ============================================================================
+
+describe("detectLocale 語言偵測", () => {
+  it("acceptLanguage 為 null 時回傳 defaultLocale (zh-TW)", () => {
+    expect(detectLocale(null)).toBe("zh-TW");
+  });
+
+  it("acceptLanguage 為空字串時回傳 defaultLocale", () => {
+    expect(detectLocale("")).toBe("zh-TW");
+  });
+
+  it("精確匹配 zh-TW 時回傳 zh-TW", () => {
+    expect(detectLocale("zh-TW,zh;q=0.9,en;q=0.8")).toBe("zh-TW");
+  });
+
+  it("精確匹配 zh-CN 時回傳 zh-CN", () => {
+    expect(detectLocale("zh-CN,zh;q=0.9,en;q=0.8")).toBe("zh-CN");
+  });
+
+  it("精確匹配 en 時回傳 en", () => {
+    expect(detectLocale("en,zh-TW;q=0.5")).toBe("en");
+  });
+
+  it("zh 前綴（不含地區碼）fallback 為 zh-TW", () => {
+    expect(detectLocale("zh;q=1.0,en;q=0.5")).toBe("zh-TW");
+  });
+
+  it("en-US 等英文變體 fallback 為 en", () => {
+    expect(detectLocale("en-US,en;q=0.9")).toBe("en");
+  });
+
+  it("不支援的語言 fallback 為 defaultLocale", () => {
+    expect(detectLocale("ja,ko;q=0.9")).toBe("zh-TW");
+  });
+
+  it("quality 值順序不影響：取第一個匹配的 locale", () => {
+    expect(detectLocale("fr;q=0.9,zh-CN;q=0.8,en;q=0.7")).toBe("zh-CN");
+  });
+
+  it("zh-HK fallback 為 zh-TW（繁體中文區域）", () => {
+    expect(detectLocale("zh-HK,zh;q=0.9")).toBe("zh-TW");
+  });
+
+  it("zh-SG fallback 為 zh-CN（簡體中文區域）", () => {
+    expect(detectLocale("zh-SG,zh;q=0.9")).toBe("zh-CN");
   });
 });
 

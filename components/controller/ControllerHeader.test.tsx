@@ -17,6 +17,12 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 // Mock 設定
 // ============================================================================
 
+// Mock next-intl — 使用真實 zh-TW 翻譯
+vi.mock("next-intl", async () => {
+  const { createNextIntlMock } = await import("@/lib/test-utils/i18n-mock");
+  return createNextIntlMock();
+});
+
 const mockStoreState = new Map<string, unknown>([
   ["connectionState", "connected"],
   ["controllerCount", 1],

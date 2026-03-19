@@ -1,13 +1,15 @@
 /**
- * ControllerHeader — 控制台頂部狀態列
+ * ControllerHeader -- 控制台頂部狀態列
  *
  * 包含桌面/平板版 StatusBar 和手機版 MobileStatusBar 兩種變體。
  * 顯示房間碼、連線狀態、裝置計數、QR Code 按鈕等。
+ * 所有 UI 字串透過 next-intl useTranslations 取得。
  */
 
 "use client";
 
 import { useState, useCallback, type FC } from "react";
+import { useTranslations } from "next-intl";
 import { useLyricsStore } from "@/lib/store";
 import { QRCodePanel } from "@/components/controller/QRCodePanel";
 
@@ -26,6 +28,8 @@ export const StatusBar: FC<StatusBarProps> = ({
   sessionCode,
   onRegenerate,
 }) => {
+  const t = useTranslations("controller.header");
+  const tc = useTranslations("common");
   const isConnected = useLyricsStore(
     (state) => state.connectionState === "connected",
   );
@@ -66,7 +70,7 @@ export const StatusBar: FC<StatusBarProps> = ({
           <circle cx="18" cy="16" r="3" />
         </svg>
         <h2 className="text-[16px] font-semibold leading-tight tracking-[-0.015em]">
-          Control Desk
+          {t("controlDesk")}
         </h2>
 
         {/* 房間碼：點擊複製 */}
@@ -75,10 +79,10 @@ export const StatusBar: FC<StatusBarProps> = ({
             type="button"
             onClick={() => copyToClipboard("code")}
             className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/30 rounded-md hover:bg-primary/20 hover:border-primary/50 transition-all group cursor-pointer"
-            title="點擊複製房間碼"
+            title={t("copyCode")}
           >
             <span className="text-[11px] font-mono text-primary/70 uppercase tracking-wider">
-              Room
+              {t("room")}
             </span>
             <span className="text-[15px] font-mono font-bold text-primary tracking-[0.2em]">
               {sessionCode}
@@ -109,7 +113,7 @@ export const StatusBar: FC<StatusBarProps> = ({
             type="button"
             onClick={() => copyToClipboard("link")}
             className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-dim rounded-md hover:border-primary/40 hover:bg-primary/5 transition-all text-[11px] font-mono text-text-muted hover:text-primary cursor-pointer"
-            title="複製顯示端連結"
+            title={t("copyDisplayLink")}
           >
             {/* 連結圖示 */}
             <svg
@@ -129,7 +133,7 @@ export const StatusBar: FC<StatusBarProps> = ({
                 </>
               )}
             </svg>
-            {copied === "link" ? "已複製" : "複製連結"}
+            {copied === "link" ? t("copiedLink") : t("copyLink")}
           </button>
 
           {/* 重新產生房間碼 */}
@@ -137,7 +141,7 @@ export const StatusBar: FC<StatusBarProps> = ({
             type="button"
             onClick={onRegenerate}
             className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-dim rounded-md hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-[11px] font-mono text-text-muted hover:text-amber-400 cursor-pointer"
-            title="重新產生房間碼（所有接收端需重新連線）"
+            title={t("regenerateTooltip")}
           >
             <svg
               width="12"
@@ -152,7 +156,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               <path d="M3 22v-6h6" />
               <path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
             </svg>
-            新房間
+            {t("newRoom")}
           </button>
 
           {/* QR Code 按鈕（平板/手機用） */}
@@ -161,7 +165,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               type="button"
               onClick={() => setShowQR(!showQR)}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-dim rounded-md hover:border-primary/40 hover:bg-primary/5 transition-all text-[11px] font-mono text-text-muted hover:text-primary cursor-pointer"
-              title="顯示 QR Code"
+              title={t("showQRCode")}
             >
               <svg
                 width="12"
@@ -184,7 +188,7 @@ export const StatusBar: FC<StatusBarProps> = ({
             {/* Popover (平板) / Modal (手機) */}
             {showQR && (
               <>
-                {/* 背景遮罩 — 手機為半透明，平板為透明（僅用於 click-outside） */}
+                {/* 背景遮罩 -- 手機為半透明，平板為透明（僅用於 click-outside） */}
                 <div
                   className="fixed inset-0 z-40 bg-black/50 md:bg-transparent"
                   onClick={() => setShowQR(false)}
@@ -200,7 +204,7 @@ export const StatusBar: FC<StatusBarProps> = ({
                         onClick={() => setShowQR(false)}
                         className="px-4 py-1.5 text-xs text-text-muted hover:text-white transition-colors cursor-pointer"
                       >
-                        關閉
+                        {tc("close")}
                       </button>
                     </div>
                   </div>
@@ -232,7 +236,7 @@ export const StatusBar: FC<StatusBarProps> = ({
           <span
             className={`text-[12px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
           >
-            {isConnected ? "SYSTEM READY" : "OFFLINE"}
+            {isConnected ? t("systemReady") : t("offline")}
           </span>
         </div>
         <div className="h-5 w-px bg-border-dim" />
@@ -251,7 +255,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
               <line x1="12" y1="20" x2="12.01" y2="20" />
             </svg>
-            WS
+            {t("ws")}
           </span>
           <span className="flex items-center gap-1.5">
             <svg
@@ -266,7 +270,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               <line x1="8" y1="21" x2="16" y2="21" />
               <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
-            CTL: {controllerCount}
+            {t("ctl")}: {controllerCount}
           </span>
           <span className="flex items-center gap-1.5 text-primary">
             <svg
@@ -282,7 +286,7 @@ export const StatusBar: FC<StatusBarProps> = ({
               <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-            DSP: {displayCount}
+            {t("dsp")}: {displayCount}
           </span>
         </div>
       </div>
@@ -305,6 +309,7 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
   sessionCode,
   isConnected,
 }) => {
+  const t = useTranslations("controller.header");
   const [copied, setCopied] = useState(false);
 
   const copyCode = useCallback(async () => {
@@ -334,10 +339,10 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
           type="button"
           onClick={copyCode}
           className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-md active:bg-primary/20 transition-all"
-          title="點擊複製房間碼"
+          title={t("copyCode")}
         >
           <span className="text-[10px] font-mono text-primary/70 uppercase tracking-wider">
-            Room
+            {t("room")}
           </span>
           <span className="text-[13px] font-mono font-bold text-primary tracking-[0.15em]">
             {sessionCode}
@@ -366,7 +371,7 @@ export const MobileStatusBar: FC<MobileStatusBarProps> = ({
         <span
           className={`text-[11px] font-mono ${isConnected ? "text-primary" : "text-red-400"}`}
         >
-          {isConnected ? "ON" : "OFF"}
+          {isConnected ? t("on") : t("off")}
         </span>
       </div>
     </header>
@@ -388,6 +393,7 @@ export const MobileQRTab: FC<MobileQRTabProps> = ({
   sessionCode,
   onRegenerate,
 }) => {
+  const t = useTranslations("controller.header");
   const [copied, setCopied] = useState(false);
 
   const copyLink = useCallback(async () => {
@@ -424,7 +430,7 @@ export const MobileQRTab: FC<MobileQRTabProps> = ({
             </>
           )}
         </svg>
-        {copied ? "已複製連結" : "複製顯示端連結"}
+        {copied ? t("copiedDisplayLink") : t("copyDisplayLink")}
       </button>
 
       {/* 重新產生房間碼 */}
@@ -432,7 +438,7 @@ export const MobileQRTab: FC<MobileQRTabProps> = ({
         type="button"
         onClick={onRegenerate}
         className="flex items-center gap-2 px-4 py-2 bg-surface border border-border-dim rounded-lg text-[12px] font-mono text-text-muted active:bg-amber-500/5 active:border-amber-500/40 active:text-amber-400 transition-all"
-        title="重新產生房間碼（所有接收端需重新連線）"
+        title={t("regenerateTooltip")}
       >
         <svg
           width="14"
@@ -447,7 +453,7 @@ export const MobileQRTab: FC<MobileQRTabProps> = ({
           <path d="M3 22v-6h6" />
           <path d="M21 12a9 9 0 01-15.36 6.36L3 16" />
         </svg>
-        新房間
+        {t("newRoom")}
       </button>
     </div>
   );

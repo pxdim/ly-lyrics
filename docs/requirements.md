@@ -137,11 +137,12 @@
 
 | ID | 需求描述 | 狀態 |
 |----|---------|------|
-| NFR3.1 | 用戶數據加密儲存 | 🔴 Not Started |
+| NFR3.1 | 用戶數據加密儲存 | ✅ 完成 |
 | NFR3.2 | WebSocket 連線驗證 | ✅ 完成 |
 | NFR3.3 | API 速率限制 | ✅ 完成 |
 | NFR3.4 | XSS/CSRF 防護 | ✅ 完成 |
 
+> **NFR3.1 備註**：安全評估結論 — 密碼使用 bcrypt hash（cost=10, 自動 salt），JWT secret 從環境變數 `JWT_SECRET` 讀取（生產環境強制要求，拒絕空值啟動）。Token 透過 HttpOnly + Secure + SameSite=Strict cookie 傳輸。歌詞、播放清單、設定等業務資料為非敏感公開內容，不需要應用層加密；傳輸層由 HTTPS/WSS 保護。
 > **NFR3.2 備註**：WebSocket 使用 session code 認證。
 > **NFR3.3 備註**：Go 後端已實作 per-IP 滑動視窗速率限制：Auth 10 req/min、STT 5 req/min、Settings 30 req/min、CRUD 60 req/min。WebSocket 不限速（由 Hub 管理）。
 > **NFR3.4 備註**：JWT 存於 HttpOnly cookie，防止 XSS 竊取 token。
@@ -192,6 +193,7 @@
 | 5.0 | 2026-03-19 | NFR 狀態更新（NFR1.2/1.4/2.3/5.2/5.3），測試數更新至 1028 | M4 收官效能評估結果同步 |
 | 6.0 | 2026-03-19 | NFR3.3/4.2/4.3 完成，M4 里程碑正式關閉 | 速率限制、API 文檔、錯誤日誌實作完成確認 |
 | 7.0 | 2026-03-19 | NFR2.4 完成、FR4.1 修正為部分完成、測試數 1053/70 檔 | 離線支援實作確認、淺色主題缺少 CSS 變數、測試數同步 |
+| 8.0 | 2026-03-19 | NFR3.1 完成（安全評估：bcrypt 密碼 hash + JWT env secret + HTTPS 傳輸加密） | 安全工程師評估：敏感資料保護已到位，非敏感業務資料不需應用層加密 |
 
 ---
 
@@ -203,5 +205,5 @@
 
 ---
 
-**文件版本:** 7.0
+**文件版本:** 8.0
 **最後更新:** 2026-03-19

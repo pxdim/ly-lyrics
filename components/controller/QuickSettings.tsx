@@ -3,13 +3,16 @@
  *
  * 包含顯示行數、字體大小、行距、高亮色、主題切換、開關選項等。
  * 直接讀取 Zustand store 中的 displaySettings。
+ * 所有 UI 字串透過 next-intl useTranslations 取得。
  */
 
 "use client";
 
 import { type FC, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useLyricsStore } from "@/lib/store";
 import { ToggleRow } from "./ToggleRow";
+import { LocaleSwitcher } from "@/components/ui/LocaleSwitcher";
 import { validateImageFile, fileToDataUrl } from "@/lib/utils/image-upload";
 
 /**
@@ -26,6 +29,8 @@ const HIGHLIGHT_COLORS = [
 ] as const;
 
 export const QuickSettings: FC = () => {
+  const t = useTranslations("controller.settings");
+  const tc = useTranslations("common");
   const displaySettings = useLyricsStore((state) => state.displaySettings);
   const updateDisplaySettings = useLyricsStore(
     (state) => state.updateDisplaySettings,
@@ -57,8 +62,9 @@ export const QuickSettings: FC = () => {
       {/* 標題 */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border-dim bg-elevated shrink-0">
         <h3 className="text-[11px] font-mono tracking-wider text-text-muted uppercase">
-          Display Config
+          {t("displayConfig")}
         </h3>
+        <LocaleSwitcher />
       </div>
 
       {/* 設定內容 */}
@@ -67,7 +73,7 @@ export const QuickSettings: FC = () => {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-mono text-text-muted uppercase">
-              Lines
+              {t("lines")}
             </span>
             <span className="text-[11px] font-mono text-primary">
               {displaySettings.displayLines}
@@ -91,7 +97,7 @@ export const QuickSettings: FC = () => {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-mono text-text-muted uppercase">
-              Font Size
+              {t("fontSize")}
             </span>
             <span className="text-[11px] font-mono text-primary">
               {displaySettings.fontSize}px
@@ -116,7 +122,7 @@ export const QuickSettings: FC = () => {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-mono text-text-muted uppercase">
-              Line Spacing
+              {t("lineSpacing")}
             </span>
             <span className="text-[11px] font-mono text-primary">
               {(displaySettings.lineSpacing ?? 0.5).toFixed(1)}x
@@ -140,7 +146,7 @@ export const QuickSettings: FC = () => {
         {/* 高亮色 */}
         <div>
           <span className="block text-[11px] font-mono text-text-muted uppercase mb-1.5">
-            Highlight
+            {t("highlight")}
           </span>
           <div className="grid grid-cols-6 gap-1.5">
             {HIGHLIGHT_COLORS.map((color) => (
@@ -166,7 +172,7 @@ export const QuickSettings: FC = () => {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-mono text-text-muted uppercase">
-              BG Color
+              {t("bgColor")}
             </span>
             <span
               className="inline-block w-4 h-4 border border-border-dim"
@@ -175,7 +181,7 @@ export const QuickSettings: FC = () => {
           </div>
           <input
             type="color"
-            aria-label="背景色"
+            aria-label={t("bgColorLabel")}
             value={displaySettings.backgroundColor}
             onInput={(e) =>
               updateDisplaySettings({
@@ -189,7 +195,7 @@ export const QuickSettings: FC = () => {
         {/* 背景圖片 (FR4.3) */}
         <div>
           <span className="block text-[11px] font-mono text-text-muted uppercase mb-1.5">
-            BG Image
+            {t("bgImage")}
           </span>
           <div className="flex items-center gap-2">
             <input
@@ -203,7 +209,7 @@ export const QuickSettings: FC = () => {
               htmlFor="bg-image-upload"
               className="px-2 py-1 text-[11px] font-mono border border-border-dim bg-surface text-text-muted cursor-pointer hover:bg-elevated hover:text-text-primary transition-colors"
             >
-              上傳
+              {tc("upload")}
             </label>
             {displaySettings.backgroundImage && (
               <>
@@ -211,7 +217,7 @@ export const QuickSettings: FC = () => {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={displaySettings.backgroundImage}
-                  alt="背景圖片預覽"
+                  alt={t("bgImageAlt")}
                   className="w-8 h-8 object-cover border border-border-dim"
                 />
                 <button
@@ -221,7 +227,7 @@ export const QuickSettings: FC = () => {
                   className="px-2 py-1 text-[11px] font-mono border border-error/30 text-error hover:bg-error/10 transition-colors"
                   type="button"
                 >
-                  清除
+                  {tc("clear")}
                 </button>
               </>
             )}
@@ -231,7 +237,7 @@ export const QuickSettings: FC = () => {
         {/* 主題 */}
         <div>
           <span className="block text-[11px] font-mono text-text-muted uppercase mb-1.5">
-            Theme
+            {t("theme")}
           </span>
           <div className="flex gap-1.5">
             {(["dark", "light"] as const).map((theme) => (
@@ -245,7 +251,7 @@ export const QuickSettings: FC = () => {
                 }`}
                 type="button"
               >
-                {theme === "dark" ? "DARK" : "LIGHT"}
+                {theme === "dark" ? t("dark") : t("light")}
               </button>
             ))}
           </div>
@@ -254,17 +260,17 @@ export const QuickSettings: FC = () => {
         {/* 開關選項 */}
         <div className="space-y-0.5">
           <ToggleRow
-            label="BACKGROUND"
+            label={t("background")}
             checked={displaySettings.showBackground}
             onChange={(v) => updateDisplaySettings({ showBackground: v })}
           />
           <ToggleRow
-            label="AUTO SCROLL"
+            label={t("autoScroll")}
             checked={displaySettings.autoScroll}
             onChange={(v) => updateDisplaySettings({ autoScroll: v })}
           />
           <ToggleRow
-            label="ANIMATION"
+            label={t("animation")}
             checked={displaySettings.enableAnimation}
             onChange={(v) => updateDisplaySettings({ enableAnimation: v })}
           />
@@ -281,14 +287,14 @@ export const QuickSettings: FC = () => {
           className="bg-surface border border-border-dim p-2 text-[10px] font-mono text-text-muted hover:text-text-primary hover:bg-elevated/50 text-center transition-colors"
           type="button"
         >
-          RESTART WS
+          {t("restartWs")}
         </button>
         <button
           onClick={() => useLyricsStore.getState().setCurrentSong(null)}
           className="bg-surface border border-border-dim p-2 text-[10px] font-mono text-text-muted hover:text-text-primary hover:bg-elevated/50 text-center transition-colors"
           type="button"
         >
-          BLACKOUT
+          {t("blackout")}
         </button>
       </div>
     </div>
