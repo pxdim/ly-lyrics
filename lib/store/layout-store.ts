@@ -62,9 +62,9 @@ const STANDARD_LAYOUT: Layouts = {
     { i: CARD_IDS.CUES, x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
     { i: CARD_IDS.PREVIEW, x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
     { i: CARD_IDS.CONFIG, x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-    { i: CARD_IDS.AI, x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-    { i: CARD_IDS.PLAYLIST, x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-    { i: CARD_IDS.CONNECTION, x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+    { i: CARD_IDS.AI, x: 0, y: 6, w: 4, h: 3, minW: 2, minH: 2 },
+    { i: CARD_IDS.PLAYLIST, x: 4, y: 6, w: 4, h: 3, minW: 2, minH: 2 },
+    { i: CARD_IDS.CONNECTION, x: 8, y: 6, w: 4, h: 3, minW: 2, minH: 2 },
   ],
 };
 

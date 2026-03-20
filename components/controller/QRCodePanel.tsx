@@ -38,14 +38,14 @@ export function QRCodePanel({ sessionCode, size = 160, className = "" }: QRCodeP
   if (!sessionCode) return null;
 
   return (
-    <div className={`flex flex-col items-center gap-4 p-4 ${className}`}>
+    <div className={`flex flex-col items-center gap-2 p-3 ${className}`}>
       {/* 標題 */}
       <p className="text-[11px] font-heading font-semibold text-primary tracking-wider uppercase">
         掃碼連接
       </p>
 
       {/* QR Code（顯示用 SVG） */}
-      <div className="bg-white rounded-lg p-3">
+      <div className="bg-white rounded-lg p-2">
         <QRCodeSVG
           value={displayUrl}
           size={size}
