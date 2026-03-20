@@ -19,6 +19,7 @@ import { createWebSocketSlice } from "./websocket-slice";
 import { createDisplaySlice } from "./display-slice";
 import { createAiTrackingSlice } from "./ai-tracking-slice";
 import type { LyricsStore, LyricsStoreState } from "./types";
+import { calcVisibleLines } from "../utils/visible-lines";
 
 // 重新匯出型別，保持向後相容
 export type { LyricsStore };
@@ -70,18 +71,17 @@ export const useLyricsStore = create<LyricsStore>()(
  */
 export const selectVisibleLyrics = (state: LyricsStoreState) => {
   const { lyrics, currentIndex, displaySettings } = state;
-  const { displayLines } = displaySettings;
-
-  // 前瞻偏移：少行數時當前句置頂，多行數時保留少量上文
-  const prevLines = Math.floor(displayLines / 3);
-  const startIndex = Math.max(0, currentIndex - prevLines);
-  const endIndex = Math.min(lyrics.length, startIndex + displayLines);
+  const { start, end } = calcVisibleLines({
+    currentIndex,
+    totalLines: lyrics.length,
+    visibleCount: displaySettings.displayLines,
+  });
 
   return {
-    visibleLyrics: lyrics.slice(startIndex, endIndex),
-    startIndex,
-    endIndex,
-    highlightIndex: currentIndex - startIndex,
+    visibleLyrics: lyrics.slice(start, end),
+    startIndex: start,
+    endIndex: end,
+    highlightIndex: currentIndex - start,
   };
 };
 

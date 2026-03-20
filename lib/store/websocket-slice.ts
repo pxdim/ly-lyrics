@@ -6,6 +6,7 @@
  */
 
 import { initNativeWSClient } from "../websocket/native-client";
+import { logger } from "../utils/logger";
 import type { SessionState, Song, DisplaySettings } from "../websocket/types";
 import type {
   WebSocketSliceState,
@@ -15,7 +16,7 @@ import type {
 
 type WebSocketSlice = WebSocketSliceState & WebSocketSliceActions;
 
-export const createWebSocketSlice: SliceCreator<WebSocketSlice> = (set, _get) => ({
+export const createWebSocketSlice: SliceCreator<WebSocketSlice> = (set, get) => ({
   // 初始狀態
   connectionState: "disconnected" as const,
   reconnectAttempt: 0,
@@ -53,20 +54,29 @@ export const createWebSocketSlice: SliceCreator<WebSocketSlice> = (set, _get) =>
 
       // 業務事件監聯：跨 slice 更新（透過 set() 直接更新其他 slice 的 state）
       ws.on("line_changed", ({ lineIndex }: { lineIndex: number }) => {
-        set({ currentIndex: lineIndex });
+        // 避免 Controller 自己發送的事件重複更新
+        if (get().currentIndex !== lineIndex) {
+          set({ currentIndex: lineIndex });
+        }
       });
 
       ws.on("session_state", (state: SessionState) => {
-        set({
-          currentIndex: state.currentLineIndex,
-          isPlaying: state.isPlaying,
-          controllerCount: state.controllerCount,
-          displayCount: state.displayCount,
-        });
+        // 合併為單次 set() 避免雙重 re-render
         if (state.currentSong) {
           set({
+            currentIndex: state.currentLineIndex,
+            isPlaying: state.isPlaying,
+            controllerCount: state.controllerCount,
+            displayCount: state.displayCount,
             currentSong: state.currentSong,
             lyrics: state.currentSong.lyrics ?? [],
+          });
+        } else {
+          set({
+            currentIndex: state.currentLineIndex,
+            isPlaying: state.isPlaying,
+            controllerCount: state.controllerCount,
+            displayCount: state.displayCount,
           });
         }
       });
@@ -104,7 +114,7 @@ export const createWebSocketSlice: SliceCreator<WebSocketSlice> = (set, _get) =>
         set({ connectionState: "connected", reconnectAttempt: 0 });
       }
     } catch (error) {
-      console.error("Failed to connect to WebSocket:", error);
+      logger.error("Failed to connect to WebSocket:", error);
       set({
         error: error instanceof Error ? error.message : "Connection failed",
       });
