@@ -264,7 +264,7 @@ function DesktopLayout({ sessionCode, onRegenerate }: LayoutProps) {
           {visibleCardIds.has("connection") && (
             <div key="connection">
               <DashboardCard title="Connection" isLocked={isLocked}>
-                <QRCodePanel sessionCode={sessionCode} size={120} />
+                <QRCodePanel sessionCode={sessionCode} size={100} compact />
               </DashboardCard>
             </div>
           )}
