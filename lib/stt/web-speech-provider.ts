@@ -104,13 +104,17 @@ export class WebSpeechProvider implements STTProvider {
       }
     };
 
-    return new Promise<void>((resolve) => {
-      this.recognition!.onstart = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.recognition) {
+        reject(new Error("SpeechRecognition 初始化失敗"));
+        return;
+      }
+      this.recognition.onstart = () => {
         this._isConnected = true;
         this._shouldRestart = true;
         resolve();
       };
-      this.recognition!.start();
+      this.recognition.start();
     });
   }
 

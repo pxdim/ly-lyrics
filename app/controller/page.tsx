@@ -95,7 +95,8 @@ export default function ControllerPage() {
     connect();
     joinSession(code, "controller");
     return () => { leaveSession(); disconnect(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // connect/joinSession/leaveSession/disconnect 是穩定的 Zustand action
+  }, [connect, joinSession, leaveSession, disconnect]);
 
   const regenerateSessionCode = useCallback(() => {
     leaveSession();

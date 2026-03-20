@@ -6,6 +6,7 @@
  */
 
 import type { ClientRole, DisplaySettings, ServerToClientEvents } from "./types";
+import { logger } from "@/lib/utils/logger";
 
 // ============================================================================
 // Types
@@ -70,7 +71,7 @@ export class NativeWSClient {
     this.shouldReconnect = true;
 
     this.ws.onopen = () => {
-      console.debug("[NativeWS] Connected to server");
+      logger.debug("[NativeWS] Connected to server");
       this.reconnectAttempts = 0;
       this.emit("_connected", undefined);
       // 重新連線後自動重新加入先前的 session
@@ -80,7 +81,7 @@ export class NativeWSClient {
     };
 
     this.ws.onclose = () => {
-      console.debug("[NativeWS] Disconnected");
+      logger.debug("[NativeWS] Disconnected");
       this.emit("_disconnected", undefined);
       if (this.shouldReconnect) {
         this.attemptReconnect();
@@ -88,7 +89,7 @@ export class NativeWSClient {
     };
 
     this.ws.onerror = () => {
-      console.error("[NativeWS] Connection error");
+      logger.error("[NativeWS] Connection error");
     };
 
     this.ws.onmessage = (event) => {
@@ -96,7 +97,7 @@ export class NativeWSClient {
         const msg: WSMessage = JSON.parse(event.data as string);
         this.emit(msg.type, msg.payload);
       } catch {
-        console.error("[NativeWS] Failed to parse message");
+        logger.error("[NativeWS] Failed to parse message");
       }
     };
   }
@@ -149,7 +150,7 @@ export class NativeWSClient {
   private send(type: string, payload?: unknown): void {
     if (this.ws?.readyState !== WebSocket.OPEN) {
       // 連線建立中的訊息會在 onopen 時透過 auto-rejoin 機制重送，非錯誤
-      console.debug("[NativeWS] Not connected, message queued for auto-rejoin:", type);
+      logger.debug("[NativeWS] Not connected, message queued for auto-rejoin:", type);
       return;
     }
     const msg: WSMessage = { type };
@@ -265,7 +266,7 @@ export class NativeWSClient {
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectAttempts++;
-      console.debug(
+      logger.debug(
         `[NativeWS] Reconnecting (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       );
       this.emit("_reconnecting", {

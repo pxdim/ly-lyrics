@@ -7,8 +7,9 @@
 
 "use client";
 
-import { type FC, useEffect, useRef, useMemo, useState, useCallback } from "react";
+import { type FC, useEffect, useRef, useMemo } from "react";
 import { useLyricsStore } from "@/lib/store";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { LyricsLine } from "./LyricsLine";
 
 export interface LyricsDisplayProps {
@@ -34,16 +35,7 @@ export const LyricsDisplay: FC<LyricsDisplayProps> = (props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 偵測手機螢幕寬度，用於響應式 padding 調整
-  const [isMobile, setIsMobile] = useState(false);
-  const handleMediaChange = useCallback((e: MediaQueryListEvent | MediaQueryList) => {
-    setIsMobile(e.matches);
-  }, []);
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    handleMediaChange(mql);
-    mql.addEventListener("change", handleMediaChange);
-    return () => mql.removeEventListener("change", handleMediaChange);
-  }, [handleMediaChange]);
+  const isMobile = useIsMobile();
 
   // Calculate visible lyrics range
   const { visibleLyrics, startIndex, highlightIndex } = useMemo(() => {

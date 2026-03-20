@@ -148,9 +148,8 @@ function DisplayPage() {
       joinSession(connectionCode, "display");
       setHasAttemptedConnection(true);
     }
-    // connect/joinSession 是穩定的 Zustand action
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionCode]);
+    // connect/joinSession 是穩定的 Zustand action，加入 deps 是安全的
+  }, [connectionCode, connect, joinSession]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -158,7 +157,8 @@ function DisplayPage() {
       leaveSession();
       disconnect();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // leaveSession/disconnect 是穩定的 Zustand action
+  }, [leaveSession, disconnect]);
 
   // Clean Output 未嘗試連線：純黑等待畫面，不顯示同步碼輸入 UI（觀眾不應看到技術介面）
   if (!hasAttemptedConnection && isCleanOutput) {

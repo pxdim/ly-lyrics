@@ -6,11 +6,12 @@
 
 "use client";
 
-import { type FC, useState, useRef, useEffect, useCallback } from "react";
+import { type FC, useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { createSong } from "@/lib/api/songs";
 import { LrcDropZone } from "@/components/lrc/LrcDropZone";
 import { useTranslations } from "next-intl";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 
 // 動態載入 loading fallback 元件（需使用 i18n hook）
 function SearchLoadingFallback() {
@@ -59,16 +60,7 @@ export const AddSongModal: FC<AddSongModalProps> = ({ isOpen, onClose, onSongAdd
   ];
 
   // 偵測手機螢幕寬度，用於響應式調整
-  const [isMobile, setIsMobile] = useState(false);
-  const handleMediaChange = useCallback((e: MediaQueryListEvent | MediaQueryList) => {
-    setIsMobile(e.matches);
-  }, []);
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    handleMediaChange(mql);
-    mql.addEventListener("change", handleMediaChange);
-    return () => mql.removeEventListener("change", handleMediaChange);
-  }, [handleMediaChange]);
+  const isMobile = useIsMobile();
 
   // 開啟時重置狀態並聚焦到歌名輸入框
   useEffect(() => {
