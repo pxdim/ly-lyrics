@@ -1,9 +1,8 @@
 /**
  * PlaylistPanel — 播放清單管理面板
  *
- * 包含播放清單列表、建立新清單（選擇歌曲）、清單詳情（重命名/刪除/拖曳排序）。
- * 使用 SortablePlaylist 元件支援拖曳排序。
- * 使用 ConfirmDialog 取代原生 confirm() 呼叫。
+ * 組合層：管理狀態與 API 呼叫，將 UI 委派給子元件。
+ * 包含三個視圖：播放清單列表、建立新清單、清單詳情。
  */
 
 "use client";
@@ -18,15 +17,13 @@ import {
   deletePlaylist,
   type ClientPlaylist,
 } from "@/lib/api/playlists";
-import { SortablePlaylist } from "@/components/playlist/SortablePlaylist";
 import { usePlaylistReorder } from "@/lib/hooks/usePlaylistReorder";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { logger } from "@/lib/utils/logger";
-import { useTranslations } from "next-intl";
+import { PlaylistListView } from "./PlaylistListView";
+import { PlaylistCreateView } from "./PlaylistCreateView";
+import { PlaylistDetailView } from "./PlaylistDetailView";
 
 export const PlaylistPanel: FC = () => {
-  const t = useTranslations("controller.playlist");
-  const tc = useTranslations("common");
   const [playlists, setPlaylists] = useState<ClientPlaylist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -115,8 +112,11 @@ export const PlaylistPanel: FC = () => {
   };
 
   // 從播放清單中選曲
-  const handleSelectSongFromPlaylist = (song: ClientSong) => {
-    setCurrentSong(song as Parameters<typeof setCurrentSong>[0]);
+  const handleSelectSongFromPlaylist = (songId: string) => {
+    const song = allSongs.find((s) => s.id === songId);
+    if (song) {
+      setCurrentSong(song as Parameters<typeof setCurrentSong>[0]);
+    }
   };
 
   // 返回播放清單列表
@@ -152,6 +152,12 @@ export const PlaylistPanel: FC = () => {
     }
   };
 
+  // 建立畫面返回
+  const handleCreateBack = () => {
+    setShowCreate(false);
+    setSelectedSongIds(new Set());
+  };
+
   // 拖曳排序 hook（在 selectedPlaylist 判斷之前呼叫，遵守 React hooks 規則）
   const { orderedSongs, handleReorder } = usePlaylistReorder({
     playlist: selectedPlaylist,
@@ -162,314 +168,46 @@ export const PlaylistPanel: FC = () => {
   // ── 播放清單歌曲詳情畫面 ──
   if (selectedPlaylist) {
     return (
-      <>
-        {/* 返回 + 標題 + 操作 */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-dim shrink-0">
-          <button
-            onClick={handleBack}
-            className="text-text-muted hover:text-text-primary transition-colors p-1"
-            type="button"
-            title={t("backToPlaylists")}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <div className="flex-1 min-w-0">
-            {editingName !== null ? (
-              <input
-                type="text"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onBlur={handleRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename();
-                  if (e.key === "Escape") setEditingName(null);
-                }}
-                className="w-full px-1 py-0.5 bg-surface border border-primary/50 text-[13px] text-text-primary focus:outline-none font-body rounded-none"
-                autoFocus
-              />
-            ) : (
-              <p
-                className="text-[13px] font-semibold text-text-primary truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => setEditingName(selectedPlaylist.name)}
-                title={t("clickToRename")}
-              >
-                {selectedPlaylist.name}
-              </p>
-            )}
-            <p className="text-[10px] font-mono text-text-muted">
-              {orderedSongs.length} {tc("tracks")}
-            </p>
-          </div>
-          <button
-            onClick={() => setDeleteConfirm(true)}
-            className="text-text-muted hover:text-red-400 transition-colors p-1 shrink-0"
-            type="button"
-            title={t("deletePlaylist")}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        </div>
-
-        {/* 可拖曳排序歌曲列表 */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <SortablePlaylist
-            songs={orderedSongs}
-            currentSongId={currentSong?.id ?? null}
-            onReorder={handleReorder}
-            onSelect={(songId) => {
-              const song = allSongs.find((s) => s.id === songId);
-              if (song) handleSelectSongFromPlaylist(song);
-            }}
-          />
-        </div>
-
-        {/* 刪除播放清單確認對話框 */}
-        <ConfirmDialog
-          open={deleteConfirm}
-          title={t("confirmDeleteTitle")}
-          message={t("confirmDeleteMessage")}
-          variant="destructive"
-          confirmText={tc("delete")}
-          onConfirm={handleConfirmDeletePlaylist}
-          onCancel={() => setDeleteConfirm(false)}
-        />
-      </>
+      <PlaylistDetailView
+        playlist={selectedPlaylist}
+        orderedSongs={orderedSongs}
+        currentSongId={currentSong?.id ?? null}
+        editingName={editingName}
+        onEditingNameChange={setEditingName}
+        onRename={handleRename}
+        deleteConfirm={deleteConfirm}
+        onDeleteConfirmChange={setDeleteConfirm}
+        onConfirmDelete={handleConfirmDeletePlaylist}
+        onReorder={handleReorder}
+        onSelectSong={handleSelectSongFromPlaylist}
+        onBack={handleBack}
+      />
     );
   }
 
   // ── 建立播放清單畫面 ──
   if (showCreate) {
     return (
-      <>
-        {/* 返回 + 標題 */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-dim shrink-0">
-          <button
-            onClick={() => {
-              setShowCreate(false);
-              setSelectedSongIds(new Set());
-            }}
-            className="text-text-muted hover:text-text-primary transition-colors p-1"
-            type="button"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <span className="text-[13px] font-semibold text-text-primary">
-            {t("newPlaylist")}
-          </span>
-        </div>
-
-        {/* 名稱輸入 */}
-        <div className="px-3 py-2 border-b border-border-dim shrink-0">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder={t("playlistNamePlaceholder")}
-            className="w-full px-3 py-1.5 bg-surface border border-border-dim text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors font-body rounded-none"
-            autoFocus
-          />
-        </div>
-
-        {/* 選擇歌曲提示 */}
-        <div className="px-3 py-1.5 border-b border-border-dim shrink-0">
-          <span className="text-[10px] font-mono text-text-muted">
-            {t("selectSongs")} ({selectedSongIds.size} {tc("selected")})
-          </span>
-        </div>
-
-        {/* 歌曲多選列表 */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {allSongs.map((song) => {
-            const isSelected = selectedSongIds.has(song.id);
-            return (
-              <div
-                key={song.id}
-                onClick={() => toggleSongSelection(song.id)}
-                className={`flex items-center gap-3 px-4 py-2 border-b border-border-dim/50 cursor-pointer transition-colors ${
-                  isSelected
-                    ? "bg-primary/10 text-text-primary"
-                    : "hover:bg-elevated/50 text-text-muted hover:text-text-primary"
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 border flex items-center justify-center shrink-0 ${
-                    isSelected
-                      ? "bg-primary border-primary"
-                      : "border-border-dim"
-                  }`}
-                >
-                  {isSelected && (
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="hsl(var(--color-surface))"
-                      strokeWidth="3"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-[13px]">{song.title}</p>
-                  {song.artist && (
-                    <p className="text-[11px] text-text-muted truncate">
-                      {song.artist}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 建立按鈕 */}
-        <div className="p-3 border-t border-border-dim shrink-0">
-          <button
-            onClick={handleCreate}
-            disabled={
-              creating || !newName.trim() || selectedSongIds.size === 0
-            }
-            className="w-full py-2 bg-primary text-surface font-mono text-[12px] tracking-wider disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
-            type="button"
-          >
-            {creating ? t("creating") : t("createPlaylist")}
-          </button>
-        </div>
-      </>
+      <PlaylistCreateView
+        allSongs={allSongs}
+        newName={newName}
+        onNewNameChange={setNewName}
+        selectedSongIds={selectedSongIds}
+        onToggleSong={toggleSongSelection}
+        creating={creating}
+        onCreate={handleCreate}
+        onBack={handleCreateBack}
+      />
     );
   }
 
   // ── 播放清單列表主畫面 ──
   return (
-    <>
-      {/* 標題列 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border-dim shrink-0">
-        <span className="text-[11px] font-mono text-text-muted">
-          {playlists.length} {tc("lists")}
-        </span>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="text-text-muted hover:text-text-primary transition-colors"
-          type="button"
-          title={t("newPlaylist")}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* 播放清單列表 */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {isLoading ? (
-          <div className="p-4 text-center text-[12px] text-text-muted font-mono uppercase">
-            {tc("loading")}
-          </div>
-        ) : playlists.length === 0 ? (
-          <div className="p-6 text-center space-y-3">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-              className="mx-auto text-border-dim"
-            >
-              <path d="M3 6h18" />
-              <path d="M3 12h18" />
-              <path d="M3 18h18" />
-            </svg>
-            <p className="font-mono text-[12px] text-text-muted">
-              {t("noPlaylists")}
-            </p>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="text-[11px] font-mono text-primary hover:text-primary/80 transition-colors"
-              type="button"
-            >
-              {t("createFirst")}
-            </button>
-          </div>
-        ) : (
-          playlists.map((pl) => (
-            <div
-              key={pl.id}
-              onClick={() => handleSelectPlaylist(pl)}
-              className="group flex items-center gap-3 px-4 py-3 border-b border-border-dim/50 cursor-pointer transition-colors hover:bg-elevated/50 text-text-muted hover:text-text-primary"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="shrink-0"
-              >
-                <path d="M3 6h18" />
-                <path d="M3 12h18" />
-                <path d="M3 18h18" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-[13px]">{pl.name}</p>
-                <p className="text-[10px] font-mono text-text-muted">
-                  {pl.songIds.length} {tc("tracks")}
-                </p>
-              </div>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          ))
-        )}
-      </div>
-    </>
+    <PlaylistListView
+      playlists={playlists}
+      isLoading={isLoading}
+      onSelectPlaylist={handleSelectPlaylist}
+      onShowCreate={() => setShowCreate(true)}
+    />
   );
 };
