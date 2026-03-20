@@ -182,7 +182,7 @@ describe("PlaylistPanel", () => {
   it("renders loading state initially", () => {
     mockFetchPlaylists.mockReturnValue(new Promise(() => {}));
     render(<PlaylistPanel />);
-    expect(screen.getByText("LOADING...")).toBeInTheDocument();
+    expect(screen.getByText("載入中...")).toBeInTheDocument();
   });
 
   it("renders playlist list after loading", async () => {
@@ -205,7 +205,7 @@ describe("PlaylistPanel", () => {
     render(<PlaylistPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText("2 tracks")).toBeInTheDocument();
+      expect(screen.getByText("2 TRACKS")).toBeInTheDocument();
     });
   });
 
@@ -682,7 +682,7 @@ describe("PlaylistPanel", () => {
 
     // 錯誤後仍應停止 loading
     await waitFor(() => {
-      expect(screen.queryByText("LOADING...")).not.toBeInTheDocument();
+      expect(screen.queryByText("載入中...")).not.toBeInTheDocument();
     });
 
     consoleSpy.mockRestore();

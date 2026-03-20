@@ -206,7 +206,7 @@ export const PlaylistPanel: FC = () => {
               </p>
             )}
             <p className="text-[10px] font-mono text-text-muted">
-              {orderedSongs.length} TRACKS
+              {orderedSongs.length} {tc("tracks")}
             </p>
           </div>
           <button
@@ -375,7 +375,7 @@ export const PlaylistPanel: FC = () => {
       {/* 標題列 */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border-dim shrink-0">
         <span className="text-[11px] font-mono text-text-muted">
-          {playlists.length} LISTS
+          {playlists.length} {tc("lists")}
         </span>
         <button
           onClick={() => setShowCreate(true)}
@@ -400,8 +400,8 @@ export const PlaylistPanel: FC = () => {
       {/* 播放清單列表 */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {isLoading ? (
-          <div className="p-4 text-center text-[12px] text-text-muted font-mono">
-            LOADING...
+          <div className="p-4 text-center text-[12px] text-text-muted font-mono uppercase">
+            {tc("loading")}
           </div>
         ) : playlists.length === 0 ? (
           <div className="p-6 text-center space-y-3">
@@ -452,7 +452,7 @@ export const PlaylistPanel: FC = () => {
               <div className="flex-1 min-w-0">
                 <p className="truncate text-[13px]">{pl.name}</p>
                 <p className="text-[10px] font-mono text-text-muted">
-                  {pl.songIds.length} tracks
+                  {pl.songIds.length} {tc("tracks")}
                 </p>
               </div>
               <svg
